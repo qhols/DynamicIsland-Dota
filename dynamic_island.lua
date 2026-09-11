@@ -534,7 +534,8 @@ local ButtonSprings = {
 
 local ThemeSpring = {
     factor = 0.0,
-    vel = 0.0
+    vel = 0.0,
+    target = 0.0
 }
 
 local TrackTransition = {
@@ -4973,6 +4974,14 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
     Render.Rect(p1, p2, FadeColor(curBorder, a), radius, Enum.DrawFlags.None, thickness or 1.0)
 end
 
+local function DrawerSurface(p1, p2, radius, aMul)
+    -- solid opaque card: the drawer only lives while the Umbrella menu is
+    -- open behind it, so blur/alpha would sample that (animated) background
+    local bg = UI.Main.IslandBgColor:Get()
+    Render.FilledRect(p1, p2, FadeColor(Color(bg.r, bg.g, bg.b, 255), aMul), radius)
+    Render.Rect(p1, p2, FadeColor(Config.Colors.Border, aMul), radius, Enum.DrawFlags.None, 1.0)
+end
+
 local function EaseOutCubic(x)
     local u = 1 - math.min(1, math.max(0, x))
     return 1 - u * u * u
@@ -5176,7 +5185,7 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     local popRad = 14 * scale
     
     Render.Shadow(p1, p2, Color(0, 0, 0, math.floor(220 * popA)), 28, popRad, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 8))
-    IslandSurface(p1, p2, popRad, Config.Colors.Border, 1.2, popA)
+    DrawerSurface(p1, p2, popRad, popA)
     
     local pad = 12 * scale
     local hdrY = popY + 11 * scale
@@ -5433,7 +5442,7 @@ local function RenderHUDDrawer(layout, dt)
     }
 
     Render.Shadow(p1, p2, Color(0, 0, 0, math.floor(200 * emerge)), 26, rad, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 6))
-    IslandSurface(p1, p2, rad, Config.Colors.Border, 1.0, emerge)
+    DrawerSurface(p1, p2, rad, emerge)
 
     HUDCustomizer.DrawerBounds = {}
     HUDCustomizer.InspectorBounds = {}
@@ -7162,19 +7171,26 @@ function DynamicIsland.OnDraw()
     
     local isPureGlass = IsPureGlass()
     local currentBg = UI.Main.IslandBgColor:Get()
-    local targetFactor = 0.0
+    local targetFactor = ThemeSpring.target
     if not isPureGlass and currentBg then
         local lum = (currentBg.r * 0.299 + currentBg.g * 0.587 + currentBg.b * 0.114)
-        if lum > 140 then
-            targetFactor = 1.0
+        -- hysteresis: hold the current palette inside the dead zone so the
+        -- spring never flaps when the bg luminance sits near the threshold
+        if targetFactor > 0.5 then
+            if lum < 120 then targetFactor = 0.0 end
+        else
+            if lum > 150 then targetFactor = 1.0 end
         end
+    else
+        targetFactor = 0.0
     end
-    
+    ThemeSpring.target = targetFactor
+
     local nF, nV = SolveDampedSpring(ThemeSpring.factor, ThemeSpring.vel, targetFactor, dt, 14.0, 0.80)
     ThemeSpring.factor = nF
     ThemeSpring.vel = nV
-    
-    local f = ThemeSpring.factor
+
+    local f = math.min(1.0, math.max(0.0, ThemeSpring.factor))
     Config.Colors.TextPrimary = LerpColor(Color(255, 255, 255, 255), Color(18, 18, 24, 255), f)
     Config.Colors.TextSecondary = LerpColor(Color(160, 160, 170, 255), Color(65, 65, 75, 230), f)
     Config.Colors.TextMuted = LerpColor(Color(120, 120, 130, 255), Color(110, 110, 120, 200), f)
