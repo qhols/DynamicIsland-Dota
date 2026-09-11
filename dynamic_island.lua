@@ -5759,8 +5759,12 @@ local function RenderFightCompact(layout, alphaMul, yOffset)
 end
 
 local CachedDotaMapHandle = nil
+local DotaMapFailed = false
+local DotaMapNextRetry = 0
+local LastMapWarmCheck = 0
 local function GetDotaMapTexture()
     if CachedDotaMapHandle ~= nil then return CachedDotaMapHandle end
+    if DotaMapFailed and os.clock() < DotaMapNextRetry then return nil end
     local mapCandidates = {
         "dota_map.png",
         "scripts/dota_map.png",
@@ -5773,13 +5777,17 @@ local function GetDotaMapTexture()
         "panorama/images/textures/minimap_game_png.vtex_c"
     }
     for _, mp in ipairs(mapCandidates) do
+        if ImageCache[mp] == false then ImageCache[mp] = nil end -- allow a retry
         local h = GetCachedImage(mp)
         if h and h > 0 then
             CachedDotaMapHandle = h
+            DotaMapFailed = false
             return h
         end
     end
-    CachedDotaMapHandle = false
+    -- don't cache the failure forever: files may appear after a map load
+    DotaMapFailed = true
+    DotaMapNextRetry = os.clock() + 30.0
     return nil
 end
 
@@ -5794,7 +5802,11 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     
     local padX = math.floor(16 * scale)
     local padY = math.floor(14 * scale)
-    local radarSz = math.floor(120 * scale)
+    -- radar unfolds with the island: sized against the live (animating)
+    -- layout so it can never pop in at full size mid-transition
+    local radarAvail = math.min(120 * scale, layout.h - padY * 2)
+    local radarSz = math.max(math.floor(34 * scale), math.floor(radarAvail))
+    local radarR = math.min(18 * scale, radarSz / 2)
     local radarX = math.floor(layout.x + layout.w - 14 * scale - radarSz)
     local radarY = math.floor(layout.y + (layout.h - radarSz) / 2 + yOff)
     
@@ -5892,13 +5904,13 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     
     local mapH = GetDotaMapTexture()
     
-    Render.FilledRect(rP1, rP2, FadeColor(Color(14, 18, 26, 235), aMul), 18 * scale)
-    
+    Render.FilledRect(rP1, rP2, FadeColor(Color(14, 18, 26, 235), aMul), radarR)
+
     Render.PushClip(rP1, rP2)
-    
+
     if mapH and mapH > 0 then
-        Render.Image(mapH, rP1, Vec2(radarSz, radarSz), FadeColor(Color(255, 255, 255, 255), aMul), 18 * scale, Enum.DrawFlags.None, uvMin, uvMax)
-        Render.FilledRect(rP1, rP2, FadeColor(Color(10, 14, 20, 35), aMul), 18 * scale)
+        Render.Image(mapH, rP1, Vec2(radarSz, radarSz), FadeColor(Color(255, 255, 255, 255), aMul), radarR, Enum.DrawFlags.None, uvMin, uvMax)
+        Render.FilledRect(rP1, rP2, FadeColor(Color(10, 14, 20, 35), aMul), radarR)
     else
         local riverP1 = Vec2(radarX, radarY + radarSz * 0.75)
         local riverP2 = Vec2(radarX + radarSz, radarY + radarSz * 0.25)
@@ -5957,7 +5969,7 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     
     Render.PopClip()
     
-    Render.Rect(rP1, rP2, FadeColor(Color(255, 255, 255, 38), aMul), 18 * scale, Enum.DrawFlags.None, 1.0)
+    Render.Rect(rP1, rP2, FadeColor(Color(255, 255, 255, 38), aMul), radarR, Enum.DrawFlags.None, 1.0)
 end
 
 local function RenderNotificationState(layout, alphaMul, yOffset)
@@ -7201,7 +7213,14 @@ function DynamicIsland.OnDraw()
     Config.Colors.ChipInactive = LerpColor(Color(255, 255, 255, 10), Color(0, 0, 0, 10), f)
     Config.Colors.ChipInactiveBorder = LerpColor(Color(255, 255, 255, 24), Color(0, 0, 0, 24), f)
     Config.Colors.TextInverse = LerpColor(Color(18, 18, 24, 255), Color(255, 255, 255, 255), f)
-    
+
+    -- pre-warm the radar map texture long before the first fight so it
+    -- never pops in mid-transition; throttled by GetDotaMapTexture itself
+    if inGame and CachedDotaMapHandle == nil and os.clock() - LastMapWarmCheck > 10.0 then
+        LastMapWarmCheck = os.clock()
+        GetDotaMapTexture()
+    end
+
     PerformanceData.FrameCount = PerformanceData.FrameCount + 1
     if curClock - PerformanceData.LastFPSUpdate >= 0.5 then
         local elapsed = curClock - PerformanceData.LastFPSUpdate
