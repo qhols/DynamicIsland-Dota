@@ -8,12 +8,19 @@ local Translations = {
         tab = {
             general = "General",
             settings = "Settings",
-            combat = "Combat & Map",
+            position = "Position & Size",
+            geometry = "Geometry",
+            appearance = "Appearance",
+            style = "Style",
+            combat = "Combat & Radar",
+            radar = "Radar",
             alerts = "Alerts",
+            notifications = "Notifications",
             runes = "Runes & Objectives",
             events = "Events",
             timings = "Timings",
-            media = "Media & Visuals",
+            seconds = "Lead Times",
+            media = "Media",
             parameters = "Parameters",
             haptics = "Haptic Engine",
             tactile = "Tactile Feedback"
@@ -28,6 +35,7 @@ local Translations = {
             custom_label = "Hero Tag",
             bg_color = "Island Background Color",
             pure_glass = "Aka Glass",
+            border_thickness = "Border Thickness",
             widget_editor = "Widget Editor (RMB)",
             reset_pos = "Reset Position"
         },
@@ -48,6 +56,8 @@ local Translations = {
             fight_radius = "Fight Detection Radius",
             radar_zoom = "Radar Zoom Range",
             fight_timeout = "Fight Completion Timeout",
+            fight_large_w = "Fight Card Width",
+            fight_large_h = "Fight Card Height",
             kills = "Kill Streaks",
             invis = "Enemy Invis & Smoke",
             teleports = "Enemy Teleports",
@@ -145,11 +155,19 @@ local Translations = {
         tab = {
             general = "Главная",
             settings = "Настройки",
-            combat = "Бой и Карта",
+            position = "Позиция и размер",
+            geometry = "Геометрия",
+            appearance = "Внешний вид",
+            style = "Стиль",
+            combat = "Бой и радар",
+            radar = "Радар",
             alerts = "Оповещения",
-            runes = "Руны и Объекты",
+            notifications = "Уведомления",
+            runes = "Руны и объекты",
             events = "События",
-            media = "Медиа и Визуал",
+            timings = "Тайминги",
+            seconds = "Пре-таймеры",
+            media = "Медиа",
             parameters = "Параметры",
             haptics = "Тактильный отклик",
             tactile = "Параметры тактилки"
@@ -164,6 +182,7 @@ local Translations = {
             custom_label = "Тег героя",
             bg_color = "Цвет фона островка",
             pure_glass = "Стиль стекла",
+            border_thickness = "Толщина обводки",
             widget_editor = "Редактор виджетов (ПКМ)",
             reset_pos = "Сбросить позицию"
         },
@@ -184,6 +203,8 @@ local Translations = {
             fight_radius = "Радиус захвата драки",
             radar_zoom = "Масштаб радара",
             fight_timeout = "Задержка закрытия после драки",
+            fight_large_w = "Ширина карточки боя",
+            fight_large_h = "Высота карточки боя",
             kills = "Серии убийств",
             invis = "Невидимость и Smoke врага",
             teleports = "Телепорты врагов",
@@ -1062,6 +1083,7 @@ local function SaveAllConfig()
                         local c = UI.Main.IslandBgColor:Get()
                         f:write(string.format("ui_bg_col=%d,%d,%d,%d\n", math.floor(c.r), math.floor(c.g), math.floor(c.b), math.floor(c.a or 255)))
                     end
+                    if UI.Main.BorderThickness then f:write(string.format("ui_border_w=%.1f\n", UI.Main.BorderThickness:Get())) end
                 end
                 if UI.Combat then
                     if UI.Combat.FightHUD then f:write("ui_c_fighthud=" .. (UI.Combat.FightHUD:Get() and "1" or "0") .. "\n") end
@@ -1070,6 +1092,8 @@ local function SaveAllConfig()
                     if UI.Combat.FightRadius then f:write("ui_c_fightradius=" .. tostring(UI.Combat.FightRadius:Get()) .. "\n") end
                     if UI.Combat.RadarZoom then f:write("ui_c_radarzoom=" .. tostring(UI.Combat.RadarZoom:Get()) .. "\n") end
                     if UI.Combat.FightTimeout then f:write("ui_c_fighttimeout=" .. tostring(UI.Combat.FightTimeout:Get()) .. "\n") end
+                    if UI.Combat.FightLargeW then f:write("ui_c_large_w=" .. tostring(UI.Combat.FightLargeW:Get()) .. "\n") end
+                    if UI.Combat.FightLargeH then f:write("ui_c_large_h=" .. tostring(UI.Combat.FightLargeH:Get()) .. "\n") end
                     if UI.Combat.Kills then f:write("ui_c_kills=" .. (UI.Combat.Kills:Get() and "1" or "0") .. "\n") end
                     if UI.Combat.Invis then f:write("ui_c_invis=" .. (UI.Combat.Invis:Get() and "1" or "0") .. "\n") end
                     if UI.Combat.Teleports then f:write("ui_c_tp=" .. (UI.Combat.Teleports:Get() and "1" or "0") .. "\n") end
@@ -1185,12 +1209,15 @@ local function LoadAllConfig()
                     elseif k == "ui_bg_col" and UI.Main and UI.Main.IslandBgColor then
                         local r, g, b, a = string.match(v, "^(%d+),(%d+),(%d+),(%d+)$")
                         if r then UI.Main.IslandBgColor:Set(Color(tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 0, tonumber(a) or 245)) end
+                    elseif k == "ui_border_w" and UI.Main and UI.Main.BorderThickness then UI.Main.BorderThickness:Set(tonumber(v) or 1.0)
                     elseif k == "ui_c_fighthud" and UI.Combat and UI.Combat.FightHUD then UI.Combat.FightHUD:Set(v == "1")
                     elseif k == "ui_c_fightscope" and UI.Combat and UI.Combat.FightScope then UI.Combat.FightScope:Set(tonumber(v) or 0)
                     elseif k == "ui_c_minheroes" and UI.Combat and UI.Combat.MinHeroes then UI.Combat.MinHeroes:Set(tonumber(v) or 2)
                     elseif k == "ui_c_fightradius" and UI.Combat and UI.Combat.FightRadius then UI.Combat.FightRadius:Set(tonumber(v) or 1600)
                     elseif k == "ui_c_radarzoom" and UI.Combat and UI.Combat.RadarZoom then UI.Combat.RadarZoom:Set(tonumber(v) or 2000)
                     elseif k == "ui_c_fighttimeout" and UI.Combat and UI.Combat.FightTimeout then UI.Combat.FightTimeout:Set(tonumber(v) or 4)
+                    elseif k == "ui_c_large_w" and UI.Combat and UI.Combat.FightLargeW then UI.Combat.FightLargeW:Set(math.floor(tonumber(v) or 365))
+                    elseif k == "ui_c_large_h" and UI.Combat and UI.Combat.FightLargeH then UI.Combat.FightLargeH:Set(math.floor(tonumber(v) or 148))
                     elseif k == "ui_r_active" and UI.Runes and UI.Runes.ActiveRunes then UI.Runes.ActiveRunes:Set(v == "1")
                     elseif k == "ui_r_water" and UI.Runes and UI.Runes.WaterRunes then UI.Runes.WaterRunes:Set(v == "1")
                     elseif k == "ui_r_bounty" and UI.Runes and UI.Runes.BountyRunes then UI.Runes.BountyRunes:Set(v == "1")
@@ -1658,30 +1685,26 @@ end
 local function InitMenu()
     local tab = Menu.Create("General", "Dynamic Island", "dynamic_island_apple")
     tab:Icon("\u{f0eb}")
-    
-    local gMain = tab:Create(L("tab.general", "General")):Create("tab.settings")
-    local gCombat = tab:Create(L("tab.combat", "Combat & Map")):Create("tab.alerts")
+
+    local gGeneral = tab:Create(L("tab.general", "General")):Create("tab.settings")
+    local gPosition = tab:Create(L("tab.position", "Position & Size")):Create("tab.geometry")
+    local gAppearance = tab:Create(L("tab.appearance", "Appearance")):Create("tab.style")
+    local gCombat = tab:Create(L("tab.combat", "Combat & Radar")):Create("tab.radar")
+    local gAlerts = tab:Create(L("tab.alerts", "Alerts")):Create("tab.notifications")
     local gRunes = tab:Create(L("tab.runes", "Runes & Objectives")):Create("tab.events")
     local gTimings = tab:Create(L("tab.timings", "Timings")):Create("tab.seconds")
-    local gMedia = tab:Create(L("tab.media", "Media & Visuals")):Create("tab.parameters")
+    local gMedia = tab:Create(L("tab.media", "Media")):Create("tab.parameters")
     local gHaptics = tab:Create(L("tab.haptics", "Haptic Engine")):Create("tab.tactile")
-    
+
     UI = {
         Main = {
-            Enabled = gMain:Switch("main.enabled", true, "\u{f0eb}"),
-            OnlyInGame = gMain:Switch("main.only_in_game", false, "\u{f108}"),
-            Preset = gMain:Combo("main.preset", { "preset.top_center", "preset.custom", "preset.top_left", "preset.top_right", "preset.screen_center", "preset.bottom_center" }, 0),
-            OffsetY = gMain:Slider("main.offset_y", 0, 1000, 20, "%d px"),
-            OffsetX = gMain:Slider("main.offset_x", -960, 960, 0, "%d px"),
-            Scale = gMain:Slider("main.scale", 60, 180, 100, "%d%%"),
-            CustomLabel = gMain:Input("main.custom_label", ""),
-            IslandBgColor = gMain:ColorPicker("main.bg_color", Color(0, 0, 0, 245)),
-            PureGlass = gMain:Switch("main.pure_glass", false, "\u{f06e}"),
-            ToggleHUDMode = gMain:Button("main.widget_editor", function()
+            Enabled = gGeneral:Switch("main.enabled", true, "\u{f0eb}"),
+            OnlyInGame = gGeneral:Switch("main.only_in_game", false, "\u{f108}"),
+            ToggleHUDMode = gGeneral:Button("main.widget_editor", function()
                 HUDCustomizer.IsOpen = not HUDCustomizer.IsOpen
                 HUDCustomizer.InspectedChip = nil
             end),
-            ResetPos = gMain:Button("main.reset_pos", function()
+            ResetPos = gGeneral:Button("main.reset_pos", function()
                 DragState.CustomX = -1
                 DragState.CustomY = -1
                 UI.Main.Preset:Set(0)
@@ -1689,6 +1712,31 @@ local function InitMenu()
                 UI.Main.OffsetX:Set(0)
                 SaveAllConfig()
             end),
+            ExportCfg = gGeneral:Button("media.export_cfg", function()
+                SaveAllConfig()
+            end),
+            ImportCfg = gGeneral:Button("media.import_cfg", function()
+                LoadAllConfig()
+            end),
+            Preset = gPosition:Combo("main.preset", { "preset.top_center", "preset.custom", "preset.top_left", "preset.top_right", "preset.screen_center", "preset.bottom_center" }, 0),
+            OffsetY = gPosition:Slider("main.offset_y", 0, 1000, 20, "%d px"),
+            OffsetX = gPosition:Slider("main.offset_x", -960, 960, 0, "%d px"),
+            Scale = gPosition:Slider("main.scale", 60, 180, 100, "%d%%"),
+            IslandBgColor = gAppearance:ColorPicker("main.bg_color", Color(0, 0, 0, 245)),
+            PureGlass = gAppearance:Switch("main.pure_glass", false, "\u{f06e}"),
+            CustomLabel = gAppearance:Input("main.custom_label", ""),
+            BorderThickness = gAppearance:Slider("main.border_thickness", 0.0, 3.0, 1.0, "%.1f px"),
+        },
+        Media = {
+            Shadow = gAppearance:Switch("media.shadow", true, "\u{f186}"),
+            Blur = gAppearance:Switch("media.blur", true, "\u{f06e}"),
+            AccentColor = gAppearance:ColorPicker("media.accent_color", Config.Colors.Accent),
+            Enabled = gMedia:Switch("media.enabled", true, "\u{f001}"),
+            SpotifyLike = gMedia:Switch("media.spotify_like", true, "\u{f004}"),
+            VolumeWheel = gMedia:Switch("media.volume_wheel", true, "\u{f028}"),
+            MarqueeSpeed = gMedia:Slider("media.marquee_speed", 20, 100, 45, "%d px/s"),
+            SecondaryBubble = gMedia:Switch("media.secondary_bubble", true, "\u{f111}"),
+            Hints = gMedia:Switch("media.hints", true, "\u{f05a}"),
         },
         Combat = {
             FightHUD = gCombat:Switch("combat.fight_hud", true, "\u{f06e}"),
@@ -1697,17 +1745,19 @@ local function InitMenu()
             FightRadius = gCombat:Slider("combat.fight_radius", 1000, 3000, 1600, "%d px"),
             RadarZoom = gCombat:Slider("combat.radar_zoom", 1000, 3500, 2000, "%d px"),
             FightTimeout = gCombat:Slider("combat.fight_timeout", 2, 10, 4, "%d s"),
-            Kills = gCombat:Switch("combat.kills", true, "\u{f0e7}"),
-            Invis = gCombat:Switch("combat.invis", true, "\u{f06e}"),
-            Teleports = gCombat:Switch("combat.teleports", true, "\u{f3c5}"),
-            KeyEnemyItems = gCombat:Switch("combat.key_enemy_items", true, "\u{f06e}"),
-            Couriers = gCombat:Switch("combat.couriers", true, "\u{f48b}"),
-            CourierDelivery = gCombat:Switch("combat.courier_delivery", true, "\u{f48b}"),
-            PauseAlert = gCombat:Switch("combat.pause_alert", true, "\u{f04c}"),
-            Towers = gCombat:Switch("combat.towers", true, "\u{f1ad}"),
-            Buybacks = gCombat:Switch("combat.buybacks", true, "\u{f2f9}"),
-            LowHP = gCombat:Switch("combat.low_hp", true, "\u{f21e}"),
-            LevelUp = gCombat:Switch("combat.level_up", true, "\u{f201}")
+            FightLargeW = gCombat:Slider("combat.fight_large_w", 300, 520, 365, "%d px"),
+            FightLargeH = gCombat:Slider("combat.fight_large_h", 110, 220, 148, "%d px"),
+            Kills = gAlerts:Switch("combat.kills", true, "\u{f0e7}"),
+            Invis = gAlerts:Switch("combat.invis", true, "\u{f06e}"),
+            Teleports = gAlerts:Switch("combat.teleports", true, "\u{f3c5}"),
+            KeyEnemyItems = gAlerts:Switch("combat.key_enemy_items", true, "\u{f06e}"),
+            Couriers = gAlerts:Switch("combat.couriers", true, "\u{f48b}"),
+            CourierDelivery = gAlerts:Switch("combat.courier_delivery", true, "\u{f48b}"),
+            PauseAlert = gAlerts:Switch("combat.pause_alert", true, "\u{f04c}"),
+            Towers = gAlerts:Switch("combat.towers", true, "\u{f1ad}"),
+            Buybacks = gAlerts:Switch("combat.buybacks", true, "\u{f2f9}"),
+            LowHP = gAlerts:Switch("combat.low_hp", true, "\u{f21e}"),
+            LevelUp = gAlerts:Switch("combat.level_up", true, "\u{f201}")
         },
         Runes = {
             ActiveRunes = gRunes:Switch("runes.active_runes", true, "\u{f0e7}"),
@@ -1729,23 +1779,6 @@ local function InitMenu()
             LotusTime = gTimings:Slider("timings.lotus_time", 5, 60, 20, "%d s"),
             Tormentor1Time = gTimings:Slider("timings.tormentor1_time", 30, 180, 120, "%d s"),
             Tormentor2Time = gTimings:Slider("timings.tormentor2_time", 5, 60, 20, "%d s")
-        },
-        Media = {
-            Enabled = gMedia:Switch("media.enabled", true, "\u{f001}"),
-            SpotifyLike = gMedia:Switch("media.spotify_like", true, "\u{f004}"),
-            VolumeWheel = gMedia:Switch("media.volume_wheel", true, "\u{f028}"),
-            MarqueeSpeed = gMedia:Slider("media.marquee_speed", 20, 100, 45, "%d px/s"),
-            SecondaryBubble = gMedia:Switch("media.secondary_bubble", true, "\u{f111}"),
-            Shadow = gMedia:Switch("media.shadow", true, "\u{f186}"),
-            Blur = gMedia:Switch("media.blur", true, "\u{f06e}"),
-            Hints = gMedia:Switch("media.hints", true, "\u{f05a}"),
-            AccentColor = gMedia:ColorPicker("media.accent_color", Config.Colors.Accent),
-            ExportCfg = gMedia:Button("media.export_cfg", function()
-                SaveAllConfig()
-            end),
-            ImportCfg = gMedia:Button("media.import_cfg", function()
-                LoadAllConfig()
-            end)
         },
         Haptics = {
             Enabled = gHaptics:Switch("haptics.enabled", true, "\u{f11e}"),
@@ -1771,6 +1804,14 @@ local function InitMenu()
             end)
         }
     }
+
+    -- live-sync the accent picker into the palette (switches, radar dots, outlines)
+    if UI.Media.AccentColor and UI.Media.AccentColor.SetCallback then
+        UI.Media.AccentColor:SetCallback(function(w)
+            local c = w:Get()
+            if c then Config.Colors.Accent = c end
+        end, true)
+    end
 end
 
 local function TriggerStateTransition(nextState)
@@ -4494,8 +4535,8 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetH = Config.Dimensions.LargeMediaH
         Config.Dimensions.CompactTargetR = Config.Dimensions.LargeMediaRadius
     elseif StateMachine.TargetState == StateMachine.States.LARGE_FIGHT then
-        Config.Dimensions.CompactTargetW = Config.Dimensions.LargeFightW
-        Config.Dimensions.CompactTargetH = Config.Dimensions.LargeFightH
+        Config.Dimensions.CompactTargetW = (UI and UI.Combat and UI.Combat.FightLargeW) and UI.Combat.FightLargeW:Get() or Config.Dimensions.LargeFightW
+        Config.Dimensions.CompactTargetH = (UI and UI.Combat and UI.Combat.FightLargeH) and UI.Combat.FightLargeH:Get() or Config.Dimensions.LargeFightH
         Config.Dimensions.CompactTargetR = Config.Dimensions.LargeFightRadius
     elseif StateMachine.TargetState == StateMachine.States.LARGE_IDLE then
         Config.Dimensions.CompactTargetW = Config.Dimensions.LargeW
@@ -7313,7 +7354,8 @@ function DynamicIsland.OnDraw()
         Render.Shadow(p1, p2, Config.Colors.Shadow, 16, layout.r, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
     end
     
-    IslandSurface(p1, p2, layout.r, HUDCustomizer.IsOpen and Config.Colors.PMenuIslandBorder or Config.Colors.Border, HUDCustomizer.IsOpen and 1.2 or 1.0)
+    local borderW = (UI and UI.Main and UI.Main.BorderThickness) and UI.Main.BorderThickness:Get() or 1.0
+    IslandSurface(p1, p2, layout.r, HUDCustomizer.IsOpen and Config.Colors.PMenuIslandBorder or Config.Colors.Border, HUDCustomizer.IsOpen and math.max(1.2, borderW) or borderW)
     
     if Haptic and Haptic.State and Haptic.State.GlowAlpha > 1.0 then
         local gAlpha = math.min(255, math.floor(Haptic.State.GlowAlpha))
