@@ -13,3 +13,8 @@
 !/media_bridge/README.md
 !/media_bridge/dynamic_island.ico
 !/media_bridge/sounds/
+!/media_bridge/csharp/
+
+# C# rewrite: sources only, bin/obj are build output
+/media_bridge/csharp/**/bin/
+/media_bridge/csharp/**/obj/

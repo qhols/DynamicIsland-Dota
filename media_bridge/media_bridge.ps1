@@ -5,6 +5,16 @@ try {
     Start-Sleep -Milliseconds 150
 } catch {}
 
+# Real single-instance lock: the process-name/commandline sweep above is a
+# best-effort cleanup and has a race window when two copies launch back to
+# back. If we lose this mutex, another instance already won and is (or is
+# about to be) bound to the port, so exit instead of retrying
+# HttpListener.Start() forever and spamming bridge_error.log.
+$script:singleInstanceMutex = New-Object System.Threading.Mutex($false, "Global\DynamicIslandMediaBridge")
+if (-not $script:singleInstanceMutex.WaitOne(0)) {
+    exit
+}
+
 # Dynamic Island Media Engine UTF8
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
 Add-Type -AssemblyName System.Drawing
@@ -596,8 +606,15 @@ namespace WinRtHelper {
                             setVol(pVol, newVol, ref g);
                             lock (_duckLock) {
                                 if (_isDucked) {
+                                    // newVol here is the currently-ducked volume the user just
+                                    // set; _savedSessionVolumes must hold the equivalent
+                                    // pre-duck (restored) volume, or RestoreAudioDucking()/
+                                    // ApplyDuckLevel(0) will permanently leave this session
+                                    // at the ducked level once the duck window ends.
                                     string sessionKey = pid.ToString() + "_" + i.ToString();
-                                    _savedSessionVolumes[sessionKey] = newVol;
+                                    float duckMultiplier = 1.0f - _targetDuckPercent;
+                                    float restoredEquivalent = duckMultiplier > 0.001f ? (newVol / duckMultiplier) : newVol;
+                                    _savedSessionVolumes[sessionKey] = Math.Min(1.0f, Math.Max(0.0f, restoredEquivalent));
                                 }
                             }
                             Marshal.Release(pVol);
