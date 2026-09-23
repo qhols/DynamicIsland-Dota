@@ -323,13 +323,14 @@ local DynamicIsland = {}
 
 local localization = qLocalization.new({
     en = {
+        di_rampage_timer = "Rampage timer",
+        di_rampage_timer_tip = "After an Ultra Kill, shows how long you have left to get the fifth",
         di_streak_mega_kill = "Mega Kill!",
         di_streak_unstoppable = "Unstoppable!",
         di_streak_wicked_sick = "Wicked Sick!",
         di_streak_godlike = "Godlike!",
-        di_tab_live = "Activities",
         di_group_live = "Live Activities",
-        di_group_alerts_all = "All Notifications",
+        di_group_alerts_all = "All Alerts",
         di_toast_duration_tip = "Used by every alert that has no duration of its own",
         di_alert_duration = "Duration",
         di_alert_duration_tip = "0 uses the shared duration from the top of the page",
@@ -605,7 +606,7 @@ local localization = qLocalization.new({
         di_ui_track = "Track",
         di_ui_match = "Match ",
         di_tab_general = "General",
-        di_tab_alerts = "Notifications",
+        di_tab_alerts = "Alerts",
         di_tab_media = "Media",
         di_tab_haptics = "Haptic Engine",
         di_main_enabled = "Enable Island",
@@ -713,13 +714,14 @@ local localization = qLocalization.new({
         di_priority_power_rune_cycle = "Power Rune Cycle"
     },
     ru = {
+        di_rampage_timer = "Таймер рампаги",
+        di_rampage_timer_tip = "После Ультра-убийства показывает, сколько осталось до Рампаги",
         di_streak_mega_kill = "Мега-убийство!",
         di_streak_unstoppable = "Неудержимый!",
         di_streak_wicked_sick = "Нечто!",
         di_streak_godlike = "Божественно!",
-        di_tab_live = "Активности",
         di_group_live = "Живые активности",
-        di_group_alerts_all = "Все уведомления",
+        di_group_alerts_all = "Все оповещения",
         di_toast_duration_tip = "Для всех оповещений, у которых не задана своя длительность",
         di_alert_duration = "Длительность",
         di_alert_duration_tip = "0 значит общая длительность сверху страницы",
@@ -995,7 +997,7 @@ local localization = qLocalization.new({
         di_ui_track = "Трек",
         di_ui_match = "Матч ",
         di_tab_general = "Главная",
-        di_tab_alerts = "Уведомления",
+        di_tab_alerts = "Оповещения",
         di_tab_media = "Медиа",
         di_tab_haptics = "Тактильный отклик",
         di_main_enabled = "Включить Island",
@@ -1410,7 +1412,7 @@ local CourierTracker = {
     Delivering = false,
     Delivered = false,
     DeliveredStartTime = 0,
-    DeliveredDuration = 1.5,
+    DeliveredDuration = 2.2,
     DeliveryOrderedTime = 0,
     StartDistance = 0,
     CurrentDistance = 0,
@@ -1606,6 +1608,8 @@ local MenuStateCandidate = { state = nil, since = 0 }
 local Focus = { ClickAt = -10, BumpAt = -10, BannerStart = 0, TileVis = 0, Active = false, Mode = 0, Until = 0, StartedAt = 0, Suppressed = 0, BannerUntil = 0, BannerOn = true, Vis = 0, LastDraw = 0, PressAt = -10, ButtonAt = -10, Accent = Color(94, 92, 230, 255) }
 local Reminders = { Fired = {} }
 local Satellite = { S = {}, Right = { kind = nil, notif = nil } }
+local Rampage = { Count = 0, LastKill = -100, Left = 0, SuccessAt = -10, Target = nil, Active = false }
+local Success = { Fired = {} }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
@@ -2174,13 +2178,16 @@ local function GetCachedImage(path, fallbackSvgKey)
     if path and path ~= "" then
         local h = ImageCache[path]
         if h ~= nil and h ~= false then return h end
-        if h == nil then
+        local failKey = "\0fail" .. path
+        if h == nil or os.clock() - (ImageCache[failKey] or 0) > 3 then
             local ok, handle = pcall(Render.LoadImage, path)
             if ok and handle and handle ~= 0 then
                 ImageCache[path] = handle
+                ImageCache[failKey] = nil
                 return handle
             end
             ImageCache[path] = false
+            ImageCache[failKey] = os.clock()
         end
     end
     if fallbackSvgKey then
@@ -2541,8 +2548,7 @@ local function InitMenu()
     local gAll = pAlerts:Create("di_group_alerts_all", Enum.GroupSide.FullWidth)
     local gCombat = pAlerts:Create("di_group_combat_alerts", Enum.GroupSide.Left)
     local gMap = pAlerts:Create("di_group_map_alerts", Enum.GroupSide.Right)
-    local pLive = tab:Create(L("di_tab_live"))
-    local gLive = pLive:Create("di_group_live", Enum.GroupSide.Left)
+    local gLive = pAlerts:Create("di_group_live", Enum.GroupSide.Left)
     local pMedia = tab:Create(L("di_tab_media"))
     local gMedia = pMedia:Create("di_group_media", Enum.GroupSide.Left)
 
@@ -2646,6 +2652,8 @@ local function InitMenu()
     local gKill = C.Kills:Gear("di_gear_alert")
     P.Kill = prio(gKill, "di_alert_priority", 3)
     D.Kill = dur(gKill)
+    C.RampageTimer = gKill:Switch("di_rampage_timer", true, "\u{f2f2}")
+    C.RampageTimer:ToolTip("di_rampage_timer_tip")
     C.Invis = gCombat:Switch("di_combat_invis", true, "\u{f070}")
     local gInvis = C.Invis:Gear("di_gear_alert")
     P.Invis = prio(gInvis, "di_alert_priority", 4)
@@ -3915,6 +3923,11 @@ local function ProcessGameEvents()
                     HeroData.MultiKill = delta
                 end
                 HeroData.LastKillTime = nowGT
+                if HeroData.MultiKill >= 5 and Rampage.Count == 4 then
+                    Rampage.SuccessAt = os.clock()
+                end
+                Rampage.Count = HeroData.MultiKill
+                Rampage.LastKill = nowGT
                 local multi = HeroData.MultiKill
                 local streak = teamData.streak or 0
                 local total = 0
@@ -3941,29 +3954,33 @@ local function ProcessGameEvents()
 
                 local killedHeroName = L("di_ui_enemy")
                 local killedRaw = ""
-                local allHeroes = Heroes.GetAll()
-                for _, h in pairs(allHeroes) do
-                    if Entity.GetTeamNum(h) ~= Entity.GetTeamNum(localHero) then
+                local deaths = HeroData.EnemyDeathTime or {}
+                local victim, victimT = nil, -1
+                for _, h in pairs(Heroes.GetAll()) do
+                    if Entity.GetTeamNum(h) ~= Entity.GetTeamNum(localHero) and not Entity.IsAlive(h)
+                        and not (NPC.IsIllusion and NPC.IsIllusion(h)) then
                         local hId = tostring(h)
-                        local wasAlive = HeroData.EnemyHeroes[hId] == nil or HeroData.EnemyHeroes[hId] == true
-                        local isNowAlive = Entity.IsAlive(h)
-                        if wasAlive and not isNowAlive then
-                            killedRaw = NPC.GetUnitName(h)
-                            killedHeroName = CleanHeroName(killedRaw)
-                            HeroData.LastKilled.Name = killedHeroName
-                            HeroData.LastKilled.MaxHP = Entity.GetMaxHealth(h)
-                            HeroData.LastKilled.Level = NPC.GetCurrentLevel(h)
-                            HeroData.LastKilled.Items = {}
-                            for idx = 0, 5 do
-                                local it = NPC.GetItemByIndex(h, idx)
-                                if it then
-                                    local iname = Ability.GetName(it)
-                                    if iname and iname ~= "" then
-                                        table.insert(HeroData.LastKilled.Items, CleanItemName(iname))
-                                    end
-                                end
+                        local justDied = HeroData.EnemyHeroes[hId] == nil or HeroData.EnemyHeroes[hId] == true
+                        local diedAt = justDied and nowGT or (deaths[hId] or -100)
+                        if nowGT - diedAt <= 3 and diedAt > victimT then
+                            victim, victimT = h, diedAt
+                        end
+                    end
+                end
+                if victim then
+                    killedRaw = NPC.GetUnitName(victim) or ""
+                    killedHeroName = CleanHeroName(killedRaw)
+                    HeroData.LastKilled.Name = killedHeroName
+                    HeroData.LastKilled.MaxHP = Entity.GetMaxHealth(victim)
+                    HeroData.LastKilled.Level = NPC.GetCurrentLevel(victim)
+                    HeroData.LastKilled.Items = {}
+                    for idx = 0, 5 do
+                        local it = NPC.GetItemByIndex(victim, idx)
+                        if it then
+                            local iname = Ability.GetName(it)
+                            if iname and iname ~= "" then
+                                table.insert(HeroData.LastKilled.Items, CleanItemName(iname))
                             end
-                            break
                         end
                     end
                 end
@@ -3983,10 +4000,15 @@ local function ProcessGameEvents()
     end
 
     local allHeroesList = Heroes.GetAll()
+    HeroData.EnemyDeathTime = HeroData.EnemyDeathTime or {}
     for _, h in pairs(allHeroesList) do
         if Entity.GetTeamNum(h) ~= Entity.GetTeamNum(localHero) then
             local hId = tostring(h)
-            HeroData.EnemyHeroes[hId] = Entity.IsAlive(h)
+            local aliveNow = Entity.IsAlive(h)
+            if HeroData.EnemyHeroes[hId] == true and not aliveNow then
+                HeroData.EnemyDeathTime[hId] = GameRules.GetGameTime()
+            end
+            HeroData.EnemyHeroes[hId] = aliveNow
 
             if UI.Combat.KeyEnemyItems:Get() and Entity.IsAlive(h) then
                 if not HeroData.EnemyInventoryCache[hId] then
@@ -4769,6 +4791,7 @@ local Journey = {
 function Journey.Reset()
     Journey.FoundAt = 0
     Journey.Accepted = false
+    Journey.AcceptedAt = nil
 end
 
 function Journey.HeroUnit(id)
@@ -5387,9 +5410,6 @@ local function ProcessCourierTracker()
             CourierTracker.Delivered = true
             CourierTracker.DeliveredStartTime = nowClk
             CourierTracker.IsGoingToStash = false
-            if Haptic and Haptic.Trigger then
-                Haptic.Trigger(Haptic.Types.SUCCESS_APPLE_PAY)
-            end
             if StateMachine.TargetState ~= StateMachine.States.COURIER_DELIVERED then
                 TriggerStateTransition(StateMachine.States.COURIER_DELIVERED)
             end
@@ -6051,7 +6071,10 @@ local function HandleInteractions()
             local canAccept = Engine.CanAcceptMatch and Engine.CanAcceptMatch()
             local ready = Journey.PollReadyUp(nowClk)
             if canAccept and Journey.FoundAt == 0 then Journey.FoundAt = nowClk end
-            if ready.visible then Journey.Accepted = true end
+            if ready.visible and not Journey.Accepted then
+                Journey.Accepted = true
+                Journey.AcceptedAt = os.clock()
+            end
 
             if canAccept or (Journey.FoundAt > 0 and ready.visible and (nowClk - Journey.FoundAt) < 60) then
                 detected = StateMachine.States.MENU_MATCH_FOUND
@@ -6272,7 +6295,10 @@ local function HandleInteractions()
     if isLeftClicked and isHover and not isCtrlOnly and StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
         if Engine.AcceptMatch and not Journey.Accepted then
             local ok = pcall(Engine.AcceptMatch, 1)
-            if ok then Journey.Accepted = true end
+            if ok then
+                Journey.Accepted = true
+                Journey.AcceptedAt = os.clock()
+            end
         end
     end
 
@@ -6557,18 +6583,23 @@ function Journey.RenderMatchFound(layout, alphaMul, yOffset)
     local ringC = Vec2(math.floor(layout.x + layout.h / 2), midY)
     local ringR = math.max(6, layout.h / 2 - 9 * scale)
     local ringT = math.max(2, 2.5 * scale)
-    Render.Circle(ringC, ringR, FadeColor(Color(255, 255, 255, 38), aMul), ringT, 0, 1.0, false, 48)
-    if Journey.RingShown > 0.002 then
-        Render.Circle(ringC, ringR, FadeColor(accent, aMul), ringT, 270, math.min(1, Journey.RingShown), true, 48)
-    end
-    if centerTxt then
-        local sC = Render.TextSize(fontBold, 11 * scale, centerTxt)
-        Odometer.Text("journey_accept", fontBold, 11 * scale, centerTxt, Vec2(math.floor(ringC.x - sC.x / 2), math.floor(midY - sC.y / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
+    local sucT = Journey.AcceptedAt and (now - Journey.AcceptedAt) or 99
+    if accepted and not declined and sucT < 1.2 then
+        Success.Draw("accept" .. Journey.AcceptedAt, ringC, ringR, sucT, aMul, scale)
     else
-        local h = GetVectorIcon(declined and "close" or "check")
-        local isz = math.floor(12 * scale)
-        if h then
-            Render.Image(h, Vec2(math.floor(ringC.x - isz / 2), math.floor(midY - isz / 2)), Vec2(isz, isz), FadeColor(accent, aMul), 0)
+        Render.Circle(ringC, ringR, FadeColor(Color(255, 255, 255, 38), aMul), ringT, 0, 1.0, false, 48)
+        if Journey.RingShown > 0.002 then
+            Render.Circle(ringC, ringR, FadeColor(accent, aMul), ringT, 270, math.min(1, Journey.RingShown), true, 48)
+        end
+        if centerTxt then
+            local sC = Render.TextSize(fontBold, 11 * scale, centerTxt)
+            Odometer.Text("journey_accept", fontBold, 11 * scale, centerTxt, Vec2(math.floor(ringC.x - sC.x / 2), math.floor(midY - sC.y / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
+        else
+            local h = GetVectorIcon(declined and "close" or "check")
+            local isz = math.floor(12 * scale)
+            if h then
+                Render.Image(h, Vec2(math.floor(ringC.x - isz / 2), math.floor(midY - isz / 2)), Vec2(isz, isz), FadeColor(accent, aMul), 0)
+            end
         end
     end
 
@@ -6881,6 +6912,78 @@ function Odometer.Text(id, font, size, text, pos, col)
         Render.Text(font, size, text, Vec2(pos.x, pos.y + st.dir * shift * (1 - e)), newCol)
     end
     Render.PopClip()
+end
+
+function Success.Draw(id, c, r, t, a, scale)
+    local green = Color(52, 199, 89, 255)
+    local thick = math.max(1.5, 2 * scale)
+    if t < 0.35 then
+        local k = t / 0.35
+        local e = (k < 0.5) and (4 * k * k * k) or (1 - ((-2 * k + 2) ^ 3) / 2)
+        Render.Circle(c, r, FadeColor(Color(255, 255, 255, 30), a), thick, 0, 1.0, false, 48)
+        if e > 0.002 then
+            Render.Circle(c, r, FadeColor(green, a), thick, 270, e, true, 48)
+        end
+        return
+    end
+    if t > 0.72 then
+        local bk = math.min(1, (t - 0.72) / 0.4)
+        if bk < 1 then
+            Render.FilledCircle(c, r * (1 + 0.7 * bk), FadeColor(Color(52, 199, 89, math.floor(90 * (1 - bk))), a), 0, 1.0, 48)
+        end
+    end
+    local fk = math.min(1, (t - 0.35) / 0.18)
+    Render.FilledCircle(c, math.max(0, r * EaseOutBack(fk)), FadeColor(green, a), 0, 1.0, 48)
+    local ck = math.max(0, math.min(1, (t - 0.40) / 0.35))
+    if ck > 0 then
+        local p0 = Vec2(c.x - 0.40 * r, c.y + 0.02 * r)
+        local p1 = Vec2(c.x - 0.12 * r, c.y + 0.30 * r)
+        local p2 = Vec2(c.x + 0.42 * r, c.y - 0.28 * r)
+        local lw = math.max(1.5, r * 0.19)
+        local white = FadeColor(Color(255, 255, 255, 255), a)
+        local f1 = math.min(1, ck / 0.4)
+        local e1 = Vec2(p0.x + (p1.x - p0.x) * f1, p0.y + (p1.y - p0.y) * f1)
+        Render.Line(p0, e1, white, lw)
+        Render.FilledCircle(p0, lw / 2, white, 0, 1.0, 12)
+        Render.FilledCircle(e1, lw / 2, white, 0, 1.0, 12)
+        if ck > 0.4 then
+            local k2 = (ck - 0.4) / 0.6
+            local f2 = 1 - (1 - k2) ^ 3
+            local e2 = Vec2(p1.x + (p2.x - p1.x) * f2, p1.y + (p2.y - p1.y) * f2)
+            Render.Line(p1, e2, white, lw)
+            Render.FilledCircle(e2, lw / 2, white, 0, 1.0, 12)
+        end
+    end
+    if t >= 0.75 and not Success.Fired[id] then
+        Success.Fired[id] = true
+        if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.SUCCESS_APPLE_PAY) end
+    end
+end
+
+function Rampage.Tick()
+    local on = UI and UI.Combat and UI.Combat.RampageTimer and UI.Combat.RampageTimer:Get()
+    local left = 18 - (GameRules.GetGameTime() - Rampage.LastKill)
+    Rampage.Left = left
+    if left <= 0 then Rampage.Count = 0 end
+    local me = HeroData.Local
+    if not on or Rampage.Count ~= 4 or left <= 0 or not me then
+        Rampage.Active = false
+        return
+    end
+    local myPos = Entity.GetAbsOrigin(me)
+    local best, bestD = nil, nil
+    for _, h in pairs(Heroes.GetAll()) do
+        if h and not Entity.IsSameTeam(me, h) and Entity.IsAlive(h) and not (NPC.IsIllusion and NPC.IsIllusion(h)) then
+            local p = Entity.GetAbsOrigin(h)
+            local d = (p.x - myPos.x) ^ 2 + (p.y - myPos.y) ^ 2
+            if not bestD or d < bestD then best, bestD = h, d end
+        end
+    end
+    Rampage.Active = best ~= nil
+    if best then
+        local raw = NPC.GetUnitName(best)
+        if raw and raw ~= "" then Rampage.Target = raw end
+    end
 end
 
 function Satellite.Step(id, want, wide)
@@ -7580,7 +7683,10 @@ local function RenderSecondarySatelliteBubble(layout)
     local ts = StateMachine.TargetState
     local active = NotificationQueue.Active
     local desired, notif = nil, nil
-    if UI.Media.SecondaryBubble:Get() and not HUDCustomizer.IsOpen then
+    local rampageSuccess = now - Rampage.SuccessAt < 1.5
+    if not HUDCustomizer.IsOpen and (Rampage.Active or rampageSuccess) then
+        desired = "rampage"
+    elseif UI.Media.SecondaryBubble:Get() and not HUDCustomizer.IsOpen then
         if active and IsNotifDeferred(active) and (ts == StateMachine.States.COMPACT_MEDIA or ts == StateMachine.States.LARGE_MEDIA) then
             local left = (active.Duration or 3) - (now - (NotificationQueue.StartTime or now))
             if left > 0.45 then
@@ -7603,7 +7709,7 @@ local function RenderSecondarySatelliteBubble(layout)
     end
     local kind = R.kind
     local combatMedia = kind == "combat" and not active and IsMediaActive()
-    local wide = kind == "notif" or kind == "aegis" or (combatMedia and FightTracker.SatelliteHover)
+    local wide = kind == "notif" or kind == "aegis" or (combatMedia and FightTracker.SatelliteHover) or (kind == "rampage" and not rampageSuccess)
     local sat = Satellite.Step("right", kind ~= nil and kind == desired, wide)
     ButtonHits.SatellitePrev = nil
     ButtonHits.SatellitePlay = nil
@@ -7645,6 +7751,40 @@ local function RenderSecondarySatelliteBubble(layout)
             end
             if ta > 0.01 then
                 Render.Text(fontBold, titleSize, title, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(Config.Colors.TextPrimary, ta))
+            end
+        end
+    elseif kind == "rampage" then
+        local left = math.max(0, Rampage.Left or 0)
+        local secs = tostring(math.ceil(left))
+        local fontSize = 12 * scale
+        local tsz = Render.TextSize(fontBold, fontSize, secs)
+        fullW = bh + math.floor(5 * scale) + tsz.x + math.floor(bh * 0.38)
+        local sucT = now - Rampage.SuccessAt
+        content = function(x1, y1, x2, y2, d, ca, ta)
+            local c = Vec2(x1 + d / 2, (y1 + y2) / 2)
+            local ringR = d / 2 - 4 * scale
+            if sucT < 1.5 then
+                Success.Draw("rampage" .. Rampage.SuccessAt, c, ringR, sucT, ca, scale)
+                return
+            end
+            local urgent = left <= 5
+            local col = urgent and Color(255, 59, 48, 255) or Color(255, 149, 0, 255)
+            local pulse = urgent and (0.7 + 0.3 * math.sin(now * 10)) or 1
+            local rt = math.max(1.4, 1.8 * scale)
+            Render.Circle(c, ringR, FadeColor(Color(255, 255, 255, 30), ca), rt, 0, 1.0, false, 48)
+            local frac = math.max(0, math.min(1, left / 18))
+            if frac > 0.002 then
+                Render.Circle(c, ringR, FadeColor(col, ca * pulse), rt, 270, frac, true, 48)
+            end
+            if Rampage.Target then
+                local isz = math.floor(ringR * 1.3)
+                local hImg = GetCachedImage("panorama/images/heroes/icons/" .. Rampage.Target .. "_png.vtex_c")
+                if hImg then
+                    Render.Image(hImg, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), ca), math.floor(isz / 2))
+                end
+            end
+            if ta > 0.01 then
+                Odometer.Text("rampage_time", fontBold, fontSize, secs, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(urgent and col or Config.Colors.TextPrimary, ta))
             end
         end
     elseif kind == "aegis" then
@@ -8611,34 +8751,15 @@ local function RenderCourierDeliveredPill(layout, alphaMul, yOffset)
     local fontBold = Config.Fonts.Bold
 
     local nowClk = os.clock()
-    local elapsed = math.min(CourierTracker.DeliveredDuration, math.max(0, nowClk - CourierTracker.DeliveredStartTime))
-    local t = elapsed / math.max(0.01, CourierTracker.DeliveredDuration)
-
-    local bounce = 1.0
-    if t < 0.3 then
-        bounce = 0.6 + 0.6 * math.sin((t / 0.3) * (math.pi / 2))
-    elseif t < 0.65 then
-        bounce = 1.2 - 0.2 * ((t - 0.3) / 0.35)
-    else
-        bounce = 1.0
-    end
-
-    local flareAlpha = math.floor(math.max(0, 1.0 - t * 1.6) * 180 * alphaMul)
-    if flareAlpha > 0 then
-        Render.Rect(Vec2(layout.x, layout.y), Vec2(layout.x + layout.w, layout.y + layout.h), Color(52, 199, 89, flareAlpha), layout.r, Enum.DrawFlags.None, 1.5)
-    end
-
-    local checkSvg = GetVectorIcon("apple_check") or GetVectorIcon("check")
-    local iconSize = math.floor(18 * scale * bounce)
+    local elapsed = math.max(0, nowClk - CourierTracker.DeliveredStartTime)
+    local iconSize = math.floor(18 * scale)
     local delivText = L("di_courier_delivered")
     local tSize = Render.TextSize(fontBold, 11.5 * scale, delivText)
     local gap = 8 * scale
     local totalW = iconSize + gap + tSize.x
     local startX = math.floor(layout.x + (layout.w - totalW) / 2)
 
-    if checkSvg then
-        Render.Image(checkSvg, Vec2(startX, centerY - math.floor(iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 255), alphaMul), 0)
-    end
+    Success.Draw("courier" .. CourierTracker.DeliveredStartTime, Vec2(startX + iconSize / 2, centerY), iconSize / 2, elapsed, alphaMul, scale)
     Render.Text(fontBold, 11.5 * scale, delivText, Vec2(startX + iconSize + gap, centerY - math.floor(tSize.y / 2) - 1 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul))
 end
 
@@ -9454,6 +9575,7 @@ function DynamicIsland.OnUpdateEx()
         end
         ProcessGameEvents()
         Reminders.Tick()
+        Rampage.Tick()
         ProcessPauseTracker()
         ProcessCourierTracker()
     else
@@ -9462,6 +9584,9 @@ function DynamicIsland.OnUpdateEx()
             HeroData.KillsSeen = -1
             HeroData.LastKillTime = -100
             HeroData.MultiKill = 0
+            HeroData.EnemyDeathTime = {}
+            Rampage.Count = 0
+            Rampage.Active = false
             Reminders.Fired = {}
             if Focus.Active and Focus.Mode == 3 then
                 Focus.Set(false)
