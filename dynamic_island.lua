@@ -574,23 +574,12 @@ local localization = qLocalization.new({
         di_ui_hero = "Hero",
         di_ui_main_menu = "Main Menu",
         di_ui_finding_match = "Finding Match",
-        di_ui_loading_match = "Loading Match",
-        di_ui_waiting_for_players = "Waiting for Players",
         di_ui_liked_songs = "Liked Songs",
         di_ui_removed_from_favorites = "Removed from Favorites",
         di_ui_saved_to_library = "Saved to Library",
         di_ui_removed_from_spotify = "Removed from Spotify",
-        di_ui_match_declined = "Match Declined",
-        di_ui_returning_to_queue = "Returning to queue",
         di_ui_accepted = "Accepted",
-        di_ui_waiting_for_players_2 = "Waiting for players",
         di_ui_match_found = "Match Found",
-        di_ui_click_to_accept = "Click to accept",
-        di_ui_accept = "Accept",
-        di_ui_strategy_time = "Strategy Time",
-        di_ui_team_showcase = "Team Showcase",
-        di_ui_hero_selection = "Hero Selection",
-        di_ui_bans = "Bans",
         di_ui_weight = "Weight",
         di_ui_color = "Color",
         di_ui_palette = "Palette",
@@ -968,23 +957,12 @@ local localization = qLocalization.new({
         di_ui_hero = "Герой",
         di_ui_main_menu = "Главное меню",
         di_ui_finding_match = "Поиск матча",
-        di_ui_loading_match = "Загрузка матча",
-        di_ui_waiting_for_players = "Ждём игроков",
         di_ui_liked_songs = "Любимые треки",
         di_ui_removed_from_favorites = "Удалено из избранного",
         di_ui_saved_to_library = "Сохранено в библиотеку",
         di_ui_removed_from_spotify = "Удалено из Spotify",
-        di_ui_match_declined = "Матч отклонён",
-        di_ui_returning_to_queue = "Возвращаемся в поиск",
         di_ui_accepted = "Принято",
-        di_ui_waiting_for_players_2 = "Ждём остальных",
         di_ui_match_found = "Матч найден",
-        di_ui_click_to_accept = "Нажми, чтобы принять",
-        di_ui_accept = "Принять",
-        di_ui_strategy_time = "Стратегия",
-        di_ui_team_showcase = "Команды",
-        di_ui_hero_selection = "Выбор героев",
-        di_ui_bans = "Баны",
         di_ui_weight = "Начертание",
         di_ui_color = "Цвет",
         di_ui_palette = "Палитра",
@@ -1330,8 +1308,6 @@ local StateMachine = {
         COURIER_DELIVERY = 12,
         COURIER_DELIVERED = 13,
         COURIER_LARGE = 14,
-        MENU_LOADING = 15,
-        DRAFT = 16,
         FOCUS_BANNER = 17
     },
     Current = 1,
@@ -2832,8 +2808,8 @@ end
 local function TriggerStateTransition(nextState)
     if StateMachine.TargetState == nextState then return end
 
-    local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE or StateMachine.TargetState == StateMachine.States.DRAFT)
-    local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE or nextState == StateMachine.States.DRAFT)
+    local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE)
+    local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE)
 
     local fromState = StateMachine.TargetState
     local fromScale = 1.0
@@ -4783,178 +4759,21 @@ local function GetMatchSearchInfo()
     return false, "0:00"
 end
 
-local Journey = {
-    ACCEPT_WINDOW = 20,
-    FoundAt = 0,
-    Accepted = false,
-    LoadingSince = 0,
-    ReadyPoll = 0,
-    Ready = { visible = false, accepted = 0, total = 0, declined = 0, slots = {} },
-    DraftPoll = 0,
-    Draft = { phase = 0, phaseMax = 0, picks = {}, bans = {}, remaining = nil },
-    RingShown = 0,
-    RingClk = 0,
-    TT = { mode = nil, last = nil, lastClk = 0, stillSince = 0 },
-    HeroNames = {}
-}
+local Journey = { Accepted = false, AcceptedAt = nil, Hidden = false }
 
 function Journey.Reset()
-    Journey.FoundAt = 0
     Journey.Accepted = false
     Journey.AcceptedAt = nil
 end
 
-function Journey.HeroUnit(id)
-    if type(id) ~= "number" or id <= 0 or not Engine.GetHeroNameByID then return nil end
-    local cached = Journey.HeroNames[id]
-    if cached ~= nil then return cached or nil end
-    local ok, name = pcall(Engine.GetHeroNameByID, id)
-    if ok and type(name) == "string" and name ~= "" then
-        if not string.find(name, "npc_dota_hero_", 1, true) then name = "npc_dota_hero_" .. name end
-        Journey.HeroNames[id] = name
-        return name
-    end
-    Journey.HeroNames[id] = false
-    return nil
-end
-
-function Journey.GamePhase(inGame)
+function Journey.HiddenPhase()
     if Engine.GetUIState then
         local okU, ui = pcall(Engine.GetUIState)
-        if okU and ui == 1 then return "loading" end
+        if okU and ui == 1 then return true end
     end
-    if not inGame or not GameRules or not GameRules.GetGameState then return nil end
+    if not GameRules or not GameRules.GetGameState then return false end
     local ok, gs = pcall(GameRules.GetGameState)
-    if not ok then return nil end
-    if gs == 2 or gs == 3 or gs == 8 then return "draft" end
-    if gs == 1 or gs == 10 then return "loading" end
-    return nil
-end
-
-function Journey.PollReadyUp(nowClk)
-    local r = Journey.Ready
-    if nowClk - Journey.ReadyPoll < 0.15 then return r end
-    Journey.ReadyPoll = nowClk
-    r.visible, r.accepted, r.total, r.declined = false, 0, 0, 0
-    if Panorama and Panorama.GetPanelByName then
-        pcall(function()
-            local root = Panorama.GetPanelByName("PopupAcceptMatch", true)
-            if not root or not root:IsValid() or root:HasClass("Hidden") then return end
-            if root:HasClass("ReadyUpPlayersVisible") then r.visible = true end
-            local decide = root:FindChildTraverse("PopupAcceptDeclineMatchPanel")
-            if decide and decide:IsValid() and decide:HasClass("Accepted") then r.visible = true end
-            local cont = root:FindChildTraverse("PlayerSlotContainer")
-            if not cont or not cont:IsValid() then return end
-
-            for i = 0, cont:GetChildCount() or 0 do
-                local s = cont:GetChild(i)
-                if s and s:IsValid() and not s:HasClass("Hidden") and r.total < 10 then
-                    r.total = r.total + 1
-                    local st = s:HasClass("Accepted") and 1 or (s:HasClass("Declined") and 2 or 0)
-                    r.slots[r.total] = st
-                    if st == 1 then r.accepted = r.accepted + 1 elseif st == 2 then r.declined = r.declined + 1 end
-                end
-            end
-        end)
-    end
-    for i = r.total + 1, #r.slots do r.slots[i] = nil end
-    return r
-end
-
-function Journey.StateRemaining(nowClk)
-    if not GameRules or not GameRules.GetStateTransitionTime then return nil end
-    local ok, st = pcall(GameRules.GetStateTransitionTime)
-    if not ok or type(st) ~= "number" or st <= 0 then return nil end
-    local tt = Journey.TT
-    if not tt.last then
-        tt.last, tt.lastClk, tt.stillSince = st, nowClk, nowClk
-    elseif math.abs(st - tt.last) > 0.001 then
-        local span = nowClk - tt.lastClk
-        if not tt.mode and span > 0.05 then
-            local rate = (st - tt.last) / span
-            if rate < -0.5 and rate > -1.6 then tt.mode = "remaining" end
-        end
-        tt.last, tt.lastClk, tt.stillSince = st, nowClk, nowClk
-    elseif not tt.mode and nowClk - tt.stillSince > 0.4 then
-        tt.mode = "absolute"
-    end
-    local okT, gt = pcall(GameRules.GetGameTime)
-    gt = (okT and type(gt) == "number") and gt or 0
-    local rem
-    if tt.mode == "remaining" then
-        rem = st
-    elseif tt.mode == "absolute" then
-        rem = st - gt
-    else
-        rem = (st > gt) and (st - gt) or st
-    end
-    if rem <= 0 or rem > 600 then return nil end
-    return rem
-end
-
-function Journey.PollDraft(nowClk)
-    local d = Journey.Draft
-    if nowClk - Journey.DraftPoll < 0.25 then return d end
-    Journey.DraftPoll = nowClk
-    d.remaining = Journey.StateRemaining(nowClk)
-    local okS, gs = pcall(GameRules.GetGameState)
-    gs = okS and gs or 0
-    if gs ~= d.phase then
-        d.phaseMax = 0
-        Journey.TT.last, Journey.TT.mode = nil, nil
-    end
-    d.phase = gs
-
-    if d.remaining then d.phaseMax = math.max(d.phaseMax or 0, d.remaining) end
-
-    for i = #d.picks, 1, -1 do d.picks[i] = nil end
-    pcall(function()
-        local lp = Players.GetLocal()
-        if not lp then return end
-        local myTeam = Entity.GetTeamNum(lp)
-        if myTeam ~= 2 and myTeam ~= 3 then return end
-        for _, pl in ipairs(Players.GetAll()) do
-            if #d.picks < 5 and Entity.GetTeamNum(pl) == myTeam then
-                local td = Player.GetTeamData(pl)
-                local heroId = td and td.selected_hero_id or -1
-                local locked = type(heroId) == "number" and heroId > 0
-                if not locked then
-                    local okTP, tp = pcall(Player.GetTeamPlayer, pl)
-                    heroId = (okTP and tp) and tp.possible_hero_selection or -1
-                end
-                local okSlot, slot = pcall(Player.GetPlayerTeamSlot, pl)
-                d.picks[#d.picks + 1] = {
-                    slot = (okSlot and type(slot) == "number") and slot or (#d.picks + 10),
-                    hero = Journey.HeroUnit(heroId),
-                    locked = locked,
-                    me = (pl == lp)
-                }
-            end
-        end
-        table.sort(d.picks, function(a, b) return a.slot < b.slot end)
-    end)
-
-    for i = #d.bans, 1, -1 do d.bans[i] = nil end
-    if GameRules.GetBannedHeroes then
-        local okB, bans = pcall(GameRules.GetBannedHeroes)
-        if okB and type(bans) == "table" then
-            local seen = {}
-            for i = 0, 31 do
-                local id = bans[i]
-                if type(id) == "number" and id > 0 and not seen[id] then
-                    seen[id] = true
-                    local unit = Journey.HeroUnit(id)
-                    if unit and #d.bans < 14 then d.bans[#d.bans + 1] = unit end
-                end
-            end
-        end
-    end
-    return d
-end
-
-function Journey.FormatClock(sec)
-    sec = math.max(0, math.floor(sec + 0.5))
-    return string.format("%d:%02d", math.floor(sec / 60), sec % 60)
+    return ok and (gs == 1 or gs == 2 or gs == 3 or gs == 8 or gs == 10) or false
 end
 
 function Journey.LineWidth(scale, label, right, hasIcon)
@@ -4974,16 +4793,6 @@ end
 function Journey.SearchTexts()
     local _, timeStr = GetMatchSearchInfo()
     return L("di_ui_finding_match"), (timeStr and timeStr ~= "") and timeStr or "0:00"
-end
-
-function Journey.LoadingTexts(nowClk)
-    local label = L("di_ui_loading_match")
-    if GameRules and GameRules.GetGameState and Engine.IsInGame and Engine.IsInGame() then
-        local ok, gs = pcall(GameRules.GetGameState)
-        if ok and (gs == 1 or gs == 10) then label = L("di_ui_waiting_for_players") end
-    end
-    local since = Journey.LoadingSince > 0 and (nowClk - Journey.LoadingSince) or 0
-    return label, Journey.FormatClock(since)
 end
 
 local function GetChipStandardWidth(chipId, scale)
@@ -6057,43 +5866,25 @@ local function HandleInteractions()
 
     local inGame = Engine.IsInGame and Engine.IsInGame()
     Focus.Tick(nowClk)
-    local journeyPhase = Journey.GamePhase(inGame)
-    if journeyPhase == "loading" then
-        if Journey.LoadingSince == 0 then Journey.LoadingSince = nowClk end
-    else
-        Journey.LoadingSince = 0
-    end
-    if journeyPhase then Journey.Reset() end
+    Journey.Hidden = Journey.HiddenPhase()
 
-    if Focus.BannerStart <= nowClk and Focus.BannerUntil > nowClk and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
+    if Journey.Hidden then
+        Journey.Reset()
+    elseif Focus.BannerStart <= nowClk and Focus.BannerUntil > nowClk and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
         if StateMachine.TargetState ~= StateMachine.States.FOCUS_BANNER then
             TriggerStateTransition(StateMachine.States.FOCUS_BANNER)
-        end
-    elseif journeyPhase and (not inGame or not NotificationQueue.Active) then
-        local want = (journeyPhase == "draft") and StateMachine.States.DRAFT or StateMachine.States.MENU_LOADING
-        if want == StateMachine.States.DRAFT then Journey.PollDraft(nowClk) end
-        if StateMachine.TargetState ~= want then
-            TriggerStateTransition(want)
         end
     elseif not inGame then
         if not NotificationQueue.Active then
             local detected
             local canAccept = Engine.CanAcceptMatch and Engine.CanAcceptMatch()
-            local ready = Journey.PollReadyUp(nowClk)
-            if canAccept and Journey.FoundAt == 0 then Journey.FoundAt = nowClk end
-            if ready.visible and not Journey.Accepted then
-                Journey.Accepted = true
-                Journey.AcceptedAt = os.clock()
-            end
-
-            if canAccept or (Journey.FoundAt > 0 and ready.visible and (nowClk - Journey.FoundAt) < 60) then
+            if canAccept or (Journey.AcceptedAt and nowClk - Journey.AcceptedAt < 1.2) then
                 detected = StateMachine.States.MENU_MATCH_FOUND
             else
                 local isSearching = GetMatchSearchInfo()
                 detected = isSearching and StateMachine.States.MENU_SEARCHING or StateMachine.States.MENU_IDLE
             end
-            if detected ~= StateMachine.States.MENU_MATCH_FOUND and Journey.FoundAt > 0
-                and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
+            if detected ~= StateMachine.States.MENU_MATCH_FOUND and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
                 Journey.Reset()
             end
             if detected ~= MenuStateCandidate.state then
@@ -6133,7 +5924,7 @@ local function HandleInteractions()
                 if StateMachine.TargetState ~= StateMachine.States.COMPACT_FIGHT and StateMachine.TargetState ~= StateMachine.States.LARGE_FIGHT then
                     TriggerStateTransition(StateMachine.States.COMPACT_FIGHT)
                 end
-            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.MENU_LOADING or StateMachine.TargetState == StateMachine.States.DRAFT or StateMachine.TargetState == StateMachine.States.FOCUS_BANNER or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
+            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.FOCUS_BANNER or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
                 local desired = (mediaActive and not HUDCustomizer.IsOpen) and StateMachine.States.COMPACT_MEDIA or StateMachine.States.COMPACT_IDLE
                 TriggerStateTransition(desired)
             elseif StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA or StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT then
@@ -6162,14 +5953,14 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.MENU_IDLE
         or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING
-        or StateMachine.TargetState == StateMachine.States.MENU_LOADING then
+        or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
         local label, right
         if StateMachine.TargetState == StateMachine.States.MENU_IDLE then
             label, right = Journey.IdleTexts()
         elseif StateMachine.TargetState == StateMachine.States.MENU_SEARCHING then
             label, right = Journey.SearchTexts()
         else
-            label, right = Journey.LoadingTexts(nowClk)
+            label = Journey.Accepted and L("di_ui_accepted") or L("di_ui_match_found")
         end
         local contentW = Journey.LineWidth(layout.scale, label, right, true)
 
@@ -6177,21 +5968,12 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetW = math.max(150, w)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
-    elseif StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
-        Config.Dimensions.CompactTargetW = 268
-        Config.Dimensions.CompactTargetH = 48
-        Config.Dimensions.CompactTargetR = 24
     elseif StateMachine.TargetState == StateMachine.States.FOCUS_BANNER then
         local right = Focus.BannerOn and L("di_focus_on") or L("di_focus_off")
         local contentW = Journey.LineWidth(layout.scale, L("di_focus_name"), right, true)
         Config.Dimensions.CompactTargetW = math.max(170, math.ceil(((contentW / layout.scale) + 32) / 4) * 4)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
-    elseif StateMachine.TargetState == StateMachine.States.DRAFT then
-        local d = Journey.Draft
-        Config.Dimensions.CompactTargetW = 340
-        Config.Dimensions.CompactTargetH = (#d.bans > 0) and 112 or 88
-        Config.Dimensions.CompactTargetR = 24
     elseif StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA then
         Config.Dimensions.CompactTargetW = Config.Dimensions.CompactMediaW
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactMediaH
@@ -6556,205 +6338,25 @@ function Journey.RenderSearching(layout, alphaMul, yOffset)
     end, label, Config.Colors.TextPrimary, right, Color(100, 170, 255, 255), "journey_search")
 end
 
-function Journey.RenderLoading(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
-    local label, right = Journey.LoadingTexts(os.clock())
-    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
-        Journey.Spinner(x + sz / 2, midY, sz * 0.42, Color(255, 255, 255, 230), aMul)
-    end, label, Config.Colors.TextPrimary, right, Config.Colors.TextMuted, "journey_load")
-end
-
 function Journey.RenderMatchFound(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
-    local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold, fontMain = Config.Fonts.Bold, Config.Fonts.Main
-    local now = os.clock()
-    local r = Journey.Ready
-    local green = Color(52, 199, 89, 255)
-    local midY = math.floor(layout.y + layout.h / 2 + yOff)
-
-    local declined = r.declined > 0
-    local accepted = Journey.Accepted
-    local accent = declined and Config.Colors.Red or green
-
-    local frac, centerTxt = 1.0, nil
-    if declined then
-        frac = 1.0
-    elseif accepted then
-        if r.total > 0 then
-            frac = r.accepted / r.total
-            centerTxt = tostring(r.accepted)
+    local sucT = Journey.AcceptedAt and (os.clock() - Journey.AcceptedAt) or 99
+    local label = Journey.Accepted and L("di_ui_accepted") or L("di_ui_match_found")
+    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+        local c = Vec2(x + sz / 2, midY)
+        local r = sz / 2 + 1 * scale
+        if sucT < 1.2 then
+            Success.Draw("accept" .. tostring(Journey.AcceptedAt), c, r, sucT, aMul, scale)
+            return
         end
-    else
-        local found = (Journey.FoundAt > 0) and Journey.FoundAt or now
-        local left = math.max(0, Journey.ACCEPT_WINDOW - (now - found))
-        frac = left / Journey.ACCEPT_WINDOW
-        centerTxt = tostring(math.ceil(left))
-        if left <= 5 then accent = Color(255, 159, 10, 255) end
-    end
-
-    local ringDt = math.min(0.1, math.max(0, now - Journey.RingClk))
-    Journey.RingClk = now
-    if accepted then
-        Journey.RingShown = Journey.RingShown + (frac - Journey.RingShown) * math.min(1, ringDt * 10)
-    else
-        Journey.RingShown = frac
-    end
-
-    local ringC = Vec2(math.floor(layout.x + layout.h / 2), midY)
-    local ringR = math.max(6, layout.h / 2 - 9 * scale)
-    local ringT = math.max(2, 2.5 * scale)
-    local sucT = Journey.AcceptedAt and (now - Journey.AcceptedAt) or 99
-    if accepted and not declined and sucT < 1.2 then
-        Success.Draw("accept" .. Journey.AcceptedAt, ringC, ringR, sucT, aMul, scale)
-    else
-        Render.Circle(ringC, ringR, FadeColor(Color(255, 255, 255, 38), aMul), ringT, 0, 1.0, false, 48)
-        if Journey.RingShown > 0.002 then
-            Render.Circle(ringC, ringR, FadeColor(accent, aMul), ringT, 270, math.min(1, Journey.RingShown), true, 48)
+        Render.FilledCircle(c, r, FadeColor(Color(52, 199, 89, 255), aMul), 0, 1.0, 32)
+        local h = GetVectorIcon("check")
+        local isz = math.floor(r * 1.3)
+        if h then
+            Render.Image(h, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul), 0)
         end
-        if centerTxt then
-            local sC = Render.TextSize(fontBold, 11 * scale, centerTxt)
-            Odometer.Text("journey_accept", fontBold, 11 * scale, centerTxt, Vec2(math.floor(ringC.x - sC.x / 2), math.floor(midY - sC.y / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
-        else
-            local h = GetVectorIcon(declined and "close" or "check")
-            local isz = math.floor(12 * scale)
-            if h then
-                Render.Image(h, Vec2(math.floor(ringC.x - isz / 2), math.floor(midY - isz / 2)), Vec2(isz, isz), FadeColor(accent, aMul), 0)
-            end
-        end
-    end
-
-    local title, sub
-    if declined then
-        title, sub = L("di_ui_match_declined"), L("di_ui_returning_to_queue")
-    elseif accepted then
-        title, sub = L("di_ui_accepted"), L("di_ui_waiting_for_players_2")
-    else
-        title, sub = L("di_ui_match_found"), L("di_ui_click_to_accept")
-    end
-    local tx = math.floor(ringC.x + ringR + 11 * scale)
-    local sT = Render.TextSize(fontBold, 12 * scale, title)
-    local sS = Render.TextSize(fontMain, 10 * scale, sub)
-    local blockH = sT.y + 1 * scale + sS.y
-    local ty = math.floor(midY - blockH / 2)
-    Render.Text(fontBold, 12 * scale, title, Vec2(tx, ty), FadeColor(Config.Colors.TextPrimary, aMul))
-    Render.Text(fontMain, 10 * scale, sub, Vec2(tx, math.floor(ty + sT.y + 1 * scale)), FadeColor(Config.Colors.TextSecondary, aMul))
-
-    if not accepted and not declined then
-        local capTxt = L("di_ui_accept")
-        local sCap = Render.TextSize(fontBold, 11 * scale, capTxt)
-        local capH = math.floor(26 * scale)
-        local capW = math.floor(sCap.x + 24 * scale)
-        local m = math.floor((layout.h - capH) / 2)
-        local cx2 = math.floor(layout.x + layout.w - m)
-        local cy1 = math.floor(midY - capH / 2)
-        Render.FilledRect(Vec2(cx2 - capW, cy1), Vec2(cx2, cy1 + capH), FadeColor(accent, aMul), math.floor(capH / 2))
-        Render.Text(fontBold, 11 * scale, capTxt, Vec2(math.floor(cx2 - capW / 2 - sCap.x / 2), math.floor(midY - sCap.y / 2)), FadeColor(Color(0, 0, 0, 230), aMul))
-    elseif r.total > 0 then
-        local pr = math.max(2, 3 * scale)
-        local gap = math.floor(5 * scale)
-        local cols = 5
-        local gridW = cols * pr * 2 + (cols - 1) * gap
-        local gx = math.floor(layout.x + layout.w - layout.h / 2 - gridW + pr * 2)
-        local rows = math.ceil(r.total / cols)
-        local gridH = rows * pr * 2 + (rows - 1) * gap
-        local gy = math.floor(midY - gridH / 2 + pr)
-        for i = 1, r.total do
-            local col = (i - 1) % cols
-            local row = math.floor((i - 1) / cols)
-            local st = r.slots[i]
-            local c = (st == 1) and green or ((st == 2) and Config.Colors.Red or Color(255, 255, 255, 50))
-            Render.FilledCircle(Vec2(gx + col * (pr * 2 + gap), gy + row * (pr * 2 + gap)), pr, FadeColor(c, aMul), 0, 1.0, 16)
-        end
-    end
-end
-
-function Journey.RenderDraft(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
-    local yOff = yOffset or 0
-    local scale = layout.scale
-    local d = Journey.Draft
-    local fontBold, fontMain = Config.Fonts.Bold, Config.Fonts.Main
-    local padX = math.floor(18 * scale)
-    local x1 = math.floor(layout.x + padX)
-    local x2 = math.floor(layout.x + layout.w - padX)
-    local top = math.floor(layout.y + 14 * scale + yOff)
-
-    local phaseTxt
-    if d.phase == 3 then
-        phaseTxt = L("di_ui_strategy_time")
-    elseif d.phase == 8 then
-        phaseTxt = L("di_ui_team_showcase")
-    else
-        phaseTxt = L("di_ui_hero_selection")
-    end
-    local locked = 0
-    for _, p in ipairs(d.picks) do
-        if p.locked then locked = locked + 1 end
-    end
-    local sP = Render.TextSize(fontBold, 12 * scale, phaseTxt)
-    Render.Text(fontBold, 12 * scale, phaseTxt, Vec2(x1, top), FadeColor(Config.Colors.TextPrimary, aMul))
-    if #d.picks > 0 then
-        local cnt = string.format("%d/%d", locked, #d.picks)
-        local sCnt = Render.TextSize(fontMain, 10.5 * scale, cnt)
-        Render.Text(fontMain, 10.5 * scale, cnt, Vec2(math.floor(x1 + sP.x + 8 * scale), math.floor(top + (sP.y - sCnt.y) / 2)), FadeColor(Config.Colors.TextMuted, aMul))
-    end
-
-    if d.remaining then
-        local tTxt = Journey.FormatClock(d.remaining)
-        local sT = Render.TextSize(fontBold, 12 * scale, tTxt)
-        local urgent = d.remaining <= 10
-        local tCol = urgent and Color(255, 159, 10, 255) or Config.Colors.TextPrimary
-        Odometer.Text("journey_draft", fontBold, 12 * scale, tTxt, Vec2(x2 - sT.x, top), FadeColor(tCol, aMul))
-        local rr = 5.5 * scale
-        local rc = Vec2(math.floor(x2 - sT.x - 7 * scale - rr), math.floor(top + sT.y / 2))
-        local frac = (d.phaseMax and d.phaseMax > 0) and math.min(1, d.remaining / d.phaseMax) or 1
-        Render.Circle(rc, rr, FadeColor(Color(255, 255, 255, 40), aMul), math.max(1.5, 1.8 * scale), 0, 1.0, false, 32)
-        Render.Circle(rc, rr, FadeColor(urgent and tCol or Config.Colors.Accent, aMul), math.max(1.5, 1.8 * scale), 270, frac, true, 32)
-    end
-
-    local gap = math.floor(6 * scale)
-    local slotW = math.floor((x2 - x1 - 4 * gap) / 5)
-    local slotH = math.floor(slotW * 9 / 16)
-    local slotY = math.floor(top + 22 * scale)
-    local rad = math.floor(6 * scale)
-    for i = 1, 5 do
-        local sx = math.floor(x1 + (i - 1) * (slotW + gap))
-        local p = d.picks[i]
-        local p1, p2 = Vec2(sx, slotY), Vec2(sx + slotW, slotY + slotH)
-        Render.FilledRect(p1, p2, FadeColor(Color(255, 255, 255, 14), aMul), rad)
-        if p and p.hero then
-            local h = GetCachedImage("panorama/images/heroes/" .. p.hero .. "_png.vtex_c")
-            if h then
-                Render.Image(h, p1, Vec2(slotW, slotH), FadeColor(Color(255, 255, 255, 255), aMul * (p.locked and 1.0 or 0.38)), rad)
-            end
-        end
-        if p and p.me then
-            Render.Rect(p1, p2, FadeColor(Config.Colors.Accent, aMul), rad, Enum.DrawFlags.None, 1.5)
-        else
-            Render.Rect(p1, p2, FadeColor(Color(255, 255, 255, 22), aMul), rad, Enum.DrawFlags.None, 1.0)
-        end
-    end
-
-    if #d.bans > 0 then
-        local by = math.floor(slotY + slotH + 10 * scale)
-        local isz = math.floor(16 * scale)
-        local bTxt = L("di_ui_bans")
-        local sB = Render.TextSize(fontMain, 10 * scale, bTxt)
-        Render.Text(fontMain, 10 * scale, bTxt, Vec2(x1, math.floor(by + (isz - sB.y) / 2)), FadeColor(Config.Colors.TextMuted, aMul))
-        local bx = math.floor(x1 + sB.x + 8 * scale)
-        local red = FadeColor(Color(255, 69, 58, 200), aMul)
-        for _, unit in ipairs(d.bans) do
-            if bx + isz > x2 then break end
-            local h = GetCachedImage("panorama/images/heroes/icons/" .. unit .. "_png.vtex_c")
-            if h then
-                Render.Image(h, Vec2(bx, by), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul * 0.55), math.floor(3 * scale))
-            end
-            Render.Line(Vec2(bx + 2 * scale, by + isz - 2 * scale), Vec2(bx + isz - 2 * scale, by + 2 * scale), red, 1.5)
-            bx = bx + isz + math.floor(4 * scale)
-        end
-    end
+    end, label, Config.Colors.TextPrimary)
 end
 
 local function RenderModularIdlePill(layout, alphaMul, yOffset)
@@ -6842,8 +6444,7 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
     local curBorder = borderCol
     if StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
         local p = Journey.Accepted and 0.45 or (0.45 + 0.30 * math.sin(os.clock() * 4.0))
-        local c = (Journey.Ready.declined > 0) and Config.Colors.Red or Color(52, 199, 89, 255)
-        curBorder = Color(c.r, c.g, c.b, math.floor(255 * p))
+        curBorder = Color(52, 199, 89, math.floor(255 * p))
     end
     Render.Rect(p1, p2, FadeColor(curBorder, a), radius, Enum.DrawFlags.None, thickness or 1.0)
 end
@@ -9331,10 +8932,6 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
         Journey.RenderSearching(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.MENU_MATCH_FOUND then
         Journey.RenderMatchFound(layout, alphaMul, yOffset)
-    elseif state == StateMachine.States.MENU_LOADING then
-        Journey.RenderLoading(layout, alphaMul, yOffset)
-    elseif state == StateMachine.States.DRAFT then
-        Journey.RenderDraft(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.FOCUS_BANNER then
         Focus.RenderBanner(layout, alphaMul, yOffset)
     end
@@ -9371,6 +8968,7 @@ function DynamicIsland.OnFrame()
     if not UI or not UI.Main.Enabled:Get() then return end
     local inGame = Engine.IsInGame and Engine.IsInGame()
     if UI.Main.OnlyInGame:Get() and not inGame then return end
+    if Journey.Hidden then return end
 
     if Menu.Opened then
         local isOpened = Menu.Opened()
