@@ -5,7 +5,7 @@ namespace MediaBridge;
 public static partial class UpdateChecker
 {
     public const string BridgeVersion = "2.0.0";
-    private const string LatestReleaseUrl = "https://api.github.com/repos/qhols/DynamicIsland/releases/latest";
+    private const string LatestReleaseUrl = "https://api.github.com/repos/qhols/DynamicIsland-Dota/releases/latest";
     private static readonly TimeSpan Interval = TimeSpan.FromHours(6);
     private static readonly TimeSpan RetryInterval = TimeSpan.FromMinutes(30);
 

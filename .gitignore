@@ -1,19 +1,14 @@
-# whitelist: only the script + media_bridge sources
 /*
 !/.gitignore
 !/README.md
 !/dynamic_island.lua
 !/media_bridge/
 
-# inside media_bridge: sources only, binaries go to releases
 /media_bridge/*
-!/media_bridge/media_bridge.ps1
-!/media_bridge/run_bridge.bat
 !/media_bridge/README.md
 !/media_bridge/dynamic_island.ico
 !/media_bridge/sounds/
 !/media_bridge/csharp/
 
-# C# rewrite: sources only, bin/obj are build output
 /media_bridge/csharp/**/bin/
 /media_bridge/csharp/**/obj/

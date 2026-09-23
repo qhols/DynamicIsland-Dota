@@ -1,44 +1,56 @@
-# dynamic-island
+# Dynamic Island for Dota 2
 
-Dynamic Island overlay for Dota 2 on the Umbrella platform.
+iPhone style dynamic island for dota, made for umbrella. one small pill at the top of the screen that shows what matters right now and gets out of the way when nothing does.
 
-## Features
+## What's in it
 
-- Dynamic Island UI with spring animations (compact pill, notifications, expanded player, status card)
-- Customizable HUD widgets: clock, KDA, gold, net worth, last hits, hero name, FPS, ping
-- Right-click widget drawer with drag-and-drop reordering and styling options
-- Rune spawn reminders and pickup notifications (power, water, bounty, wisdom)
-- Objective tracking: Roshan timer with Aegis satellite bubble, Tormentor alerts, Lotus pool timer, neutral item tiers
-- Combat alerts: killstreaks, buybacks, tower attacks, courier attacks, low HP targets
-- Invisibility detection (Shadow Blade, Silver Edge, Smoke, Vendetta, Moonlight Shadow, etc.) and enemy TP destination alerts
-- Enemy key item purchase alerts (BKB, Blink, Hex, Rapier, Refresher, etc.)
-- Media player support with real-time waveform, track info, album art, and Spotify like button (via MediaBridge)
-- Minimalist status card in idle state (large clock + match stats)
-- Draggable with Ctrl + LMB, position presets, automatic config saving to JSON
+- clock, kda, gold, net worth, cs, fps, ping, pick what you want and drag them around
+- music player: cover, track, seek by dragging the bar, volume on scroll, spotify likes
+- fight radar that pops up during fights
+- alerts for runes, stacks, lotus, neutrals, tormentor, roshan and aegis, kill streaks, buybacks, towers, couriers, enemy tps, invis and key items
+- every alert has its own priority and duration, lower ones go to a small bubble next to the island instead of covering your music
+- rampage timer after an ultra kill
+- match flow in the menu: queue timer, accept countdown, who accepted, loading, draft with picks and bans
+- do not disturb and your own reminders (like "smoke at 12:00")
+- english and russian, switches live with the umbrella language
 
-## Requirements
+## Install
 
-- Umbrella for Dota 2
-- Windows 10 or 11
-- `media_bridge.exe` (optional, for media player sync and sound effects)
+1. put `dynamic_island.lua` into your umbrella `scripts` folder
+2. get `media_bridge.exe` from [releases](https://github.com/qhols/DynamicIsland-Dota/releases/latest) and run it. it handles music, sounds and the update check, sounds are already inside
+3. turn it on in umbrella: General > Dynamic Island
 
-## Installation
+The script works without the bridge, you just won't have music and sounds.
 
-1. Copy dynamic_island.lua to your Umbrella scripts folder (usually C:\Umbrella\scripts).
-2. If you want music integration and sound effects, download `media_bridge.exe` and `sounds.zip` from releases, place the `sounds/` folder next to `media_bridge.exe`, and run it (runs silently in the background, single-instance safe).
-3. Enable the script in the Umbrella menu.
+## Bridge with dota
+
+To start it together with dota, put it in front of `%command%` in steam launch options (Dota 2 > Properties):
+
+```
+"C:\path\to\media_bridge.exe" %command%
+```
+
+It closes by itself a few seconds after dota closes. Run it with `--stay` if you want it to keep running.
+
+## Spotify likes
+
+Needs [spicetify](https://spicetify.app) and spotify started with `--remote-debugging-port=9222`. The bridge adds that flag to your spotify shortcuts and `spotify:` links on its own, so after the first restart it just works. If spotify was started without it, the island tells you.
 
 ## Controls
 
-- Left click: expand/collapse player or press media buttons
-- Right click: open widget customizer (when Umbrella menu is open)
-- Ctrl + Left click drag: move the island anywhere on screen
+- hover the island to expand it
+- drag the progress bar to seek
+- scroll over the player for volume
+- right click the island with the umbrella menu open for the widget editor
+- ctrl + drag to move it
+- double click a side bubble to close it
 
-## Media Bridge
+## Building the bridge
 
-MediaBridge runs a lightweight local server on port 45455 that pulls metadata from Windows media sessions (Spotify, Apple Music, browsers, etc.), handles playback and volume controls, and plays UI sound effects with audio ducking.
+Needs the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
-- Standalone binary: `media_bridge/media_bridge.exe`
-- Script: `media_bridge/media_bridge.ps1`
-- Sounds: `media_bridge/sounds/`
+```powershell
+./media_bridge/csharp/build.ps1
+```
 
+Details and endpoints are in [media_bridge/README.md](media_bridge/README.md).
