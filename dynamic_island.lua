@@ -323,6 +323,33 @@ local DynamicIsland = {}
 
 local localization = qLocalization.new({
     en = {
+        di_group_alerts_all = "All Alerts",
+        di_toast_duration_tip = "Used by every alert that has no duration of its own",
+        di_alert_duration = "Duration",
+        di_alert_duration_tip = "0 uses the shared duration from the top of the page",
+        di_dur_default = "Shared",
+        di_reminder_duration = "Reminder Duration",
+        di_look_customize = "Customize look",
+        di_gear_look = "Island look",
+        di_group_island = "Island",
+        di_group_look = "Appearance",
+        di_group_combat_alerts = "In Combat",
+        di_group_map_alerts = "Map & Objectives",
+        di_group_media = "Music",
+        di_group_haptics = "Feedback",
+        di_group_ducking = "Ducking",
+        di_gear_more = "More",
+        di_gear_position = "Position",
+        di_gear_radar = "Radar",
+        di_gear_alert = "Options",
+        di_gear_media = "Player",
+        di_gear_visual = "Visual",
+        di_gear_audio = "Sound",
+        di_gear_ducking = "Ducking",
+        di_alert_priority = "Priority",
+        di_alert_priority_tip = "When alerts collide, the higher one shows first",
+        di_media_priority_tip = "Alerts at or below this priority won't cover the player",
+        di_runes_neutrals = "Neutral Item Tiers",
         di_tab_focus = "Focus",
         di_tab_focus_group = "Do Not Disturb",
         di_tab_reminders_group = "Reminders",
@@ -573,25 +600,9 @@ local localization = qLocalization.new({
         di_ui_track = "Track",
         di_ui_match = "Match ",
         di_tab_general = "General",
-        di_tab_settings = "Settings",
-        di_tab_position = "Position & Size",
-        di_tab_geometry = "Geometry",
-        di_tab_appearance = "Appearance",
-        di_tab_style = "Style",
-        di_tab_combat = "Combat & Radar",
-        di_tab_radar = "Radar",
         di_tab_alerts = "Alerts",
-        di_tab_notifications = "Notifications",
-        di_tab_runes = "Runes & Objectives",
-        di_tab_events = "Events",
-        di_tab_timings = "Timings",
-        di_tab_seconds = "Lead Times",
         di_tab_media = "Media",
-        di_tab_parameters = "Parameters",
         di_tab_haptics = "Haptic Engine",
-        di_tab_tactile = "Tactile Feedback",
-        di_tab_priority = "Priorities",
-        di_tab_priority_group = "Alert Priority",
         di_main_enabled = "Enable Island",
         di_main_only_in_game = "Only In-Game",
         di_main_preset = "Position Preset",
@@ -600,7 +611,7 @@ local localization = qLocalization.new({
         di_main_scale = "Island Scale",
         di_main_custom_label = "Hero Tag",
         di_main_bg_color = "Island Background Color",
-        di_main_pure_glass = "Aka Glass",
+        di_main_pure_glass = "Glass Mode",
         di_main_border_thickness = "Border Thickness",
         di_main_widget_editor = "Widget Editor (RMB)",
         di_main_reset_pos = "Reset Position",
@@ -641,7 +652,7 @@ local localization = qLocalization.new({
         di_runes_tormentor = "Tormentor Objective",
         di_runes_roshan = "Roshan & Aegis",
         di_runes_stacks = "Camp Stack Reminder",
-        di_timings_toast_duration = "Toast Duration",
+        di_timings_toast_duration = "Alert Duration",
         di_timings_stack_time = "Stack Reminder Lead (pull at :53)",
         di_timings_power_rune_time = "Power Runes Lead Time",
         di_timings_water_rune_time = "Water Runes Lead Time",
@@ -689,31 +700,41 @@ local localization = qLocalization.new({
         di_haptics_ducking_motion = "Ducking: Island Motion",
         di_haptics_ducking_taptics = "Ducking: Clicks & Taptics",
         di_haptics_test_ducking = "Audition Ducking",
-        di_priority_media = "Music Player (alerts at or below this don't cover it)",
-        di_priority_stack = "Camp Stack Reminder",
         di_priority_roshan_kill = "Roshan Killed",
         di_priority_aegis = "Aegis Picked Up",
-        di_priority_buyback = "Player Buyback",
-        di_priority_low_hp = "Low HP Kill Opportunity",
         di_priority_roshan_attack = "Roshan Under Attack",
-        di_priority_tower = "Tower Under Attack",
-        di_priority_invis = "Enemy Invis & Smoke",
-        di_priority_teleport = "Enemy Teleport",
-        di_priority_kill = "Kill Streak",
-        di_priority_courier = "Courier Under Attack",
-        di_priority_enemy_item = "Key Enemy Item Purchased",
-        di_priority_tormentor = "Tormentor Objective",
         di_priority_fight_summary = "Fight Summary",
         di_priority_rune = "Rune Spawn Reminder",
-        di_priority_rune_world = "World Rune Spawned",
-        di_priority_rune_pickup = "Ally Rune Pickup",
-        di_priority_power_rune_cycle = "Power Rune Cycle",
-        di_priority_lotus = "Lotus Pool",
-        di_priority_neutral = "Neutral Item Tier",
-        di_priority_level = "Hero Level Up",
-        di_priority_spotify_like = "Spotify Like Confirmation",
+        di_priority_power_rune_cycle = "Power Rune Cycle"
     },
     ru = {
+        di_group_alerts_all = "Все оповещения",
+        di_toast_duration_tip = "Для всех оповещений, у которых не задана своя длительность",
+        di_alert_duration = "Длительность",
+        di_alert_duration_tip = "0 значит общая длительность сверху страницы",
+        di_dur_default = "Общая",
+        di_reminder_duration = "Длительность напоминаний",
+        di_look_customize = "Настроить внешний вид",
+        di_gear_look = "Вид островка",
+        di_group_island = "Остров",
+        di_group_look = "Внешний вид",
+        di_group_combat_alerts = "В бою",
+        di_group_map_alerts = "Карта и объекты",
+        di_group_media = "Музыка",
+        di_group_haptics = "Отклик",
+        di_group_ducking = "Приглушение",
+        di_gear_more = "Ещё",
+        di_gear_position = "Позиция",
+        di_gear_radar = "Радар",
+        di_gear_alert = "Параметры",
+        di_gear_media = "Плеер",
+        di_gear_visual = "Визуал",
+        di_gear_audio = "Звук",
+        di_gear_ducking = "Приглушение",
+        di_alert_priority = "Приоритет",
+        di_alert_priority_tip = "Если оповещения совпали, первым покажется более важное",
+        di_media_priority_tip = "Оповещения с таким приоритетом или ниже не перекрывают плеер",
+        di_runes_neutrals = "Тиры нейтральных предметов",
         di_tab_focus = "Фокус",
         di_tab_focus_group = "Не беспокоить",
         di_tab_reminders_group = "Напоминания",
@@ -964,25 +985,9 @@ local localization = qLocalization.new({
         di_ui_track = "Трек",
         di_ui_match = "Матч ",
         di_tab_general = "Главная",
-        di_tab_settings = "Настройки",
-        di_tab_position = "Позиция и размер",
-        di_tab_geometry = "Геометрия",
-        di_tab_appearance = "Внешний вид",
-        di_tab_style = "Стиль",
-        di_tab_combat = "Бой и радар",
-        di_tab_radar = "Радар",
         di_tab_alerts = "Оповещения",
-        di_tab_notifications = "Уведомления",
-        di_tab_runes = "Руны и объекты",
-        di_tab_events = "События",
-        di_tab_timings = "Тайминги",
-        di_tab_seconds = "Пре-таймеры",
         di_tab_media = "Медиа",
-        di_tab_parameters = "Параметры",
         di_tab_haptics = "Тактильный отклик",
-        di_tab_tactile = "Параметры тактилки",
-        di_tab_priority = "Приоритеты",
-        di_tab_priority_group = "Приоритет оповещений",
         di_main_enabled = "Включить Island",
         di_main_only_in_game = "Только в игре",
         di_main_preset = "Пресет позиции",
@@ -991,7 +996,7 @@ local localization = qLocalization.new({
         di_main_scale = "Масштаб",
         di_main_custom_label = "Тег героя",
         di_main_bg_color = "Цвет фона островка",
-        di_main_pure_glass = "Стиль стекла",
+        di_main_pure_glass = "Режим стекла",
         di_main_border_thickness = "Толщина обводки",
         di_main_widget_editor = "Редактор виджетов (ПКМ)",
         di_main_reset_pos = "Сбросить позицию",
@@ -1080,29 +1085,12 @@ local localization = qLocalization.new({
         di_haptics_ducking_motion = "Затихание: Движение острова",
         di_haptics_ducking_taptics = "Затихание: Клики и кнопки",
         di_haptics_test_ducking = "Проверить звук",
-        di_priority_media = "Музыкальный плеер (оповещения не выше него его не перекрывают)",
-        di_priority_stack = "Напоминание о стаке",
         di_priority_roshan_kill = "Убийство Рошана",
         di_priority_aegis = "Подбор Эгиды",
-        di_priority_buyback = "Выкуп игрока",
-        di_priority_low_hp = "Добивание Low HP",
         di_priority_roshan_attack = "Атака на Рошана",
-        di_priority_tower = "Атака на вышку",
-        di_priority_invis = "Невидимость и Smoke врага",
-        di_priority_teleport = "Телепорт врага",
-        di_priority_kill = "Серия убийств",
-        di_priority_courier = "Атака на курьера",
-        di_priority_enemy_item = "Покупка важного предмета врагом",
-        di_priority_tormentor = "Терзатель",
         di_priority_fight_summary = "Итог боя",
         di_priority_rune = "Напоминание о руне",
-        di_priority_rune_world = "Появление руны на карте",
-        di_priority_rune_pickup = "Подбор руны союзником",
-        di_priority_power_rune_cycle = "Цикл Power рун",
-        di_priority_lotus = "Пруд лотоса",
-        di_priority_neutral = "Тир нейтрального предмета",
-        di_priority_level = "Повышение уровня",
-        di_priority_spotify_like = "Подтверждение лайка Spotify",
+        di_priority_power_rune_cycle = "Цикл Power рун"
     },
 })
 local Menu = localization.WrapLibrary(Menu)
@@ -1556,8 +1544,9 @@ local GameTracker = {
         IsAlive = true,
         DeathTime = 0,
         AegisExpiryTime = 0,
-        RespawnMinTime = 0,
-        RespawnMaxTime = 0,
+        AegisHolder = nil,
+        Vis = 0,
+        VisClk = 0,
         HasAegis = false,
         LastAttackAlert = 0,
         Dismissed = false
@@ -1604,7 +1593,7 @@ local NotificationQueue = {
 local SatelliteBounds = nil
 local MenuStateCandidate = { state = nil, since = 0 }
 
-local Focus = { Active = false, Mode = 0, Until = 0, StartedAt = 0, Suppressed = 0, BannerUntil = 0, BannerOn = true, Vis = 0, LastDraw = 0, PressAt = -10, ButtonAt = -10, Accent = Color(94, 92, 230, 255) }
+local Focus = { ClickAt = -10, BumpAt = -10, BannerStart = 0, TileVis = 0, Active = false, Mode = 0, Until = 0, StartedAt = 0, Suppressed = 0, BannerUntil = 0, BannerOn = true, Vis = 0, LastDraw = 0, PressAt = -10, ButtonAt = -10, Accent = Color(94, 92, 230, 255) }
 local Reminders = { Fired = {} }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
@@ -1759,7 +1748,7 @@ local VectorIcons = {
     ["search"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#FFF" stroke-width="2.2"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="#FFF" stroke-width="2.2" stroke-linecap="round"/></svg>',
     ["check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><polyline points="4,12 9,17 20,6" fill="none" stroke="#34C759" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
-    ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4a8.8 8.8 0 1 0 11.2 11.2z" fill="#FFFFFF"/></svg>',
+    ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3A6.364 6.364 0 0 0 21 12A9 9 0 1 1 12 3Z" fill="#FFFFFF"/></svg>',
     ["bell"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3a6 6 0 0 0-6 6v4.3L4.4 16v1.2h15.2V16L18 13.3V9a6 6 0 0 0-6-6z" fill="#FFFFFF"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0z" fill="#FFFFFF"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
     ["pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="11" fill="#FF9500"/><rect x="7.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/><rect x="13.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/></svg>',
@@ -1993,6 +1982,8 @@ local function SaveAllConfig()
                                 f:write(string.format("w_%s.%s=%s\n", secName, name, v and "b1" or "b0"))
                             elseif ok and type(v) == "number" then
                                 f:write(string.format("w_%s.%s=%s\n", secName, name, tostring(v)))
+                            elseif ok and type(v) == "string" and not v:find("[\r\n]") then
+                                f:write(string.format("w_%s.%s=s:%s\n", secName, name, v))
                             end
                         end
                     end
@@ -2045,8 +2036,14 @@ local function LoadAllConfig()
                 if wSec then
                     local w = type(UI[wSec]) == "table" and UI[wSec][wName] or nil
                     if w then
-                        local val = (wVal == "b1") or (wVal ~= "b0" and tonumber(wVal))
-                        if wVal == "b0" then val = false end
+                        local val
+                        if wVal:sub(1, 2) == "s:" then
+                            val = wVal:sub(3)
+                        elseif wVal == "b1" or wVal == "b0" then
+                            val = wVal == "b1"
+                        else
+                            val = tonumber(wVal)
+                        end
                         if val ~= nil then pcall(function() w:Set(val) end) end
                     end
                 elseif k and v then
@@ -2375,13 +2372,6 @@ function Haptic.Trigger(hType, p1, p2)
         Haptic.Pattern.Type = Haptic.Types.HEARTBEAT
         Haptic.Pattern.StartTime = nowClk
         Haptic.Pattern.Step = 1
-    elseif hType == Haptic.Types.STUN_DISRUPT then
-        if visualOn then
-            Haptic.State.VelX = Haptic.State.VelX + 35.0 * intensity
-            Haptic.State.GlowAlpha = 95 * intensity
-            Haptic.State.GlowColor = Color(255, 204, 0, 255)
-        end
-        HapticPlaySound("hero_stunned", 0.45)
     end
 end
 
@@ -2470,17 +2460,8 @@ function Haptic.Update(dt)
         else
             Haptic.State.WasLowHP = false
         end
-
-        local isStunned = NPC.IsStunned and NPC.IsStunned(myHero) or false
-        local isSilenced = NPC.IsSilenced and NPC.IsSilenced(myHero) or false
-        local isCurrentlyDisabled = isStunned or isSilenced
-        if isCurrentlyDisabled and not Haptic.State.WasStunned then
-            Haptic.Trigger(Haptic.Types.STUN_DISRUPT)
-        end
-        Haptic.State.WasStunned = isCurrentlyDisabled
     else
         Haptic.State.WasLowHP = false
-        Haptic.State.WasStunned = false
     end
 end
 
@@ -2535,228 +2516,290 @@ function Haptic.ApplyTransform(layout)
 end
 
 local function InitMenu()
-    local tab = Menu.Create("General", "Dynamic Island", "dynamic_island_apple")
+    local tab = Menu.Create("General", "Dynamic Island", "Dynamic Island")
     tab:Icon("\u{f0eb}")
+    local extra = Menu.Create("General", "Dynamic Island", "Dynamic Island Extra")
+    extra:Icon("\u{f1de}")
 
-    local gGeneral = tab:Create(L("di_tab_general")):Create("di_tab_settings")
-    local gPosition = tab:Create(L("di_tab_position")):Create("di_tab_geometry")
-    local gAppearance = tab:Create(L("di_tab_appearance")):Create("di_tab_style")
-    local gCombat = tab:Create(L("di_tab_combat")):Create("di_tab_radar")
-    local gAlerts = tab:Create(L("di_tab_alerts")):Create("di_tab_notifications")
-    local gRunes = tab:Create(L("di_tab_runes")):Create("di_tab_events")
-    local gTimings = tab:Create(L("di_tab_timings")):Create("di_tab_seconds")
-    local gMedia = tab:Create(L("di_tab_media")):Create("di_tab_parameters")
-    local gHaptics = tab:Create(L("di_tab_haptics")):Create("di_tab_tactile")
-    local gPriority = tab:Create(L("di_tab_priority")):Create("di_tab_priority_group")
+    local pMain = tab:Create(L("di_tab_general"))
+    local gIsland = pMain:Create("di_group_island", Enum.GroupSide.Left)
+    local gLook = pMain:Create("di_group_look", Enum.GroupSide.Right)
+    local lookLabel = gLook:Label("di_look_customize", "\u{f1fc}")
+    local gLookGear = lookLabel:Gear("di_gear_look")
+    local pAlerts = tab:Create(L("di_tab_alerts"))
+    local gAll = pAlerts:Create("di_group_alerts_all", Enum.GroupSide.FullWidth)
+    local gCombat = pAlerts:Create("di_group_combat_alerts", Enum.GroupSide.Left)
+    local gMap = pAlerts:Create("di_group_map_alerts", Enum.GroupSide.Right)
+    local pMedia = tab:Create(L("di_tab_media"))
+    local gMedia = pMedia:Create("di_group_media", Enum.GroupSide.Left)
 
-    UI = {
-        Main = {
-            Enabled = gGeneral:Switch("di_main_enabled", true, "\u{f0eb}"),
-            OnlyInGame = gGeneral:Switch("di_main_only_in_game", false, "\u{f108}"),
-            ToggleHUDMode = gGeneral:Button("di_main_widget_editor", function()
-                HUDCustomizer.IsOpen = not HUDCustomizer.IsOpen
-                HUDCustomizer.InspectedChip = nil
-            end),
-            ResetPos = gGeneral:Button("di_main_reset_pos", function()
-                DragState.CustomX = -1
-                DragState.CustomY = -1
-                UI.Main.Preset:Set(0)
-                UI.Main.OffsetY:Set(20)
-                UI.Main.OffsetX:Set(0)
-                SaveAllConfig()
-            end),
-            ExportCfg = gGeneral:Button("di_media_export_cfg", function()
-                SaveAllConfig()
-            end),
-            ImportCfg = gGeneral:Button("di_media_import_cfg", function()
-                LoadAllConfig()
-            end),
-            Preset = gPosition:Combo("di_main_preset", { "di_preset_top_center", "di_preset_custom", "di_preset_top_left", "di_preset_top_right", "di_preset_screen_center", "di_preset_bottom_center" }, 0),
-            OffsetY = gPosition:Slider("di_main_offset_y", 0, 1000, 20, "%d px"),
-            OffsetX = gPosition:Slider("di_main_offset_x", -960, 960, 0, "%d px"),
-            Scale = gPosition:Slider("di_main_scale", 60, 180, 100, "%d%%"),
-            IslandBgColor = gAppearance:ColorPicker("di_main_bg_color", Color(0, 0, 0, 245)),
-            PureGlass = gAppearance:Switch("di_main_pure_glass", false, "\u{f06e}"),
-            CustomLabel = gAppearance:Input("di_main_custom_label", ""),
-            BorderThickness = gAppearance:Slider("di_main_border_thickness", 0.0, 3.0, 1.0, "%.1f px"),
-        },
-        Media = {
-            Shadow = gAppearance:Switch("di_media_shadow", true, "\u{f186}"),
-            Blur = gAppearance:Switch("di_media_blur", true, "\u{f06e}"),
-            AccentColor = gAppearance:ColorPicker("di_media_accent_color", Config.Colors.Accent),
-            Enabled = gMedia:Switch("di_media_enabled", true, "\u{f001}"),
-            SpotifyLike = gMedia:Switch("di_media_spotify_like", true, "\u{f004}"),
-            VolumeWheel = gMedia:Switch("di_media_volume_wheel", true, "\u{f028}"),
-            MarqueeSpeed = gMedia:Slider("di_media_marquee_speed", 20, 100, 45, "%d px/s"),
-            SecondaryBubble = gMedia:Switch("di_media_secondary_bubble", true, "\u{f111}"),
-            Hints = gMedia:Switch("di_media_hints", true, "\u{f05a}"),
-        },
-        Combat = {
-            FightHUD = gCombat:Switch("di_combat_fight_hud", true, "\u{f06e}"),
-            FightScope = gCombat:Combo("di_combat_fight_scope", { "di_combat_scope_local", "di_combat_scope_any" }, 0),
-            MinHeroes = gCombat:Slider("di_combat_min_heroes", 1, 10, 2, "%d"),
-            FightRadius = gCombat:Slider("di_combat_fight_radius", 1000, 3000, 1600, "%d px"),
-            RadarZoom = gCombat:Slider("di_combat_radar_zoom", 1000, 3500, 2000, "%d px"),
-            FightTimeout = gCombat:Slider("di_combat_fight_timeout", 2, 10, 4, "%d s"),
-            FightLargeW = gCombat:Slider("di_combat_fight_large_w", 300, 520, 365, "%d px"),
-            FightLargeH = gCombat:Slider("di_combat_fight_large_h", 110, 220, 148, "%d px"),
-            Kills = gAlerts:Switch("di_combat_kills", true, "\u{f0e7}"),
-            Invis = gAlerts:Switch("di_combat_invis", true, "\u{f06e}"),
-            Teleports = gAlerts:Switch("di_combat_teleports", true, "\u{f3c5}"),
-            KeyEnemyItems = gAlerts:Switch("di_combat_key_enemy_items", true, "\u{f06e}"),
-            Couriers = gAlerts:Switch("di_combat_couriers", true, "\u{f48b}"),
-            CourierDelivery = gAlerts:Switch("di_combat_courier_delivery", true, "\u{f48b}"),
-            PauseAlert = gAlerts:Switch("di_combat_pause_alert", true, "\u{f04c}"),
-            Towers = gAlerts:Switch("di_combat_towers", true, "\u{f1ad}"),
-            Buybacks = gAlerts:Switch("di_combat_buybacks", true, "\u{f2f9}"),
-            LowHP = gAlerts:Switch("di_combat_low_hp", true, "\u{f21e}"),
-            LevelUp = gAlerts:Switch("di_combat_level_up", true, "\u{f201}")
-        },
-        Runes = {
-            ActiveRunes = gRunes:Switch("di_runes_active_runes", true, "\u{f0e7}"),
-            WaterRunes = gRunes:Switch("di_runes_water_runes", true, "\u{f043}"),
-            BountyRunes = gRunes:Switch("di_runes_bounty_runes", true, "\u{f155}"),
-            WisdomRunes = gRunes:Switch("di_runes_wisdom_runes", true, "\u{f19d}"),
-            RunePickups = gRunes:Switch("di_runes_rune_pickups", true, "\u{f21b}"),
-            RuneWorldSpawn = gRunes:Switch("di_runes_rune_world_spawn", true, "\u{f279}"),
-            Lotus = gRunes:Switch("di_runes_lotus", true, "\u{f06c}"),
-            Tormentor = gRunes:Switch("di_runes_tormentor", true, "\u{f005}"),
-            Roshan = gRunes:Switch("di_runes_roshan", true, "\u{f6e3}"),
-            Stacks = gRunes:Switch("di_runes_stacks", false, "\u{f5fd}")
-        },
-        Timings = {
-            ToastDuration = gTimings:Slider("di_timings_toast_duration", 2, 8, 4, "%d s"),
-            PowerRuneTime = gTimings:Slider("di_timings_power_rune_time", 5, 60, 20, "%d s"),
-            WaterRuneTime = gTimings:Slider("di_timings_water_rune_time", 5, 60, 20, "%d s"),
-            BountyRuneTime = gTimings:Slider("di_timings_bounty_rune_time", 5, 45, 10, "%d s"),
-            WisdomRuneTime = gTimings:Slider("di_timings_wisdom_rune_time", 5, 60, 20, "%d s"),
-            LotusTime = gTimings:Slider("di_timings_lotus_time", 5, 60, 20, "%d s"),
-            Tormentor1Time = gTimings:Slider("di_timings_tormentor1_time", 30, 180, 120, "%d s"),
-            Tormentor2Time = gTimings:Slider("di_timings_tormentor2_time", 5, 60, 20, "%d s"),
-            StackTime = gTimings:Slider("di_timings_stack_time", 3, 20, 8, "%d s")
-        },
-        Haptics = {
-            Enabled = gHaptics:Switch("di_haptics_enabled", true, "\u{f11e}"),
-            VisualFeedback = gHaptics:Switch("di_haptics_visual", true, "\u{f06e}"),
-            AudioFeedback = gHaptics:Switch("di_haptics_audio", true, "\u{f028}"),
-            Volume = gHaptics:Slider("di_haptics_volume", 0, 100, 50, "%d%%"),
-            Intensity = gHaptics:Slider("di_haptics_intensity", 50, 150, 100, "%d%%"),
-            CombatFilter = gHaptics:Switch("di_haptics_combat_filter", true, "\u{f0e7}"),
-            AudioDucking = gHaptics:Switch("di_haptics_audio_ducking", true, "\u{f026}"),
-            DuckingAmount = gHaptics:Slider("di_haptics_ducking_amount", 0, 100, 50, "%d%%"),
-            DuckingAlerts = gHaptics:Switch("di_haptics_ducking_alerts", true, "\u{f0f3}"),
-            DuckingCourier = gHaptics:Switch("di_haptics_ducking_courier", true, "\u{f48b}"),
-            DuckingNotifs = gHaptics:Switch("di_haptics_ducking_notifs", true, "\u{f05a}"),
-            DuckingMotion = gHaptics:Switch("di_haptics_ducking_motion", false, "\u{f065}"),
-            DuckingTaptics = gHaptics:Switch("di_haptics_ducking_taptics", false, "\u{f0a7}"),
-            TestDucking = gHaptics:Button("di_haptics_test_ducking", function()
-                if HTTP and HTTP.Request then
-                    local userVol = (UI and UI.Haptics and UI.Haptics.Volume) and (UI.Haptics.Volume:Get() / 100.0) or 0.5
-                    local baseDuckPct = (UI and UI.Haptics and UI.Haptics.DuckingAmount and UI.Haptics.DuckingAmount:Get() or 50) / 100.0
-                    local finalDuck = string.format("%.2f", baseDuckPct)
-                    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/sound?name=courier_delivered&vol=" .. string.format("%.2f", userVol) .. "&force=1&duck=" .. finalDuck, {}, function() end)
-                end
-            end)
-        },
-        Priority = {
-            Media = gPriority:Slider("di_priority_media", 1, 5, 5, "%d"),
-            RoshanKill = gPriority:Slider("di_priority_roshan_kill", 1, 5, 5, "%d"),
-            Aegis = gPriority:Slider("di_priority_aegis", 1, 5, 5, "%d"),
-            Buyback = gPriority:Slider("di_priority_buyback", 1, 5, 5, "%d"),
-            LowHp = gPriority:Slider("di_priority_low_hp", 1, 5, 5, "%d"),
-            RoshanAttack = gPriority:Slider("di_priority_roshan_attack", 1, 5, 4, "%d"),
-            Tower = gPriority:Slider("di_priority_tower", 1, 5, 4, "%d"),
-            Invis = gPriority:Slider("di_priority_invis", 1, 5, 4, "%d"),
-            Teleport = gPriority:Slider("di_priority_teleport", 1, 5, 4, "%d"),
-            Kill = gPriority:Slider("di_priority_kill", 1, 5, 3, "%d"),
-            Courier = gPriority:Slider("di_priority_courier", 1, 5, 3, "%d"),
-            EnemyItem = gPriority:Slider("di_priority_enemy_item", 1, 5, 3, "%d"),
-            Tormentor = gPriority:Slider("di_priority_tormentor", 1, 5, 3, "%d"),
-            FightSummary = gPriority:Slider("di_priority_fight_summary", 1, 5, 3, "%d"),
-            Rune = gPriority:Slider("di_priority_rune", 1, 5, 2, "%d"),
-            RuneWorld = gPriority:Slider("di_priority_rune_world", 1, 5, 2, "%d"),
-            RunePickup = gPriority:Slider("di_priority_rune_pickup", 1, 5, 2, "%d"),
-            PowerRuneCycle = gPriority:Slider("di_priority_power_rune_cycle", 1, 5, 2, "%d"),
-            Lotus = gPriority:Slider("di_priority_lotus", 1, 5, 2, "%d"),
-            Neutral = gPriority:Slider("di_priority_neutral", 1, 5, 2, "%d"),
-            Level = gPriority:Slider("di_priority_level", 1, 5, 1, "%d"),
-            SpotifyLike = gPriority:Slider("di_priority_spotify_like", 1, 5, 1, "%d"),
-            Stack = gPriority:Slider("di_priority_stack", 1, 5, 2, "%d"),
-            Reminder = gPriority:Slider("di_priority_reminder", 1, 5, 4, "%d")
-        }
-    }
+    local pFocus = extra:Create(L("di_tab_focus"))
+    local gFocus = pFocus:Create("di_tab_focus_group", Enum.GroupSide.Left)
+    local gRem = pFocus:Create("di_tab_reminders_group", Enum.GroupSide.Right)
+    local pHaptics = extra:Create(L("di_tab_haptics"))
+    local gHaptics = pHaptics:Create("di_group_haptics", Enum.GroupSide.Left)
+    local gDuck = pHaptics:Create("di_group_ducking", Enum.GroupSide.Right)
 
-    local tFocus = tab:Create(L("di_tab_focus"))
-    local gFocus = tFocus:Create("di_tab_focus_group", Enum.GroupSide.Left)
-    local gRem = tFocus:Create("di_tab_reminders_group", Enum.GroupSide.Right)
-    UI.Focus = {
-        Key = gFocus:Bind("di_focus_key", Enum.ButtonCode.KEY_NONE, "\u{f186}"),
-        Until = gFocus:Combo("di_focus_until", { "di_focus_until_off", "di_focus_until_10", "di_focus_until_20", "di_focus_until_match" }, 0),
-        Urgent = gFocus:Switch("di_focus_urgent", true, "\u{f0f3}")
-    }
-    UI.Focus.Key:ToolTip("di_focus_key_tip")
-    UI.Focus.Until:Icon("\u{f017}")
-    UI.Focus.Urgent:ToolTip("di_focus_urgent_tip")
-    UI.Focus.Key:Properties(L("di_focus_name"))
+    UI = { Main = {}, Media = {}, Combat = {}, Runes = {}, Timings = {}, Haptics = {}, Priority = {}, Durations = {}, Focus = {}, Reminders = {} }
+    local M, Md, C, R, T, H, P, D = UI.Main, UI.Media, UI.Combat, UI.Runes, UI.Timings, UI.Haptics, UI.Priority, UI.Durations
 
-    UI.Reminders = UI.Reminders or {}
-    UI.Reminders.On1 = gRem:Switch("di_rem_1", false, "\u{f0f3}")
-    local gearR1 = UI.Reminders.On1:Gear("di_rem_gear_1")
-    UI.Reminders.Text1 = gearR1:Input("di_rem1_text", "", "\u{f036}")
-    UI.Reminders.Text1:ToolTip("di_rem_text_tip")
-    UI.Reminders.Min1 = gearR1:Slider("di_rem1_min", 0, 90, 10, "%d")
-    UI.Reminders.Min1:Icon("\u{f017}")
-    UI.Reminders.Sec1 = gearR1:Slider("di_rem1_sec", 0, 59, 0, "%d")
-    UI.Reminders.Sec1:Icon("\u{f017}")
-    UI.Reminders.Every1 = gearR1:Slider("di_rem1_every", 0, 30, 0, "%d")
-    UI.Reminders.Every1:Icon("\u{f01e}")
-    UI.Reminders.Every1:ToolTip("di_rem_every_tip")
-
-    UI.Reminders = UI.Reminders or {}
-    UI.Reminders.On2 = gRem:Switch("di_rem_2", false, "\u{f0f3}")
-    local gearR2 = UI.Reminders.On2:Gear("di_rem_gear_2")
-    UI.Reminders.Text2 = gearR2:Input("di_rem2_text", "", "\u{f036}")
-    UI.Reminders.Text2:ToolTip("di_rem_text_tip")
-    UI.Reminders.Min2 = gearR2:Slider("di_rem2_min", 0, 90, 20, "%d")
-    UI.Reminders.Min2:Icon("\u{f017}")
-    UI.Reminders.Sec2 = gearR2:Slider("di_rem2_sec", 0, 59, 0, "%d")
-    UI.Reminders.Sec2:Icon("\u{f017}")
-    UI.Reminders.Every2 = gearR2:Slider("di_rem2_every", 0, 30, 0, "%d")
-    UI.Reminders.Every2:Icon("\u{f01e}")
-    UI.Reminders.Every2:ToolTip("di_rem_every_tip")
-
-    UI.Reminders = UI.Reminders or {}
-    UI.Reminders.On3 = gRem:Switch("di_rem_3", false, "\u{f0f3}")
-    local gearR3 = UI.Reminders.On3:Gear("di_rem_gear_3")
-    UI.Reminders.Text3 = gearR3:Input("di_rem3_text", "", "\u{f036}")
-    UI.Reminders.Text3:ToolTip("di_rem_text_tip")
-    UI.Reminders.Min3 = gearR3:Slider("di_rem3_min", 0, 90, 30, "%d")
-    UI.Reminders.Min3:Icon("\u{f017}")
-    UI.Reminders.Sec3 = gearR3:Slider("di_rem3_sec", 0, 59, 0, "%d")
-    UI.Reminders.Sec3:Icon("\u{f017}")
-    UI.Reminders.Every3 = gearR3:Slider("di_rem3_every", 0, 30, 0, "%d")
-    UI.Reminders.Every3:Icon("\u{f01e}")
-    UI.Reminders.Every3:ToolTip("di_rem_every_tip")
-
-    UI.Reminders = UI.Reminders or {}
-    UI.Reminders.On4 = gRem:Switch("di_rem_4", false, "\u{f0f3}")
-    local gearR4 = UI.Reminders.On4:Gear("di_rem_gear_4")
-    UI.Reminders.Text4 = gearR4:Input("di_rem4_text", "", "\u{f036}")
-    UI.Reminders.Text4:ToolTip("di_rem_text_tip")
-    UI.Reminders.Min4 = gearR4:Slider("di_rem4_min", 0, 90, 40, "%d")
-    UI.Reminders.Min4:Icon("\u{f017}")
-    UI.Reminders.Sec4 = gearR4:Slider("di_rem4_sec", 0, 59, 0, "%d")
-    UI.Reminders.Sec4:Icon("\u{f017}")
-    UI.Reminders.Every4 = gearR4:Slider("di_rem4_every", 0, 30, 0, "%d")
-    UI.Reminders.Every4:Icon("\u{f01e}")
-    UI.Reminders.Every4:ToolTip("di_rem_every_tip")
-
-    if UI.Media.AccentColor and UI.Media.AccentColor.SetCallback then
-        UI.Media.AccentColor:SetCallback(function(w)
-            local c = w:Get()
-            if c then Config.Colors.Accent = c end
-        end, true)
+    local function prio(gear, key, def)
+        local w = gear:Slider(key, 1, 5, def, "%d")
+        w:Icon("\u{f160}")
+        w:ToolTip("di_alert_priority_tip")
+        return w
     end
+    local function durFmt(v)
+        if v == 0 then return L("di_dur_default") end
+        return string.format("%d s", v)
+    end
+    local function dur(gear, key)
+        local w = gear:Slider(key or "di_alert_duration", 0, 10, 0, durFmt)
+        w:Icon("\u{f254}")
+        w:ToolTip("di_alert_duration_tip")
+        return w
+    end
+    local function lead(gear, key, lo, hi, def)
+        local w = gear:Slider(key, lo, hi, def, "%d s")
+        w:Icon("\u{f017}")
+        return w
+    end
+
+    M.Enabled = gIsland:Switch("di_main_enabled", true, "\u{f0eb}")
+    local gMore = M.Enabled:Gear("di_gear_more")
+    M.OnlyInGame = gMore:Switch("di_main_only_in_game", false, "\u{f108}")
+    T.ToastDuration = gAll:Slider("di_timings_toast_duration", 1, 10, 4, "%d s")
+    T.ToastDuration:Icon("\u{f254}")
+    T.ToastDuration:ToolTip("di_toast_duration_tip")
+    M.CustomLabel = gMore:Input("di_main_custom_label", "", "\u{f02b}")
+    M.ResetPos = gMore:Button("di_main_reset_pos", function()
+        DragState.CustomX = -1
+        DragState.CustomY = -1
+        UI.Main.Preset:Set(0)
+        UI.Main.OffsetY:Set(20)
+        UI.Main.OffsetX:Set(0)
+        SaveAllConfig()
+    end)
+    M.ExportCfg = gMore:Button("di_media_export_cfg", function()
+        SaveAllConfig()
+    end)
+    M.ImportCfg = gMore:Button("di_media_import_cfg", function()
+        LoadAllConfig()
+    end)
+
+    M.Preset = gIsland:Combo("di_main_preset", { "di_preset_top_center", "di_preset_custom", "di_preset_top_left", "di_preset_top_right", "di_preset_screen_center", "di_preset_bottom_center" }, 0)
+    M.Preset:Icon("\u{f3c5}")
+    local gPos = M.Preset:Gear("di_gear_position")
+    M.OffsetY = gPos:Slider("di_main_offset_y", 0, 1000, 20, "%d px")
+    M.OffsetY:Icon("\u{f338}")
+    M.OffsetX = gPos:Slider("di_main_offset_x", -960, 960, 0, "%d px")
+    M.OffsetX:Icon("\u{f337}")
+    M.Scale = gPos:Slider("di_main_scale", 60, 180, 100, "%d%%")
+    M.Scale:Icon("\u{f065}")
+
+    M.ToggleHUDMode = gLook:Button("di_main_widget_editor", function()
+        HUDCustomizer.IsOpen = not HUDCustomizer.IsOpen
+        HUDCustomizer.InspectedChip = nil
+    end)
+
+    M.PureGlass = gLookGear:Switch("di_main_pure_glass", false, "\u{f06e}")
+    Md.Blur = gLookGear:Switch("di_media_blur", true, "\u{f042}")
+    Md.Shadow = gLookGear:Switch("di_media_shadow", true, "\u{f0c8}")
+    M.IslandBgColor = gLookGear:ColorPicker("di_main_bg_color", Color(0, 0, 0, 245), "\u{f53f}")
+    Md.AccentColor = gLookGear:ColorPicker("di_media_accent_color", Config.Colors.Accent, "\u{f53f}")
+    M.BorderThickness = gLookGear:Slider("di_main_border_thickness", 0.0, 3.0, 1.0, "%.1f px")
+    M.BorderThickness:Icon("\u{f065}")
+
+    C.FightHUD = gCombat:Switch("di_combat_fight_hud", true, "\u{f140}")
+    local gRadar = C.FightHUD:Gear("di_gear_radar")
+    C.FightScope = gRadar:Combo("di_combat_fight_scope", { "di_combat_scope_local", "di_combat_scope_any" }, 0)
+    C.FightScope:Icon("\u{f05b}")
+    C.MinHeroes = gRadar:Slider("di_combat_min_heroes", 1, 10, 2, "%d")
+    C.MinHeroes:Icon("\u{f0c0}")
+    C.FightRadius = gRadar:Slider("di_combat_fight_radius", 1000, 3000, 1600, "%d px")
+    C.FightRadius:Icon("\u{f1ce}")
+    C.RadarZoom = gRadar:Slider("di_combat_radar_zoom", 1000, 3500, 2000, "%d px")
+    C.RadarZoom:Icon("\u{f00e}")
+    C.FightTimeout = gRadar:Slider("di_combat_fight_timeout", 2, 10, 4, "%d s")
+    C.FightTimeout:Icon("\u{f017}")
+    C.FightLargeW = gRadar:Slider("di_combat_fight_large_w", 300, 520, 365, "%d px")
+    C.FightLargeW:Icon("\u{f337}")
+    C.FightLargeH = gRadar:Slider("di_combat_fight_large_h", 110, 220, 148, "%d px")
+    C.FightLargeH:Icon("\u{f338}")
+    P.FightSummary = prio(gRadar, "di_priority_fight_summary", 3)
+    D.FightSummary = dur(gRadar)
+
+    C.Kills = gCombat:Switch("di_combat_kills", true, "\u{f0e7}")
+    local gKill = C.Kills:Gear("di_gear_alert")
+    P.Kill = prio(gKill, "di_alert_priority", 3)
+    D.Kill = dur(gKill)
+    C.Invis = gCombat:Switch("di_combat_invis", true, "\u{f070}")
+    local gInvis = C.Invis:Gear("di_gear_alert")
+    P.Invis = prio(gInvis, "di_alert_priority", 4)
+    D.Invis = dur(gInvis)
+    C.Teleports = gCombat:Switch("di_combat_teleports", true, "\u{f3c5}")
+    local gTeleport = C.Teleports:Gear("di_gear_alert")
+    P.Teleport = prio(gTeleport, "di_alert_priority", 4)
+    D.Teleport = dur(gTeleport)
+    C.KeyEnemyItems = gCombat:Switch("di_combat_key_enemy_items", true, "\u{f290}")
+    local gEnemyItem = C.KeyEnemyItems:Gear("di_gear_alert")
+    P.EnemyItem = prio(gEnemyItem, "di_alert_priority", 3)
+    D.EnemyItem = dur(gEnemyItem)
+    C.Towers = gCombat:Switch("di_combat_towers", true, "\u{f447}")
+    local gTower = C.Towers:Gear("di_gear_alert")
+    P.Tower = prio(gTower, "di_alert_priority", 4)
+    D.Tower = dur(gTower)
+    C.Couriers = gCombat:Switch("di_combat_couriers", true, "\u{f48b}")
+    local gCourier = C.Couriers:Gear("di_gear_alert")
+    P.Courier = prio(gCourier, "di_alert_priority", 3)
+    D.Courier = dur(gCourier)
+    C.Buybacks = gCombat:Switch("di_combat_buybacks", true, "\u{f2f9}")
+    local gBuyback = C.Buybacks:Gear("di_gear_alert")
+    P.Buyback = prio(gBuyback, "di_alert_priority", 5)
+    D.Buyback = dur(gBuyback)
+    C.LowHP = gCombat:Switch("di_combat_low_hp", true, "\u{f004}")
+    local gLowHp = C.LowHP:Gear("di_gear_alert")
+    P.LowHp = prio(gLowHp, "di_alert_priority", 5)
+    D.LowHp = dur(gLowHp)
+    C.LevelUp = gCombat:Switch("di_combat_level_up", true, "\u{f201}")
+    local gLevel = C.LevelUp:Gear("di_gear_alert")
+    P.Level = prio(gLevel, "di_alert_priority", 1)
+    D.Level = dur(gLevel)
+    C.CourierDelivery = gCombat:Switch("di_combat_courier_delivery", true, "\u{f48b}")
+    C.PauseAlert = gCombat:Switch("di_combat_pause_alert", true, "\u{f04c}")
+
+    R.ActiveRunes = gMap:Switch("di_runes_active_runes", true, "\u{f0e7}")
+    local gPower = R.ActiveRunes:Gear("di_gear_alert")
+    T.PowerRuneTime = lead(gPower, "di_timings_power_rune_time", 5, 60, 20)
+    P.Rune = prio(gPower, "di_priority_rune", 2)
+    P.PowerRuneCycle = prio(gPower, "di_priority_power_rune_cycle", 2)
+    D.Rune = dur(gPower)
+    R.WaterRunes = gMap:Switch("di_runes_water_runes", true, "\u{f043}")
+    T.WaterRuneTime = lead(R.WaterRunes:Gear("di_gear_alert"), "di_timings_water_rune_time", 5, 60, 20)
+    R.BountyRunes = gMap:Switch("di_runes_bounty_runes", true, "\u{f155}")
+    T.BountyRuneTime = lead(R.BountyRunes:Gear("di_gear_alert"), "di_timings_bounty_rune_time", 5, 45, 10)
+    R.WisdomRunes = gMap:Switch("di_runes_wisdom_runes", true, "\u{f19d}")
+    T.WisdomRuneTime = lead(R.WisdomRunes:Gear("di_gear_alert"), "di_timings_wisdom_rune_time", 5, 60, 20)
+    R.RunePickups = gMap:Switch("di_runes_rune_pickups", true, "\u{f21b}")
+    local gRunePickup = R.RunePickups:Gear("di_gear_alert")
+    P.RunePickup = prio(gRunePickup, "di_alert_priority", 2)
+    D.RunePickup = dur(gRunePickup)
+    R.RuneWorldSpawn = gMap:Switch("di_runes_rune_world_spawn", true, "\u{f279}")
+    local gRuneWorld = R.RuneWorldSpawn:Gear("di_gear_alert")
+    P.RuneWorld = prio(gRuneWorld, "di_alert_priority", 2)
+    D.RuneWorld = dur(gRuneWorld)
+    R.Stacks = gMap:Switch("di_runes_stacks", false, "\u{f5fd}")
+    local gStack = R.Stacks:Gear("di_gear_alert")
+    T.StackTime = lead(gStack, "di_timings_stack_time", 3, 20, 8)
+    P.Stack = prio(gStack, "di_alert_priority", 2)
+    D.Stack = dur(gStack)
+    R.Lotus = gMap:Switch("di_runes_lotus", true, "\u{f06c}")
+    local gLotus = R.Lotus:Gear("di_gear_alert")
+    T.LotusTime = lead(gLotus, "di_timings_lotus_time", 5, 60, 20)
+    P.Lotus = prio(gLotus, "di_alert_priority", 2)
+    D.Lotus = dur(gLotus)
+    R.Neutrals = gMap:Switch("di_runes_neutrals", true, "\u{f466}")
+    local gNeutral = R.Neutrals:Gear("di_gear_alert")
+    P.Neutral = prio(gNeutral, "di_alert_priority", 2)
+    D.Neutral = dur(gNeutral)
+    R.Tormentor = gMap:Switch("di_runes_tormentor", true, "\u{f005}")
+    local gTorm = R.Tormentor:Gear("di_gear_alert")
+    T.Tormentor1Time = lead(gTorm, "di_timings_tormentor1_time", 30, 180, 120)
+    T.Tormentor2Time = lead(gTorm, "di_timings_tormentor2_time", 5, 60, 20)
+    P.Tormentor = prio(gTorm, "di_alert_priority", 3)
+    D.Tormentor = dur(gTorm)
+    R.Roshan = gMap:Switch("di_runes_roshan", true, "\u{f6e3}")
+    local gRosh = R.Roshan:Gear("di_gear_alert")
+    P.RoshanKill = prio(gRosh, "di_priority_roshan_kill", 5)
+    P.Aegis = prio(gRosh, "di_priority_aegis", 5)
+    P.RoshanAttack = prio(gRosh, "di_priority_roshan_attack", 4)
+    D.Roshan = dur(gRosh)
+
+    Md.Enabled = gMedia:Switch("di_media_enabled", true, "\u{f001}")
+    local gPlayer = Md.Enabled:Gear("di_gear_media")
+    P.Media = gPlayer:Slider("di_alert_priority", 1, 5, 5, "%d")
+    P.Media:Icon("\u{f160}")
+    P.Media:ToolTip("di_media_priority_tip")
+    Md.MarqueeSpeed = gPlayer:Slider("di_media_marquee_speed", 20, 100, 45, "%d px/s")
+    Md.MarqueeSpeed:Icon("\u{f337}")
+    Md.SpotifyLike = gMedia:Switch("di_media_spotify_like", true, "\u{f004}")
+    local gSpotifyLike = Md.SpotifyLike:Gear("di_gear_alert")
+    P.SpotifyLike = prio(gSpotifyLike, "di_alert_priority", 1)
+    D.SpotifyLike = dur(gSpotifyLike)
+    Md.VolumeWheel = gMedia:Switch("di_media_volume_wheel", true, "\u{f028}")
+    Md.SecondaryBubble = gMedia:Switch("di_media_secondary_bubble", true, "\u{f111}")
+    Md.Hints = gMedia:Switch("di_media_hints", true, "\u{f05a}")
+
+    H.Enabled = gHaptics:Switch("di_haptics_enabled", true, "\u{f011}")
+    H.VisualFeedback = gHaptics:Switch("di_haptics_visual", true, "\u{f06e}")
+    H.Intensity = H.VisualFeedback:Gear("di_gear_visual"):Slider("di_haptics_intensity", 50, 150, 100, "%d%%")
+    H.Intensity:Icon("\u{f065}")
+    H.AudioFeedback = gHaptics:Switch("di_haptics_audio", true, "\u{f028}")
+    H.Volume = H.AudioFeedback:Gear("di_gear_audio"):Slider("di_haptics_volume", 0, 100, 50, "%d%%")
+    H.Volume:Icon("\u{f028}")
+    H.CombatFilter = gHaptics:Switch("di_haptics_combat_filter", true, "\u{f0e7}")
+    H.AudioDucking = gDuck:Switch("di_haptics_audio_ducking", true, "\u{f026}")
+    local gDuckGear = H.AudioDucking:Gear("di_gear_ducking")
+    H.DuckingAmount = gDuckGear:Slider("di_haptics_ducking_amount", 0, 100, 50, "%d%%")
+    H.DuckingAmount:Icon("\u{f027}")
+    H.DuckingAlerts = gDuckGear:Switch("di_haptics_ducking_alerts", true, "\u{f0f3}")
+    H.DuckingCourier = gDuckGear:Switch("di_haptics_ducking_courier", true, "\u{f48b}")
+    H.DuckingNotifs = gDuckGear:Switch("di_haptics_ducking_notifs", true, "\u{f05a}")
+    H.DuckingMotion = gDuckGear:Switch("di_haptics_ducking_motion", false, "\u{f065}")
+    H.DuckingTaptics = gDuckGear:Switch("di_haptics_ducking_taptics", false, "\u{f0a7}")
+    H.TestDucking = gDuckGear:Button("di_haptics_test_ducking", function()
+        if HTTP and HTTP.Request then
+            local userVol = (UI and UI.Haptics and UI.Haptics.Volume) and (UI.Haptics.Volume:Get() / 100.0) or 0.5
+            local baseDuckPct = (UI and UI.Haptics and UI.Haptics.DuckingAmount and UI.Haptics.DuckingAmount:Get() or 50) / 100.0
+            local finalDuck = string.format("%.2f", baseDuckPct)
+            pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/sound?name=courier_delivered&vol=" .. string.format("%.2f", userVol) .. "&force=1&duck=" .. finalDuck, {}, function() end)
+        end
+    end)
+
+    UI.Focus.Key = gFocus:Bind("di_focus_key", Enum.ButtonCode.KEY_NONE, "\u{f186}")
+    UI.Focus.Key:ToolTip("di_focus_key_tip")
+    UI.Focus.Key:Properties(L("di_focus_name"))
+    UI.Focus.Until = gFocus:Combo("di_focus_until", { "di_focus_until_off", "di_focus_until_10", "di_focus_until_20", "di_focus_until_match" }, 0)
+    UI.Focus.Until:Icon("\u{f017}")
+    UI.Focus.Urgent = gFocus:Switch("di_focus_urgent", true, "\u{f0f3}")
+    UI.Focus.Urgent:ToolTip("di_focus_urgent_tip")
+
+    local RM = UI.Reminders
+    for i, key in ipairs({ "di_rem_1", "di_rem_2", "di_rem_3", "di_rem_4" }) do
+        local sw = gRem:Switch(key, false, "\u{f0f3}")
+        local g = sw:Gear(({ "di_rem_gear_1", "di_rem_gear_2", "di_rem_gear_3", "di_rem_gear_4" })[i])
+        RM["On" .. i] = sw
+        RM["Text" .. i] = g:Input(({ "di_rem1_text", "di_rem2_text", "di_rem3_text", "di_rem4_text" })[i], "", "\u{f036}")
+        RM["Text" .. i]:ToolTip("di_rem_text_tip")
+        RM["Min" .. i] = g:Slider(({ "di_rem1_min", "di_rem2_min", "di_rem3_min", "di_rem4_min" })[i], 0, 90, 10 * i, "%d")
+        RM["Min" .. i]:Icon("\u{f017}")
+        RM["Sec" .. i] = g:Slider(({ "di_rem1_sec", "di_rem2_sec", "di_rem3_sec", "di_rem4_sec" })[i], 0, 59, 0, "%d")
+        RM["Sec" .. i]:Icon("\u{f017}")
+        RM["Every" .. i] = g:Slider(({ "di_rem1_every", "di_rem2_every", "di_rem3_every", "di_rem4_every" })[i], 0, 30, 0, "%d")
+        RM["Every" .. i]:Icon("\u{f01e}")
+        RM["Every" .. i]:ToolTip("di_rem_every_tip")
+    end
+    P.Reminder = prio(gRem, "di_priority_reminder", 4)
+    D.Reminder = dur(gRem, "di_reminder_duration")
+
+    local function refreshDisabled()
+        local hOn = H.Enabled:Get()
+        H.VisualFeedback:Disabled(not hOn)
+        H.AudioFeedback:Disabled(not hOn)
+        H.CombatFilter:Disabled(not hOn)
+        H.AudioDucking:Disabled(not hOn)
+        local mOn = Md.Enabled:Get()
+        Md.SpotifyLike:Disabled(not mOn)
+        Md.VolumeWheel:Disabled(not mOn)
+        Md.SecondaryBubble:Disabled(not mOn)
+    end
+    H.Enabled:SetCallback(refreshDisabled, true)
+    Md.Enabled:SetCallback(refreshDisabled)
+
+    Md.AccentColor:SetCallback(function(w)
+        local c = w:Get()
+        if c then Config.Colors.Accent = c end
+    end, true)
 end
 
 local function TriggerStateTransition(nextState)
@@ -3043,6 +3086,32 @@ local NotifPriorityKey = {
 
 local DEFAULT_NOTIF_PRIORITY = 3
 
+local NotifDurationKey = {
+    stack = "Stack",
+    roshan_kill = "Roshan",
+    aegis = "Roshan",
+    roshan_attack = "Roshan",
+    buyback = "Buyback",
+    low_hp = "LowHp",
+    tower = "Tower",
+    invis = "Invis",
+    teleport = "Teleport",
+    kill = "Kill",
+    courier = "Courier",
+    enemy_item = "EnemyItem",
+    tormentor = "Tormentor",
+    fight_summary = "FightSummary",
+    rune = "Rune",
+    power_rune_cycle = "Rune",
+    rune_world = "RuneWorld",
+    rune_pickup = "RunePickup",
+    lotus = "Lotus",
+    neutral = "Neutral",
+    level = "Level",
+    spotify_like = "SpotifyLike",
+    reminder = "Reminder"
+}
+
 local function GetNotifPriority(notif)
     if notif.PriorityOverride then
         return notif.PriorityOverride
@@ -3070,8 +3139,18 @@ end
 
 function DynamicIsland.PushNotification(notif)
     if not notif then return end
-    if not notif.Duration and UI and UI.Timings and UI.Timings.ToastDuration then
-        notif.Duration = UI.Timings.ToastDuration:Get()
+    if notif.Type == "neutral" and UI and UI.Runes and UI.Runes.Neutrals and not UI.Runes.Neutrals:Get() then return end
+    local shared = (UI and UI.Timings and UI.Timings.ToastDuration) and UI.Timings.ToastDuration:Get() or 4
+    local durKey = notif.Type and NotifDurationKey[notif.Type]
+    if durKey then
+        local dw = UI and UI.Durations and UI.Durations[durKey]
+        local own = dw and dw:Get() or 0
+        notif.Duration = (own > 0) and own or shared
+    elseif not notif.Duration then
+        notif.Duration = shared
+    end
+    if notif.MaxDuration then
+        notif.Duration = math.min(notif.Duration, notif.MaxDuration)
     end
     notif.Priority = GetNotifPriority(notif)
     if Focus.Blocks(notif) then
@@ -3104,12 +3183,13 @@ function Focus.Blocks(notif)
     return true
 end
 
-function Focus.Set(on)
+function Focus.Set(on, delay)
     if on == Focus.Active then return end
     local now = os.clock()
     Focus.Active = on
     Focus.BannerOn = on
-    Focus.BannerUntil = now + 1.8
+    Focus.BannerStart = now + (delay or 0)
+    Focus.BannerUntil = Focus.BannerStart + 2.2
     if on then
         Focus.StartedAt = now
         Focus.Suppressed = 0
@@ -3972,7 +4052,7 @@ local function ProcessGameEvents()
                         AccentColor = Color(48, 179, 80, 255),
                         IconType = "svg",
                         FallbackSvg = "stack",
-                        Duration = math.min(4.0, stackLead)
+                        MaxDuration = stackLead
                     })
                 end
             end
@@ -4347,7 +4427,10 @@ function DynamicIsland.OnModifierCreate(ent, mod)
         return
     end
 
-    if isHero and UI.Runes.Roshan:Get() and mn == "modifier_item_aegis" then
+    if isHero and UI.Runes.Roshan:Get() and mn == "modifier_item_aegis" and not (NPC.IsIllusion and NPC.IsIllusion(ent)) then
+        GameTracker.Roshan.AegisExpiryTime = GameRules.GetGameTime() + 300
+        GameTracker.Roshan.AegisHolder = ent
+        GameTracker.Roshan.Dismissed = false
         local heroName = GetPlayerDisplayName(ent)
         local accent = isEnemy and Config.Colors.Red or Config.Colors.Accent
         DynamicIsland.PushNotification({
@@ -4361,6 +4444,15 @@ function DynamicIsland.OnModifierCreate(ent, mod)
             Duration = 4.5
         })
         return
+    end
+end
+
+function DynamicIsland.OnModifierDestroy(ent, mod)
+    if GameTracker.Roshan.AegisExpiryTime == 0 or not mod or ent ~= GameTracker.Roshan.AegisHolder then return end
+    local ok, mn = pcall(Modifier.GetName, mod)
+    if ok and mn == "modifier_item_aegis" then
+        GameTracker.Roshan.AegisExpiryTime = 0
+        GameTracker.Roshan.AegisHolder = nil
     end
 end
 
@@ -4414,10 +4506,6 @@ function DynamicIsland.OnFireEventClient(data)
 
     if data.name == "dota_roshan_kill" and UI.Runes.Roshan:Get() then
         GameTracker.Roshan.DeathTime = GameRules.GetGameTime()
-        GameTracker.Roshan.AegisExpiryTime = GameTracker.Roshan.DeathTime + 300
-        GameTracker.Roshan.RespawnMinTime = GameTracker.Roshan.DeathTime + 480
-        GameTracker.Roshan.RespawnMaxTime = GameTracker.Roshan.DeathTime + 660
-        GameTracker.Roshan.Dismissed = false
         DynamicIsland.PushNotification({
             Type = "roshan_kill",
             Tag = L("di_ui_roshan_slain"),
@@ -5516,16 +5604,23 @@ local function HandleInteractions()
     MouseInput.LastWheelDown = isWheelDown
 
     if isLeftClicked and not isCtrlOnly then
-        local fb = Focus.Bounds
-        if fb and cx >= fb.x1 and cx <= fb.x2 and cy >= fb.y1 and cy <= fb.y2 then
-            Focus.Set(false)
+        local mb = Focus.Bounds
+        if mb and cx >= mb.x1 and cx <= mb.x2 and cy >= mb.y1 and cy <= mb.y2 then
+            if nowClk - Focus.ClickAt < 0.4 then
+                Focus.ClickAt = -10
+                Focus.Set(false)
+            else
+                Focus.ClickAt = nowClk
+                Focus.BumpAt = nowClk
+                if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_LIGHT) end
+            end
             return
         end
-        fb = Focus.Button
+        local fb = Focus.Button
         if fb and StateMachine.TargetState == StateMachine.States.LARGE_IDLE and (nowClk - Focus.ButtonAt) < 0.25
             and cx >= fb.x1 and cx <= fb.x2 and cy >= fb.y1 and cy <= fb.y2 then
             Focus.PressAt = nowClk
-            Focus.Set(not Focus.Active)
+            Focus.Set(not Focus.Active, 0.45)
             if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_MEDIUM) end
             return
         end
@@ -5595,16 +5690,26 @@ local function HandleInteractions()
                 if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_MEDIUM) end
                 return
             end
-        elseif NotificationQueue.Active and IsNotifDeferred(NotificationQueue.Active) then
-            NotificationQueue.LastDismissed = NotificationQueue.Active
-            NotificationQueue.Active = nil
-            HapticPlaySound("toast_dismiss", 0.45)
-            if #NotificationQueue.List > 0 then
-                NotificationQueue.Active = PopHighestPriorityNotif()
-                NotificationQueue.StartTime = nowClk
-            end
         else
-            GameTracker.Roshan.Dismissed = true
+            local kind = (NotificationQueue.Active and IsNotifDeferred(NotificationQueue.Active)) and "notif" or "aegis"
+            if MouseInput.SatClickKind == kind and nowClk - (MouseInput.SatClickAt or -10) < 0.4 then
+                MouseInput.SatClickAt = -10
+                if kind == "notif" then
+                    NotificationQueue.LastDismissed = NotificationQueue.Active
+                    NotificationQueue.Active = nil
+                    if #NotificationQueue.List > 0 then
+                        NotificationQueue.Active = PopHighestPriorityNotif()
+                        NotificationQueue.StartTime = nowClk
+                    end
+                else
+                    GameTracker.Roshan.Dismissed = true
+                end
+                HapticPlaySound("toast_dismiss", 0.45)
+            else
+                MouseInput.SatClickAt = nowClk
+                MouseInput.SatClickKind = kind
+                if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_LIGHT) end
+            end
         end
         return
     end
@@ -5897,7 +6002,7 @@ local function HandleInteractions()
     end
     if journeyPhase then Journey.Reset() end
 
-    if Focus.BannerUntil > nowClk and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
+    if Focus.BannerStart <= nowClk and Focus.BannerUntil > nowClk and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
         if StateMachine.TargetState ~= StateMachine.States.FOCUS_BANNER then
             TriggerStateTransition(StateMachine.States.FOCUS_BANNER)
         end
@@ -6745,15 +6850,17 @@ function Odometer.Text(id, font, size, text, pos, col)
     Render.PopClip()
 end
 
-function Focus.RenderBanner(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
-    local on = Focus.BannerOn
-    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
-        local h = GetVectorIcon("moon")
-        if h then
-            Render.Image(h, Vec2(x, math.floor(midY - sz / 2)), Vec2(sz, sz), FadeColor(on and Focus.Accent or Color(255, 255, 255, 150), aMul), 0)
-        end
-    end, L("di_focus_name"), Config.Colors.TextPrimary, on and L("di_focus_on") or L("di_focus_off"), on and Focus.Accent or Config.Colors.TextMuted)
+function Focus.SatRow(layout)
+    local scale = layout.scale
+    local compactH = math.floor(Config.Dimensions.CompactH * scale + 0.5)
+    local targetH = math.floor((Config.Dimensions.CompactTargetH or Config.Dimensions.CompactH) * scale + 0.5)
+    local refH, parityH = compactH, compactH
+    if targetH <= compactH * 1.4 then
+        refH, parityH = layout.h, targetH
+    end
+    local bh = math.floor(compactH * 0.88)
+    if (parityH - bh) % 2 == 1 then bh = bh - 1 end
+    return math.floor(layout.y + refH / 2 - bh / 2 + 0.5), bh
 end
 
 function Focus.RenderBubble(layout)
@@ -6762,44 +6869,69 @@ function Focus.RenderBubble(layout)
     Focus.LastDraw = now
     local st = StateMachine.TargetState
     local want = Focus.Active and not HUDCustomizer.IsOpen and st ~= StateMachine.States.FOCUS_BANNER and st ~= StateMachine.States.MENU_MATCH_FOUND
-    Focus.Vis = Focus.Vis + ((want and 1 or 0) - Focus.Vis) * math.min(1, dtl * 12)
+    Focus.Vis = Focus.Vis + ((want and 1 or 0) - Focus.Vis) * math.min(1, dtl * 9)
     if Focus.Vis < 0.02 then
         Focus.Bounds = nil
         return
     end
     local v = math.min(1, Focus.Vis)
     local scale = layout.scale
-    local full = math.floor(Config.Dimensions.CompactH * scale)
-    local size = math.floor(full * (0.55 + 0.45 * EaseOutBack(v)))
-    local cxm = math.floor(layout.x - 8 * scale - full / 2)
-    local cym = math.floor(layout.y + full / 2)
-    local p1 = Vec2(math.floor(cxm - size / 2), math.floor(cym - size / 2))
-    local p2 = Vec2(p1.x + size, p1.y + size)
-    Focus.Bounds = { x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y }
+    local rowY, full = Focus.SatRow(layout)
+    local bt = now - Focus.BumpAt
+    local bump = 1 - 0.09 * math.exp(-bt * 10) * math.cos(bt * 24)
+    local d = math.floor(full * (0.5 + 0.5 * EaseOutBack(v)) * bump)
+    local slide = (1 - v) * 10 * scale
+    local cxm = math.floor(layout.x - 8 * scale - full / 2 + slide + 0.5)
+    local cym = rowY + full / 2
+    local p1 = Vec2(math.floor(cxm - d / 2), math.floor(cym - d / 2))
+    local p2 = Vec2(p1.x + d, p1.y + d)
+    Focus.Bounds = { x1 = math.floor(cxm - full / 2), y1 = math.floor(cym - full / 2), x2 = math.floor(cxm + full / 2), y2 = math.floor(cym + full / 2) }
     if UI.Media.Shadow:Get() then
-        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, v), 14, math.floor(size / 2), Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, v), 12, math.floor(d / 2), Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
     end
-    IslandSurface(p1, p2, math.floor(size / 2), Config.Colors.Border, nil, v)
-    local isz = math.floor(size * 0.42)
+    IslandSurface(p1, p2, math.floor(d / 2), Config.Colors.Border, nil, v)
+    local c = Vec2(cxm, cym)
+    Render.FilledCircle(c, d * 0.30, FadeColor(Color(Focus.Accent.r, Focus.Accent.g, Focus.Accent.b, 38), v), 0, 1.0, 32)
+    local isz = math.floor(d * 0.52)
     local h = GetVectorIcon("moon")
     if h then
         Render.Image(h, Vec2(math.floor(cxm - isz / 2), math.floor(cym - isz / 2)), Vec2(isz, isz), FadeColor(Focus.Accent, v), 0)
     end
     if Focus.Until > Focus.StartedAt then
         local frac = math.max(0, math.min(1, (Focus.Until - now) / (Focus.Until - Focus.StartedAt)))
-        local rr = size / 2 - 4 * scale
+        local rr = d / 2 - 2.5 * scale
         local rt = math.max(1.2, 1.5 * scale)
-        Render.Circle(Vec2(cxm, cym), rr, FadeColor(Color(255, 255, 255, 34), v), rt, 0, 1.0, false, 40)
+        Render.Circle(c, rr, FadeColor(Color(255, 255, 255, 22), v), rt, 0, 1.0, false, 48)
         if frac > 0.002 then
-            Render.Circle(Vec2(cxm, cym), rr, FadeColor(Focus.Accent, v), rt, 270, frac, true, 40)
+            Render.Circle(c, rr, FadeColor(Focus.Accent, v), rt, 270, frac, true, 48)
         end
     end
+end
+
+function Focus.RenderBanner(layout, alphaMul, yOffset)
+    local aMul = alphaMul or 1.0
+    local on = Focus.BannerOn
+    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+        local h = GetVectorIcon("moon")
+        if h then
+            local t = math.max(0, os.clock() - Focus.BannerStart)
+            local e = EaseOutBack(math.min(1, t / 0.5))
+            local a = math.min(1, t / 0.25)
+            local s2 = math.floor(sz * (0.55 + 0.45 * e))
+            local dy = math.floor((1 - e) * 5 * layout.scale)
+            Render.Image(h, Vec2(math.floor(x + (sz - s2) / 2), math.floor(midY - s2 / 2 + dy)), Vec2(s2, s2), FadeColor(on and Focus.Accent or Color(255, 255, 255, 150), aMul * a), 0)
+        end
+    end, L("di_focus_name"), Config.Colors.TextPrimary, on and L("di_focus_on") or L("di_focus_off"), on and Focus.Accent or Config.Colors.TextMuted)
 end
 
 function Focus.RenderTile(layout, x1, x2, y1, aMul)
     local scale = layout.scale
     local now = os.clock()
     local on = Focus.Active
+    local dtl = math.min(0.05, math.max(0, now - (Focus.TileClk or now)))
+    Focus.TileClk = now
+    Focus.TileVis = (Focus.TileVis or 0) + ((on and 1 or 0) - (Focus.TileVis or 0)) * math.min(1, dtl * 11)
+    local tv = math.min(1, math.max(0, Focus.TileVis))
     local tileH = math.floor(26 * scale)
     local pt = now - Focus.PressAt
     local press = 1 - 0.07 * math.exp(-pt * 11) * math.cos(pt * 24)
@@ -6809,10 +6941,10 @@ function Focus.RenderTile(layout, x1, x2, y1, aMul)
     local hh = tileH * press
     local q1 = Vec2(math.floor(cxT - w / 2), math.floor(cyT - hh / 2))
     local q2 = Vec2(math.floor(cxT + w / 2), math.floor(cyT + hh / 2))
-    Render.FilledRect(q1, q2, FadeColor(on and Color(255, 255, 255, 235) or Color(255, 255, 255, 22), aMul), math.floor(hh / 2))
+    Render.FilledRect(q1, q2, FadeColor(LerpColor(Color(255, 255, 255, 22), Color(255, 255, 255, 235), tv), aMul), math.floor(hh / 2))
     local cr = math.floor(hh / 2 - 3 * scale)
     local cc = Vec2(math.floor(q1.x + hh / 2), math.floor(cyT))
-    Render.FilledCircle(cc, cr, FadeColor(on and Focus.Accent or Color(255, 255, 255, 40), aMul), 0, 1.0, 24)
+    Render.FilledCircle(cc, cr, FadeColor(LerpColor(Color(255, 255, 255, 40), Focus.Accent, tv), aMul), 0, 1.0, 24)
     local isz = math.floor(cr * 1.15)
     local moon = GetVectorIcon("moon")
     if moon then
@@ -6821,12 +6953,12 @@ function Focus.RenderTile(layout, x1, x2, y1, aMul)
     local fontBold = Config.Fonts.Bold
     local label = L("di_focus_name")
     local ls = Render.TextSize(fontBold, 10.5 * scale, label)
-    local textCol = on and Color(22, 22, 26, 255) or Config.Colors.TextPrimary
+    local textCol = LerpColor(Config.Colors.TextPrimary, Color(22, 22, 26, 255), tv)
     Render.Text(fontBold, 10.5 * scale, label, Vec2(math.floor(cc.x + cr + 7 * scale), math.floor(cyT - ls.y / 2)), FadeColor(textCol, aMul))
     if on then
         local right = Focus.Until > 0 and FormatTime(math.max(0, Focus.Until - now)) or L("di_focus_on")
         local rs = Render.TextSize(fontBold, 10.5 * scale, right)
-        Odometer.Text("focus_tile", fontBold, 10.5 * scale, right, Vec2(math.floor(q2.x - 10 * scale - rs.x), math.floor(cyT - rs.y / 2)), FadeColor(Focus.Accent, aMul))
+        Odometer.Text("focus_tile", fontBold, 10.5 * scale, right, Vec2(math.floor(q2.x - 10 * scale - rs.x), math.floor(cyT - rs.y / 2)), FadeColor(Focus.Accent, aMul * tv))
     end
     Focus.Button = { x1 = x1, y1 = y1, x2 = x2, y2 = y1 + tileH }
     Focus.ButtonAt = now
@@ -7538,53 +7670,57 @@ local function RenderSecondarySatelliteBubble(layout)
         return
     end
 
-    if StateMachine.TargetState ~= StateMachine.States.COMPACT_IDLE and StateMachine.TargetState ~= StateMachine.States.COMPACT_MEDIA then return end
-    if GameTracker.Roshan.Dismissed then return end
-
-    local isRoshanActive = GameTracker.Roshan.DeathTime > 0
-    if isRoshanActive then
-        local bubbleH = math.floor(Config.Dimensions.CompactH * scale)
-        local bubbleW = math.floor(58 * scale)
-        local bubbleR = math.floor(Config.Dimensions.CompactRadius * scale)
-        local bx = math.floor(layout.x + layout.w + 8 * scale)
-        local by = math.floor(layout.y)
-
-        SatelliteBounds = { x1 = bx, y1 = by, x2 = bx + bubbleW, y2 = by + bubbleH }
-
-        local p1 = Vec2(bx, by)
-        local p2 = Vec2(bx + bubbleW, by + bubbleH)
-
-        if UI.Media.Shadow:Get() then
-            Render.Shadow(p1, p2, Config.Colors.Shadow, 14, bubbleR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
-        end
-
-        IslandSurface(p1, p2, bubbleR, Config.Colors.Border)
-
-        local iconSize = math.floor(15 * scale)
-        local iconX = math.floor(bx + 7 * scale)
-        local iconY = math.floor(by + (bubbleH - iconSize) / 2)
-
-        local aegisH = GetCachedImage("panorama/images/items/aegis_png.vtex_c")
-        if aegisH then
-            Render.Image(aegisH, Vec2(iconX, iconY), Vec2(iconSize, iconSize), Color(255, 255, 255, 255), 3 * scale)
-        end
-
-        local timeStr = ""
-        if now < GameTracker.Roshan.AegisExpiryTime then
-            local rem = GameTracker.Roshan.AegisExpiryTime - now
-            timeStr = FormatTime(rem)
-        else
-            local minRem = math.max(0, GameTracker.Roshan.RespawnMinTime - now)
-            timeStr = FormatTime(minRem)
-        end
-
-        local tSize = Render.TextSize(fontBold, 10 * scale, timeStr)
-        local tx = math.floor(iconX + iconSize + 5 * scale)
-        local ty = math.floor(by + (bubbleH - tSize.y) / 2 - 1)
-        Render.Text(fontBold, 10 * scale, timeStr, Vec2(tx, ty), Config.Colors.TextPrimary)
-    else
+    local ros = GameTracker.Roshan
+    local clk = os.clock()
+    local dtl = math.min(0.05, math.max(0, clk - ros.VisClk))
+    ros.VisClk = clk
+    local rem = ros.AegisExpiryTime - GameRules.GetGameTime()
+    local want = rem > 0 and not ros.Dismissed and StateMachine.TargetState ~= StateMachine.States.NOTIFICATION
+    ros.Vis = ros.Vis + ((want and 1 or 0) - ros.Vis) * math.min(1, dtl * 9)
+    if ros.Vis < 0.02 then
         SatelliteBounds = nil
+        return
     end
+    local v = math.min(1, ros.Vis)
+    rem = math.max(0, rem)
+
+    local by, bh = Focus.SatRow(layout)
+    local br = math.floor(bh / 2)
+    local ringR = math.floor(br - 4 * scale)
+    local iconSize = math.floor(ringR * 1.25)
+    local timeStr = FormatTime(rem)
+    local fontSize = 10.5 * scale
+    local tSize = Render.TextSize(fontBold, fontSize, timeStr)
+    local gap = math.floor(5 * scale)
+    local fullW = bh + gap + tSize.x + math.floor(br * 0.75)
+    local grow = EaseOutBack(v)
+    local bw = math.floor(bh + (fullW - bh) * math.min(1, grow))
+    local slide = (1 - v) * 10 * scale
+    local bx = math.floor(layout.x + layout.w + 8 * scale - slide)
+    SatelliteBounds = { x1 = bx, y1 = by, x2 = bx + bw, y2 = by + bh }
+    local p1 = Vec2(bx, by)
+    local p2 = Vec2(bx + bw, by + bh)
+    if UI.Media.Shadow:Get() then
+        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, v), 12, br, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+    end
+    IslandSurface(p1, p2, br, Config.Colors.Border, nil, v)
+    Render.PushClip(p1, p2, true)
+    local ringC = Vec2(bx + br, by + br)
+    local gold = Color(255, 196, 64, 255)
+    local rt = math.max(1.2, 1.5 * scale)
+    Render.Circle(ringC, ringR, FadeColor(Color(255, 255, 255, 30), v), rt, 0, 1.0, false, 48)
+    local frac = math.max(0, math.min(1, rem / 300))
+    if frac > 0.002 then
+        Render.Circle(ringC, ringR, FadeColor(gold, v), rt, 270, frac, true, 48)
+    end
+    local aegisH = GetCachedImage("panorama/images/items/aegis_png.vtex_c")
+    if aegisH then
+        Render.Image(aegisH, Vec2(math.floor(ringC.x - iconSize / 2), math.floor(ringC.y - iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 255), v), math.floor(iconSize / 2))
+    end
+    local tx = math.floor(bx + bh + gap)
+    local ty = math.floor(by + (bh - tSize.y) / 2 - 1)
+    Odometer.Text("aegis_time", fontBold, fontSize, timeStr, Vec2(tx, ty), FadeColor(Config.Colors.TextPrimary, v))
+    Render.PopClip()
 end
 
 local function RenderMenuClosedHint(layout)
@@ -9365,8 +9501,7 @@ function DynamicIsland.OnUpdateEx()
             GameTracker.Roshan.IsAlive = true
             GameTracker.Roshan.DeathTime = 0
             GameTracker.Roshan.AegisExpiryTime = 0
-            GameTracker.Roshan.RespawnMinTime = 0
-            GameTracker.Roshan.RespawnMaxTime = 0
+            GameTracker.Roshan.AegisHolder = nil
             GameTracker.Roshan.HasAegis = false
             GameTracker.Roshan.LastAttackAlert = 0
             GameTracker.Roshan.Dismissed = false
