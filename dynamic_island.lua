@@ -578,7 +578,9 @@ local StateMachine = {
         GAME_PAUSED = 11,
         COURIER_DELIVERY = 12,
         COURIER_DELIVERED = 13,
-        COURIER_LARGE = 14
+        COURIER_LARGE = 14,
+        MENU_LOADING = 15,
+        DRAFT = 16
     },
     Current = 1,
     TargetState = 1,
@@ -855,6 +857,12 @@ local NotificationQueue = {
 
 local SatelliteBounds = nil
 local MenuStateCandidate = { state = nil, since = 0 }
+
+local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
+
+local SCRIPT_VERSION = "2.0.0"
+
+local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
 local SatelliteSubBounds = {}
 local ImageCache = {}
 
@@ -1001,6 +1009,7 @@ local VectorIcons = {
     ["home"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="#FFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["search"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#FFF" stroke-width="2.2"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="#FFF" stroke-width="2.2" stroke-linecap="round"/></svg>',
     ["check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><polyline points="4,12 9,17 20,6" fill="none" stroke="#34C759" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
     ["pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="11" fill="#FF9500"/><rect x="7.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/><rect x="13.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/></svg>',
     ["volume"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>',
@@ -1915,8 +1924,8 @@ end
 local function TriggerStateTransition(nextState)
     if StateMachine.TargetState == nextState then return end
 
-    local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE)
-    local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE)
+    local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE or StateMachine.TargetState == StateMachine.States.DRAFT)
+    local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE or nextState == StateMachine.States.DRAFT)
 
     local fromState = StateMachine.TargetState
     local fromScale = 1.0
@@ -2330,6 +2339,7 @@ local function IsMediaActive()
 end
 
 local function AdvancePosition(dt)
+    SeekDrag.Grow, SeekDrag.GrowVel = SolveDampedSpring(SeekDrag.Grow, SeekDrag.GrowVel, SeekDrag.Active and 1 or 0, dt, 30.0, 0.80)
     if MediaData.IsPlaying then
         MediaData.PosSmooth = MediaData.PosSmooth + dt
         MediaData.PosTarget = MediaData.PosTarget + dt
@@ -2442,9 +2452,20 @@ local function PollMediaBridge()
         MediaData.App = app
 
         local newPos = tonumber(posStr) or 0
-        MediaData.PosTarget = newPos
-        if math.abs(newPos - MediaData.PosSmooth) > 1.0 then
-            MediaData.PosSmooth = newPos
+        local acceptPos = not SeekDrag.Active
+        if acceptPos and nowClk < SeekDrag.HoldUntil then
+            local expected = SeekDrag.HoldPos + (MediaData.IsPlaying and (nowClk - SeekDrag.HoldStart) or 0)
+            if math.abs(newPos - expected) > 2.5 then
+                acceptPos = false
+            else
+                SeekDrag.HoldUntil = 0
+            end
+        end
+        if acceptPos then
+            MediaData.PosTarget = newPos
+            if math.abs(newPos - MediaData.PosSmooth) > 1.0 then
+                MediaData.PosSmooth = newPos
+            end
         end
         MediaData.Duration = tonumber(durStr) or 0
         MediaData.HasReceivedData = true
@@ -2501,6 +2522,59 @@ local function PollMediaBridge()
             end
         end
     end, "media_poll")
+end
+
+local function PollBridgeStatus()
+    local clk = os.clock()
+    if clk - BridgeStatus.LastPoll < 3.0 then return end
+    BridgeStatus.LastPoll = clk
+    if BridgeStatus.FirstPoll == 0 then BridgeStatus.FirstPoll = clk end
+    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/status", {}, function(res)
+        if not res or not res.response or res.response == "" then return end
+        local body = res.response
+        if not string.find(body, '"status"', 1, true) then return end
+        BridgeStatus.LastOk = os.clock()
+        BridgeStatus.Version = string.match(body, '"version"%s*:%s*"([^"]*)"') or ""
+        BridgeStatus.Latest = string.match(body, '"latest_version"%s*:%s*"([^"]*)"') or ""
+        BridgeStatus.MediaSessions = string.match(body, '"media_sessions"%s*:%s*"([^"]*)"') or ""
+    end, "bridge_status")
+end
+
+local function ParseVersion(s)
+    if not s or s == "" then return nil end
+    local a, b, c = string.match(s, "^[vV]?(%d+)%.(%d+)%.?(%d*)")
+    if not a then return nil end
+    return { tonumber(a), tonumber(b), tonumber(c) or 0 }
+end
+
+local function VersionLess(x, y)
+    for i = 1, 3 do
+        if x[i] ~= y[i] then return x[i] < y[i] end
+    end
+    return false
+end
+
+local function CollectStatusHints()
+    local out = {}
+    local clk = os.clock()
+    local online = BridgeStatus.LastOk > 0 and (clk - BridgeStatus.LastOk) < 7.0
+    local settled = BridgeStatus.FirstPoll > 0 and (clk - BridgeStatus.FirstPoll) > 6.0
+
+    if UI and UI.Media and UI.Media.Enabled:Get() and settled and not online then
+        table.insert(out, { text = L("MediaBridge не запущен, музыка и звуки выключены", "MediaBridge isn't running, music and sounds are off"), dot = Color(255, 159, 10, 255) })
+    elseif online and BridgeStatus.MediaSessions == "timeout" then
+        table.insert(out, { text = L("Служба медиа Windows не отвечает, перезагрузи ПК", "Windows media service isn't responding, restart your PC"), dot = Color(255, 159, 10, 255) })
+    end
+
+    local latest = ParseVersion(BridgeStatus.Latest)
+    if latest then
+        local mine = ParseVersion(SCRIPT_VERSION)
+        local bridge = ParseVersion(BridgeStatus.Version)
+        if (mine and VersionLess(mine, latest)) or (bridge and VersionLess(bridge, latest)) then
+            table.insert(out, { text = L("Доступно обновление ", "Update available: ") .. BridgeStatus.Latest, dot = Color(10, 132, 255, 255) })
+        end
+    end
+    return out
 end
 
 local function ProcessFightDetector()
@@ -3623,32 +3697,206 @@ local function GetMatchSearchInfo()
     return false, "0:00"
 end
 
-local function CalculateMenuIdleWidth(scale)
-    local fontBold = Config.Fonts.Bold
-    local tSize = Render.TextSize(fontBold, 11 * scale, L("island.in_menu", "In Menu"))
-    local clockText = os.date("%H:%M")
-    local clkSize = Render.TextSize(fontBold, 11 * scale, clockText)
-    local iconExtra = (12 + 5) * scale * 2
-    local dotExtra = (7 + 1.6 * 2 + 7) * scale
-    return iconExtra + tSize.x + dotExtra + clkSize.x
+local Journey = {
+    ACCEPT_WINDOW = 20,
+    FoundAt = 0,
+    Accepted = false,
+    LoadingSince = 0,
+    ReadyPoll = 0,
+    Ready = { visible = false, accepted = 0, total = 0, declined = 0, slots = {} },
+    DraftPoll = 0,
+    Draft = { phase = 0, phaseMax = 0, picks = {}, bans = {}, remaining = nil },
+    RingShown = 0,
+    RingClk = 0,
+    TT = { mode = nil, last = nil, lastClk = 0, stillSince = 0 },
+    HeroNames = {}
+}
+
+function Journey.Reset()
+    Journey.FoundAt = 0
+    Journey.Accepted = false
 end
 
-local function CalculateMenuSearchingWidth(scale, timeStr)
-    local fontBold = Config.Fonts.Bold
-    local label = L("island.finding_match", "Finding Match ") .. (timeStr or "0:00")
-    local tSize = Render.TextSize(fontBold, 11 * scale, label)
-    local clockText = os.date("%H:%M")
-    local clkSize = Render.TextSize(fontBold, 11 * scale, clockText)
-    local iconExtra = (12 + 5) * scale * 2
-    local dotExtra = (7 + 1.6 * 2 + 7) * scale
-    return iconExtra + tSize.x + dotExtra + clkSize.x
+function Journey.HeroUnit(id)
+    if type(id) ~= "number" or id <= 0 or not Engine.GetHeroNameByID then return nil end
+    local cached = Journey.HeroNames[id]
+    if cached ~= nil then return cached or nil end
+    local ok, name = pcall(Engine.GetHeroNameByID, id)
+    if ok and type(name) == "string" and name ~= "" then
+        if not string.find(name, "npc_dota_hero_", 1, true) then name = "npc_dota_hero_" .. name end
+        Journey.HeroNames[id] = name
+        return name
+    end
+    Journey.HeroNames[id] = false
+    return nil
 end
 
-local function CalculateMenuMatchFoundWidth(scale)
+function Journey.GamePhase(inGame)
+    if Engine.GetUIState then
+        local okU, ui = pcall(Engine.GetUIState)
+        if okU and ui == 1 then return "loading" end
+    end
+    if not inGame or not GameRules or not GameRules.GetGameState then return nil end
+    local ok, gs = pcall(GameRules.GetGameState)
+    if not ok then return nil end
+    if gs == 2 or gs == 3 or gs == 8 then return "draft" end
+    if gs == 1 or gs == 10 then return "loading" end
+    return nil
+end
+
+function Journey.PollReadyUp(nowClk)
+    local r = Journey.Ready
+    if nowClk - Journey.ReadyPoll < 0.15 then return r end
+    Journey.ReadyPoll = nowClk
+    r.visible, r.accepted, r.total, r.declined = false, 0, 0, 0
+    if Panorama and Panorama.GetPanelByName then
+        pcall(function()
+            local root = Panorama.GetPanelByName("PopupAcceptMatch", true)
+            if not root or not root:IsValid() or root:HasClass("Hidden") then return end
+            if root:HasClass("ReadyUpPlayersVisible") then r.visible = true end
+            local decide = root:FindChildTraverse("PopupAcceptDeclineMatchPanel")
+            if decide and decide:IsValid() and decide:HasClass("Accepted") then r.visible = true end
+            local cont = root:FindChildTraverse("PlayerSlotContainer")
+            if not cont or not cont:IsValid() then return end
+
+            for i = 0, cont:GetChildCount() or 0 do
+                local s = cont:GetChild(i)
+                if s and s:IsValid() and not s:HasClass("Hidden") and r.total < 10 then
+                    r.total = r.total + 1
+                    local st = s:HasClass("Accepted") and 1 or (s:HasClass("Declined") and 2 or 0)
+                    r.slots[r.total] = st
+                    if st == 1 then r.accepted = r.accepted + 1 elseif st == 2 then r.declined = r.declined + 1 end
+                end
+            end
+        end)
+    end
+    for i = r.total + 1, #r.slots do r.slots[i] = nil end
+    return r
+end
+
+function Journey.StateRemaining(nowClk)
+    if not GameRules or not GameRules.GetStateTransitionTime then return nil end
+    local ok, st = pcall(GameRules.GetStateTransitionTime)
+    if not ok or type(st) ~= "number" or st <= 0 then return nil end
+    local tt = Journey.TT
+    if not tt.last then
+        tt.last, tt.lastClk, tt.stillSince = st, nowClk, nowClk
+    elseif math.abs(st - tt.last) > 0.001 then
+        local span = nowClk - tt.lastClk
+        if not tt.mode and span > 0.05 then
+            local rate = (st - tt.last) / span
+            if rate < -0.5 and rate > -1.6 then tt.mode = "remaining" end
+        end
+        tt.last, tt.lastClk, tt.stillSince = st, nowClk, nowClk
+    elseif not tt.mode and nowClk - tt.stillSince > 0.4 then
+        tt.mode = "absolute"
+    end
+    local okT, gt = pcall(GameRules.GetGameTime)
+    gt = (okT and type(gt) == "number") and gt or 0
+    local rem
+    if tt.mode == "remaining" then
+        rem = st
+    elseif tt.mode == "absolute" then
+        rem = st - gt
+    else
+        rem = (st > gt) and (st - gt) or st
+    end
+    if rem <= 0 or rem > 600 then return nil end
+    return rem
+end
+
+function Journey.PollDraft(nowClk)
+    local d = Journey.Draft
+    if nowClk - Journey.DraftPoll < 0.25 then return d end
+    Journey.DraftPoll = nowClk
+    d.remaining = Journey.StateRemaining(nowClk)
+    local okS, gs = pcall(GameRules.GetGameState)
+    gs = okS and gs or 0
+    if gs ~= d.phase then
+        d.phaseMax = 0
+        Journey.TT.last, Journey.TT.mode = nil, nil
+    end
+    d.phase = gs
+
+    if d.remaining then d.phaseMax = math.max(d.phaseMax or 0, d.remaining) end
+
+    for i = #d.picks, 1, -1 do d.picks[i] = nil end
+    pcall(function()
+        local lp = Players.GetLocal()
+        if not lp then return end
+        local myTeam = Entity.GetTeamNum(lp)
+        if myTeam ~= 2 and myTeam ~= 3 then return end
+        for _, pl in ipairs(Players.GetAll()) do
+            if #d.picks < 5 and Entity.GetTeamNum(pl) == myTeam then
+                local td = Player.GetTeamData(pl)
+                local heroId = td and td.selected_hero_id or -1
+                local locked = type(heroId) == "number" and heroId > 0
+                if not locked then
+                    local okTP, tp = pcall(Player.GetTeamPlayer, pl)
+                    heroId = (okTP and tp) and tp.possible_hero_selection or -1
+                end
+                local okSlot, slot = pcall(Player.GetPlayerTeamSlot, pl)
+                d.picks[#d.picks + 1] = {
+                    slot = (okSlot and type(slot) == "number") and slot or (#d.picks + 10),
+                    hero = Journey.HeroUnit(heroId),
+                    locked = locked,
+                    me = (pl == lp)
+                }
+            end
+        end
+        table.sort(d.picks, function(a, b) return a.slot < b.slot end)
+    end)
+
+    for i = #d.bans, 1, -1 do d.bans[i] = nil end
+    if GameRules.GetBannedHeroes then
+        local okB, bans = pcall(GameRules.GetBannedHeroes)
+        if okB and type(bans) == "table" then
+            local seen = {}
+            for i = 0, 31 do
+                local id = bans[i]
+                if type(id) == "number" and id > 0 and not seen[id] then
+                    seen[id] = true
+                    local unit = Journey.HeroUnit(id)
+                    if unit and #d.bans < 14 then d.bans[#d.bans + 1] = unit end
+                end
+            end
+        end
+    end
+    return d
+end
+
+function Journey.FormatClock(sec)
+    sec = math.max(0, math.floor(sec + 0.5))
+    return string.format("%d:%02d", math.floor(sec / 60), sec % 60)
+end
+
+function Journey.LineWidth(scale, label, right, hasIcon)
     local fontBold = Config.Fonts.Bold
-    local tSize = Render.TextSize(fontBold, 11.5 * scale, L("island.match_found", "Match Found!"))
-    local iconExtra = (13 + 6) * scale
-    return iconExtra + tSize.x
+    local w = Render.TextSize(fontBold, 11 * scale, label).x
+    if hasIcon then w = w + 17 * scale end
+    if right and right ~= "" then
+        w = w + 26 * scale + Render.TextSize(fontBold, 11 * scale, right).x
+    end
+    return w
+end
+
+function Journey.IdleTexts()
+    return L("Главное меню", "Main Menu"), os.date("%H:%M")
+end
+
+function Journey.SearchTexts()
+    local _, timeStr = GetMatchSearchInfo()
+    return L("Поиск матча", "Finding Match"), (timeStr and timeStr ~= "") and timeStr or "0:00"
+end
+
+function Journey.LoadingTexts(nowClk)
+    local label = L("Загрузка матча", "Loading Match")
+    if GameRules and GameRules.GetGameState and Engine.IsInGame and Engine.IsInGame() then
+        local ok, gs = pcall(GameRules.GetGameState)
+        if ok and (gs == 1 or gs == 10) then label = L("Ждём игроков", "Waiting for Players") end
+    end
+    local since = Journey.LoadingSince > 0 and (nowClk - Journey.LoadingSince) or 0
+    return label, Journey.FormatClock(since)
 end
 
 local function GetChipStandardWidth(chipId, scale)
@@ -4213,6 +4461,27 @@ local function HandleInteractions()
 
     local cx, cy = Input.GetCursorPos()
 
+    if SeekDrag.Active then
+        local hit = ButtonHits.MediaSeek
+        if hit and hit.x2 > hit.x1 then
+            SeekDrag.Frac = math.max(0.0, math.min(1.0, (cx - hit.x1) / (hit.x2 - hit.x1)))
+        end
+        if not isLMouseDown then
+            SeekDrag.Active = false
+            if StateMachine.TargetState == StateMachine.States.LARGE_MEDIA and MediaData.Duration > 0 then
+                local target = SeekDrag.Frac * MediaData.Duration
+                SendMediaCommand(string.format("seek?pos=%.2f", target))
+                MediaData.PosTarget = target
+                MediaData.PosSmooth = target
+                SeekDrag.HoldPos = target
+                SeekDrag.HoldStart = nowClk
+                SeekDrag.HoldUntil = nowClk + 2.5
+                if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_LIGHT) end
+            end
+        end
+        return
+    end
+
     local isWheelUp = Input.IsKeyDown(Enum.ButtonCode.KEY_MWHEELUP) or Input.IsKeyDown(124)
     local isWheelDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MWHEELDOWN) or Input.IsKeyDown(125)
 
@@ -4670,14 +4939,37 @@ local function HandleInteractions()
     end
 
     local inGame = Engine.IsInGame and Engine.IsInGame()
-    if not inGame then
+    local journeyPhase = Journey.GamePhase(inGame)
+    if journeyPhase == "loading" then
+        if Journey.LoadingSince == 0 then Journey.LoadingSince = nowClk end
+    else
+        Journey.LoadingSince = 0
+    end
+    if journeyPhase then Journey.Reset() end
+
+    if journeyPhase and (not inGame or not NotificationQueue.Active) then
+        local want = (journeyPhase == "draft") and StateMachine.States.DRAFT or StateMachine.States.MENU_LOADING
+        if want == StateMachine.States.DRAFT then Journey.PollDraft(nowClk) end
+        if StateMachine.TargetState ~= want then
+            TriggerStateTransition(want)
+        end
+    elseif not inGame then
         if not NotificationQueue.Active then
             local detected
-            if Engine.CanAcceptMatch and Engine.CanAcceptMatch() then
+            local canAccept = Engine.CanAcceptMatch and Engine.CanAcceptMatch()
+            local ready = Journey.PollReadyUp(nowClk)
+            if canAccept and Journey.FoundAt == 0 then Journey.FoundAt = nowClk end
+            if ready.visible then Journey.Accepted = true end
+
+            if canAccept or (Journey.FoundAt > 0 and ready.visible and (nowClk - Journey.FoundAt) < 60) then
                 detected = StateMachine.States.MENU_MATCH_FOUND
             else
                 local isSearching = GetMatchSearchInfo()
                 detected = isSearching and StateMachine.States.MENU_SEARCHING or StateMachine.States.MENU_IDLE
+            end
+            if detected ~= StateMachine.States.MENU_MATCH_FOUND and Journey.FoundAt > 0
+                and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
+                Journey.Reset()
             end
             if detected ~= MenuStateCandidate.state then
                 MenuStateCandidate.state = detected
@@ -4716,7 +5008,7 @@ local function HandleInteractions()
                 if StateMachine.TargetState ~= StateMachine.States.COMPACT_FIGHT and StateMachine.TargetState ~= StateMachine.States.LARGE_FIGHT then
                     TriggerStateTransition(StateMachine.States.COMPACT_FIGHT)
                 end
-            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
+            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.MENU_LOADING or StateMachine.TargetState == StateMachine.States.DRAFT or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
                 local desired = (mediaActive and not HUDCustomizer.IsOpen) and StateMachine.States.COMPACT_MEDIA or StateMachine.States.COMPACT_IDLE
                 TriggerStateTransition(desired)
             elseif StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA or StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT then
@@ -4743,22 +5035,32 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetW = math.max(80, targetUnscaled)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
-    elseif StateMachine.TargetState == StateMachine.States.MENU_IDLE then
-        local contentW = CalculateMenuIdleWidth(layout.scale)
-        Config.Dimensions.CompactTargetW = math.max(120, (contentW / layout.scale) + 26)
-        Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
-        Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
-    elseif StateMachine.TargetState == StateMachine.States.MENU_SEARCHING then
-        local _, timeStr = GetMatchSearchInfo()
-        local contentW = CalculateMenuSearchingWidth(layout.scale, timeStr)
-        Config.Dimensions.CompactTargetW = math.max(160, (contentW / layout.scale) + 26)
+    elseif StateMachine.TargetState == StateMachine.States.MENU_IDLE
+        or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING
+        or StateMachine.TargetState == StateMachine.States.MENU_LOADING then
+        local label, right
+        if StateMachine.TargetState == StateMachine.States.MENU_IDLE then
+            label, right = Journey.IdleTexts()
+        elseif StateMachine.TargetState == StateMachine.States.MENU_SEARCHING then
+            label, right = Journey.SearchTexts()
+        else
+            label, right = Journey.LoadingTexts(nowClk)
+        end
+        local contentW = Journey.LineWidth(layout.scale, label, right, true)
+
+        local w = math.ceil(((contentW / layout.scale) + 32) / 4) * 4
+        Config.Dimensions.CompactTargetW = math.max(150, w)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
-        local contentW = CalculateMenuMatchFoundWidth(layout.scale)
-        Config.Dimensions.CompactTargetW = math.max(180, (contentW / layout.scale) + 30)
-        Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH + 2
-        Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
+        Config.Dimensions.CompactTargetW = 268
+        Config.Dimensions.CompactTargetH = 48
+        Config.Dimensions.CompactTargetR = 24
+    elseif StateMachine.TargetState == StateMachine.States.DRAFT then
+        local d = Journey.Draft
+        Config.Dimensions.CompactTargetW = 340
+        Config.Dimensions.CompactTargetH = (#d.bans > 0) and 112 or 88
+        Config.Dimensions.CompactTargetR = 24
     elseif StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA then
         Config.Dimensions.CompactTargetW = Config.Dimensions.CompactMediaW
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactMediaH
@@ -4870,8 +5172,19 @@ local function HandleInteractions()
     end
 
     if isLeftClicked and isHover and not isCtrlOnly and StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
-        if Engine.AcceptMatch then
-            pcall(Engine.AcceptMatch, 1)
+        if Engine.AcceptMatch and not Journey.Accepted then
+            local ok = pcall(Engine.AcceptMatch, 1)
+            if ok then Journey.Accepted = true end
+        end
+    end
+
+    if isLeftClicked and isHover and not isCtrlOnly and mediaActive
+        and StateMachine.TargetState == StateMachine.States.LARGE_MEDIA and not StateMachine.Transition.Active then
+        local h = ButtonHits.MediaSeek
+        if h and cx >= h.x1 - 4 and cx <= h.x2 + 4 and cy >= h.y1 and cy <= h.y2 then
+            SeekDrag.Active = true
+            SeekDrag.Frac = math.max(0.0, math.min(1.0, (cx - h.x1) / math.max(1, h.x2 - h.x1)))
+            return
         end
     end
 
@@ -5053,128 +5366,244 @@ local function DrawAlbumThumbnail(x, y, size, radius, alphaMul, scaleMul, custom
     end
 end
 
-local function RenderMenuIdlePill(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
-    local yOff = yOffset or 0
+function Journey.DrawLine(layout, aMul, yOff, drawIcon, label, labelCol, right, rightCol)
     local scale = layout.scale
     local fontBold = Config.Fonts.Bold
-    local textCol = FadeColor(Color(255, 255, 255, 255), aMul)
-    local dotCol = FadeColor(Color(255, 255, 255, 140), aMul)
-
-    local txtMenu = L("island.in_menu", "In Menu")
-    local txtClock = os.date("%H:%M")
-
-    local sMenu = Render.TextSize(fontBold, 11 * scale, txtMenu)
-    local sClock = Render.TextSize(fontBold, 11 * scale, txtClock)
-
-    local iconSz = math.floor(12 * scale)
-    local iconGap = math.floor(5 * scale)
-    local dotR = math.floor(1.6 * scale)
-    local dotPad = math.floor(7 * scale)
-
-    local totalW = iconSz + iconGap + sMenu.x + dotPad + (dotR * 2) + dotPad + iconSz + iconGap + sClock.x
-    local curX = math.floor(layout.x + (layout.w - totalW) / 2)
+    local padX = math.floor(16 * scale)
     local midY = math.floor(layout.y + layout.h / 2 + yOff)
-    local iconY = math.floor(midY - iconSz / 2 + MenuIconOffsetY * scale)
-    local ty = math.floor(midY - sMenu.y / 2 + MenuTextOffsetY * scale)
-
-    local hHome = GetVectorIcon("home")
-    if hHome then
-        Render.Image(hHome, Vec2(curX, iconY), Vec2(iconSz, iconSz), textCol, 0)
+    local iconSz = math.floor(12 * scale)
+    local x = math.floor(layout.x + padX)
+    drawIcon(x, midY, iconSz)
+    x = x + iconSz + math.floor(5 * scale)
+    local sL = Render.TextSize(fontBold, 11 * scale, label)
+    local ty = math.floor(midY - sL.y / 2 + MenuTextOffsetY * scale)
+    Render.Text(fontBold, 11 * scale, label, Vec2(x, ty), FadeColor(labelCol, aMul))
+    if right and right ~= "" then
+        local sR = Render.TextSize(fontBold, 11 * scale, right)
+        Render.Text(fontBold, 11 * scale, right, Vec2(math.floor(layout.x + layout.w - padX - sR.x), ty), FadeColor(rightCol, aMul))
     end
-    curX = curX + iconSz + iconGap
-
-    Render.Text(fontBold, 11 * scale, txtMenu, Vec2(curX, ty), textCol)
-    curX = curX + sMenu.x + dotPad
-
-    Render.FilledCircle(Vec2(curX + dotR, midY), dotR, dotCol, 0, 1.0, 16)
-    curX = curX + (dotR * 2) + dotPad
-
-    local hClock = GetVectorIcon("clock")
-    if hClock then
-        Render.Image(hClock, Vec2(curX, iconY), Vec2(iconSz, iconSz), textCol, 0)
-    end
-    curX = curX + iconSz + iconGap
-
-    Render.Text(fontBold, 11 * scale, txtClock, Vec2(curX, ty), textCol)
 end
 
-local function RenderMenuSearchingPill(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
-    local yOff = yOffset or 0
-    local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local searchCol = FadeColor(Color(220, 238, 255, 255), aMul)
-    local textCol = FadeColor(Color(255, 255, 255, 255), aMul)
-    local dotCol = FadeColor(Color(255, 255, 255, 140), aMul)
-
-    local _, timeStr = GetMatchSearchInfo()
-    local txtSearch = L("island.finding_match", "Finding Match ") .. (timeStr or "0:00")
-    local txtClock = os.date("%H:%M")
-
-    local sSearch = Render.TextSize(fontBold, 11 * scale, txtSearch)
-    local sClock = Render.TextSize(fontBold, 11 * scale, txtClock)
-
-    local iconSz = math.floor(12 * scale)
-    local iconGap = math.floor(5 * scale)
-    local dotR = math.floor(1.6 * scale)
-    local dotPad = math.floor(7 * scale)
-
-    local totalW = iconSz + iconGap + sSearch.x + dotPad + (dotR * 2) + dotPad + iconSz + iconGap + sClock.x
-    local curX = math.floor(layout.x + (layout.w - totalW) / 2)
-    local midY = math.floor(layout.y + layout.h / 2 + yOff)
-    local iconY = math.floor(midY - iconSz / 2 + MenuIconOffsetY * scale)
-    local ty = math.floor(midY - sSearch.y / 2 + MenuTextOffsetY * scale)
-
-    local hSearch = GetVectorIcon("search")
-    if hSearch then
-        Render.Image(hSearch, Vec2(curX, iconY), Vec2(iconSz, iconSz), searchCol, 0)
-    end
-    curX = curX + iconSz + iconGap
-
-    Render.Text(fontBold, 11 * scale, txtSearch, Vec2(curX, ty), searchCol)
-    curX = curX + sSearch.x + dotPad
-
-    Render.FilledCircle(Vec2(curX + dotR, midY), dotR, dotCol, 0, 1.0, 16)
-    curX = curX + (dotR * 2) + dotPad
-
-    local hClock = GetVectorIcon("clock")
-    if hClock then
-        Render.Image(hClock, Vec2(curX, iconY), Vec2(iconSz, iconSz), textCol, 0)
-    end
-    curX = curX + iconSz + iconGap
-
-    Render.Text(fontBold, 11 * scale, txtClock, Vec2(curX, ty), textCol)
+function Journey.Spinner(cx, cy, r, col, aMul)
+    local t = math.max(1.5, r * 0.28)
+    Render.Circle(Vec2(cx, cy), r, FadeColor(Color(255, 255, 255, 36), aMul), t, 0, 1.0, false, 28)
+    local start = (os.clock() * 320) % 360
+    Render.Circle(Vec2(cx, cy), r, FadeColor(col, aMul), t, start, 0.28, true, 28)
 end
 
-local function RenderMenuMatchFoundPill(layout, alphaMul, yOffset)
+function Journey.RenderIdle(layout, alphaMul, yOffset)
+    local aMul = alphaMul or 1.0
+    local label, right = Journey.IdleTexts()
+    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+        local h = GetVectorIcon("home")
+        if h then
+            Render.Image(h, Vec2(x, math.floor(midY - sz / 2 + MenuIconOffsetY * layout.scale)), Vec2(sz, sz), FadeColor(Color(255, 255, 255, 150), aMul), 0)
+        end
+    end, label, Config.Colors.TextSecondary, right, Config.Colors.TextPrimary)
+end
+
+function Journey.RenderSearching(layout, alphaMul, yOffset)
+    local aMul = alphaMul or 1.0
+    local label, right = Journey.SearchTexts()
+    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+        Journey.Spinner(x + sz / 2, midY, sz * 0.42, Config.Colors.Blue, aMul)
+    end, label, Config.Colors.TextPrimary, right, Color(100, 170, 255, 255))
+end
+
+function Journey.RenderLoading(layout, alphaMul, yOffset)
+    local aMul = alphaMul or 1.0
+    local label, right = Journey.LoadingTexts(os.clock())
+    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+        Journey.Spinner(x + sz / 2, midY, sz * 0.42, Color(255, 255, 255, 230), aMul)
+    end, label, Config.Colors.TextPrimary, right, Config.Colors.TextMuted)
+end
+
+function Journey.RenderMatchFound(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-
-    local pulse = 0.8 + 0.2 * math.sin(os.clock() * 8.0)
-    local greenCol = FadeColor(Color(52, 199, 89, math.floor(255 * pulse)), aMul)
-
-    local txtFound = L("island.match_found", "Match Found!")
-    local sFound = Render.TextSize(fontBold, 11.5 * scale, txtFound)
-
-    local iconSz = math.floor(13 * scale)
-    local iconGap = math.floor(6 * scale)
-
-    local totalW = iconSz + iconGap + sFound.x
-    local curX = math.floor(layout.x + (layout.w - totalW) / 2)
+    local fontBold, fontMain = Config.Fonts.Bold, Config.Fonts.Main
+    local now = os.clock()
+    local r = Journey.Ready
+    local green = Color(52, 199, 89, 255)
     local midY = math.floor(layout.y + layout.h / 2 + yOff)
-    local iconY = math.floor(midY - iconSz / 2 + MenuIconOffsetY * scale)
-    local ty = math.floor(midY - sFound.y / 2 + MenuTextOffsetY * scale)
 
-    local hCheck = GetVectorIcon("check")
-    if hCheck then
-        Render.Image(hCheck, Vec2(curX, iconY), Vec2(iconSz, iconSz), greenCol, 0)
+    local declined = r.declined > 0
+    local accepted = Journey.Accepted
+    local accent = declined and Config.Colors.Red or green
+
+    local frac, centerTxt = 1.0, nil
+    if declined then
+        frac = 1.0
+    elseif accepted then
+        if r.total > 0 then
+            frac = r.accepted / r.total
+            centerTxt = tostring(r.accepted)
+        end
+    else
+        local found = (Journey.FoundAt > 0) and Journey.FoundAt or now
+        local left = math.max(0, Journey.ACCEPT_WINDOW - (now - found))
+        frac = left / Journey.ACCEPT_WINDOW
+        centerTxt = tostring(math.ceil(left))
+        if left <= 5 then accent = Color(255, 159, 10, 255) end
     end
-    curX = curX + iconSz + iconGap
 
-    Render.Text(fontBold, 11.5 * scale, txtFound, Vec2(curX, ty), greenCol)
+    local ringDt = math.min(0.1, math.max(0, now - Journey.RingClk))
+    Journey.RingClk = now
+    if accepted then
+        Journey.RingShown = Journey.RingShown + (frac - Journey.RingShown) * math.min(1, ringDt * 10)
+    else
+        Journey.RingShown = frac
+    end
+
+    local ringC = Vec2(math.floor(layout.x + layout.h / 2), midY)
+    local ringR = math.max(6, layout.h / 2 - 9 * scale)
+    local ringT = math.max(2, 2.5 * scale)
+    Render.Circle(ringC, ringR, FadeColor(Color(255, 255, 255, 38), aMul), ringT, 0, 1.0, false, 48)
+    if Journey.RingShown > 0.002 then
+        Render.Circle(ringC, ringR, FadeColor(accent, aMul), ringT, 270, math.min(1, Journey.RingShown), true, 48)
+    end
+    if centerTxt then
+        local sC = Render.TextSize(fontBold, 11 * scale, centerTxt)
+        Render.Text(fontBold, 11 * scale, centerTxt, Vec2(math.floor(ringC.x - sC.x / 2), math.floor(midY - sC.y / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
+    else
+        local h = GetVectorIcon(declined and "close" or "check")
+        local isz = math.floor(12 * scale)
+        if h then
+            Render.Image(h, Vec2(math.floor(ringC.x - isz / 2), math.floor(midY - isz / 2)), Vec2(isz, isz), FadeColor(accent, aMul), 0)
+        end
+    end
+
+    local title, sub
+    if declined then
+        title, sub = L("Матч отклонён", "Match Declined"), L("Возвращаемся в поиск", "Returning to queue")
+    elseif accepted then
+        title, sub = L("Принято", "Accepted"), L("Ждём остальных", "Waiting for players")
+    else
+        title, sub = L("Матч найден", "Match Found"), L("Нажми, чтобы принять", "Click to accept")
+    end
+    local tx = math.floor(ringC.x + ringR + 11 * scale)
+    local sT = Render.TextSize(fontBold, 12 * scale, title)
+    local sS = Render.TextSize(fontMain, 10 * scale, sub)
+    local blockH = sT.y + 1 * scale + sS.y
+    local ty = math.floor(midY - blockH / 2)
+    Render.Text(fontBold, 12 * scale, title, Vec2(tx, ty), FadeColor(Config.Colors.TextPrimary, aMul))
+    Render.Text(fontMain, 10 * scale, sub, Vec2(tx, math.floor(ty + sT.y + 1 * scale)), FadeColor(Config.Colors.TextSecondary, aMul))
+
+    if not accepted and not declined then
+        local capTxt = L("Принять", "Accept")
+        local sCap = Render.TextSize(fontBold, 11 * scale, capTxt)
+        local capH = math.floor(26 * scale)
+        local capW = math.floor(sCap.x + 24 * scale)
+        local m = math.floor((layout.h - capH) / 2)
+        local cx2 = math.floor(layout.x + layout.w - m)
+        local cy1 = math.floor(midY - capH / 2)
+        Render.FilledRect(Vec2(cx2 - capW, cy1), Vec2(cx2, cy1 + capH), FadeColor(accent, aMul), math.floor(capH / 2))
+        Render.Text(fontBold, 11 * scale, capTxt, Vec2(math.floor(cx2 - capW / 2 - sCap.x / 2), math.floor(midY - sCap.y / 2)), FadeColor(Color(0, 0, 0, 230), aMul))
+    elseif r.total > 0 then
+        local pr = math.max(2, 3 * scale)
+        local gap = math.floor(5 * scale)
+        local cols = 5
+        local gridW = cols * pr * 2 + (cols - 1) * gap
+        local gx = math.floor(layout.x + layout.w - layout.h / 2 - gridW + pr * 2)
+        local rows = math.ceil(r.total / cols)
+        local gridH = rows * pr * 2 + (rows - 1) * gap
+        local gy = math.floor(midY - gridH / 2 + pr)
+        for i = 1, r.total do
+            local col = (i - 1) % cols
+            local row = math.floor((i - 1) / cols)
+            local st = r.slots[i]
+            local c = (st == 1) and green or ((st == 2) and Config.Colors.Red or Color(255, 255, 255, 50))
+            Render.FilledCircle(Vec2(gx + col * (pr * 2 + gap), gy + row * (pr * 2 + gap)), pr, FadeColor(c, aMul), 0, 1.0, 16)
+        end
+    end
+end
+
+function Journey.RenderDraft(layout, alphaMul, yOffset)
+    local aMul = alphaMul or 1.0
+    local yOff = yOffset or 0
+    local scale = layout.scale
+    local d = Journey.Draft
+    local fontBold, fontMain = Config.Fonts.Bold, Config.Fonts.Main
+    local padX = math.floor(18 * scale)
+    local x1 = math.floor(layout.x + padX)
+    local x2 = math.floor(layout.x + layout.w - padX)
+    local top = math.floor(layout.y + 14 * scale + yOff)
+
+    local phaseTxt
+    if d.phase == 3 then
+        phaseTxt = L("Стратегия", "Strategy Time")
+    elseif d.phase == 8 then
+        phaseTxt = L("Команды", "Team Showcase")
+    else
+        phaseTxt = L("Выбор героев", "Hero Selection")
+    end
+    local locked = 0
+    for _, p in ipairs(d.picks) do
+        if p.locked then locked = locked + 1 end
+    end
+    local sP = Render.TextSize(fontBold, 12 * scale, phaseTxt)
+    Render.Text(fontBold, 12 * scale, phaseTxt, Vec2(x1, top), FadeColor(Config.Colors.TextPrimary, aMul))
+    if #d.picks > 0 then
+        local cnt = string.format("%d/%d", locked, #d.picks)
+        local sCnt = Render.TextSize(fontMain, 10.5 * scale, cnt)
+        Render.Text(fontMain, 10.5 * scale, cnt, Vec2(math.floor(x1 + sP.x + 8 * scale), math.floor(top + (sP.y - sCnt.y) / 2)), FadeColor(Config.Colors.TextMuted, aMul))
+    end
+
+    if d.remaining then
+        local tTxt = Journey.FormatClock(d.remaining)
+        local sT = Render.TextSize(fontBold, 12 * scale, tTxt)
+        local urgent = d.remaining <= 10
+        local tCol = urgent and Color(255, 159, 10, 255) or Config.Colors.TextPrimary
+        Render.Text(fontBold, 12 * scale, tTxt, Vec2(x2 - sT.x, top), FadeColor(tCol, aMul))
+        local rr = 5.5 * scale
+        local rc = Vec2(math.floor(x2 - sT.x - 7 * scale - rr), math.floor(top + sT.y / 2))
+        local frac = (d.phaseMax and d.phaseMax > 0) and math.min(1, d.remaining / d.phaseMax) or 1
+        Render.Circle(rc, rr, FadeColor(Color(255, 255, 255, 40), aMul), math.max(1.5, 1.8 * scale), 0, 1.0, false, 32)
+        Render.Circle(rc, rr, FadeColor(urgent and tCol or Config.Colors.Accent, aMul), math.max(1.5, 1.8 * scale), 270, frac, true, 32)
+    end
+
+    local gap = math.floor(6 * scale)
+    local slotW = math.floor((x2 - x1 - 4 * gap) / 5)
+    local slotH = math.floor(slotW * 9 / 16)
+    local slotY = math.floor(top + 22 * scale)
+    local rad = math.floor(6 * scale)
+    for i = 1, 5 do
+        local sx = math.floor(x1 + (i - 1) * (slotW + gap))
+        local p = d.picks[i]
+        local p1, p2 = Vec2(sx, slotY), Vec2(sx + slotW, slotY + slotH)
+        Render.FilledRect(p1, p2, FadeColor(Color(255, 255, 255, 14), aMul), rad)
+        if p and p.hero then
+            local h = GetCachedImage("panorama/images/heroes/" .. p.hero .. "_png.vtex_c")
+            if h then
+                Render.Image(h, p1, Vec2(slotW, slotH), FadeColor(Color(255, 255, 255, 255), aMul * (p.locked and 1.0 or 0.38)), rad)
+            end
+        end
+        if p and p.me then
+            Render.Rect(p1, p2, FadeColor(Config.Colors.Accent, aMul), rad, Enum.DrawFlags.None, 1.5)
+        else
+            Render.Rect(p1, p2, FadeColor(Color(255, 255, 255, 22), aMul), rad, Enum.DrawFlags.None, 1.0)
+        end
+    end
+
+    if #d.bans > 0 then
+        local by = math.floor(slotY + slotH + 10 * scale)
+        local isz = math.floor(16 * scale)
+        local bTxt = L("Баны", "Bans")
+        local sB = Render.TextSize(fontMain, 10 * scale, bTxt)
+        Render.Text(fontMain, 10 * scale, bTxt, Vec2(x1, math.floor(by + (isz - sB.y) / 2)), FadeColor(Config.Colors.TextMuted, aMul))
+        local bx = math.floor(x1 + sB.x + 8 * scale)
+        local red = FadeColor(Color(255, 69, 58, 200), aMul)
+        for _, unit in ipairs(d.bans) do
+            if bx + isz > x2 then break end
+            local h = GetCachedImage("panorama/images/heroes/icons/" .. unit .. "_png.vtex_c")
+            if h then
+                Render.Image(h, Vec2(bx, by), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul * 0.55), math.floor(3 * scale))
+            end
+            Render.Line(Vec2(bx + 2 * scale, by + isz - 2 * scale), Vec2(bx + isz - 2 * scale, by + 2 * scale), red, 1.5)
+            bx = bx + isz + math.floor(4 * scale)
+        end
+    end
 end
 
 local function RenderModularIdlePill(layout, alphaMul, yOffset)
@@ -5261,8 +5690,9 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
     end
     local curBorder = borderCol
     if StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
-        local p = 0.55 + 0.45 * math.sin(os.clock() * 8.0)
-        curBorder = Color(52, 199, 89, math.floor(255 * p))
+        local p = Journey.Accepted and 0.45 or (0.45 + 0.30 * math.sin(os.clock() * 4.0))
+        local c = (Journey.Ready.declined > 0) and Config.Colors.Red or Color(52, 199, 89, 255)
+        curBorder = Color(c.r, c.g, c.b, math.floor(255 * p))
     end
     Render.Rect(p1, p2, FadeColor(curBorder, a), radius, Enum.DrawFlags.None, thickness or 1.0)
 end
@@ -5792,6 +6222,30 @@ local function RenderHUDDrawer(layout, dt)
     end
 end
 
+local TruncateCache = {}
+local function TruncateToWidth(font, size, text, maxW)
+    local key = text .. "|" .. math.floor(size * 10) .. "|" .. math.floor(maxW)
+    local hit = TruncateCache[key]
+    if hit then return hit end
+    local result = text
+    if Render.TextSize(font, size, text).x > maxW then
+        local chars = {}
+        for ch in string.gmatch(text, "[\0-\x7F\xC2-\xF4][\x80-\xBF]*") do
+            chars[#chars + 1] = ch
+        end
+        result = "…"
+        for n = #chars - 1, 1, -1 do
+            local candidate = (table.concat(chars, "", 1, n):gsub("%s+$", "")) .. "…"
+            if Render.TextSize(font, size, candidate).x <= maxW then
+                result = candidate
+                break
+            end
+        end
+    end
+    TruncateCache[key] = result
+    return result
+end
+
 local function RenderDeferredNotifBubble(layout, notif)
     local scale = layout.scale
     local now = os.clock()
@@ -5807,12 +6261,14 @@ local function RenderDeferredNotifBubble(layout, notif)
     local fontBold = Config.Fonts.Bold
     local bubbleH = math.floor(Config.Dimensions.CompactH * scale)
     local bubbleR = math.floor(Config.Dimensions.CompactRadius * scale)
-    local padX = math.floor(8 * scale)
-    local iconSize = math.floor(16 * scale)
-    local gap = math.floor(6 * scale)
+
+    local padX = math.floor(10 * scale)
+    local iconSize = math.floor(15 * scale)
+    local gap = math.floor(9 * scale)
     local title = notif.Title or notif.Tag or ""
     local titleSize = 10.5 * scale
-    local textW = math.min(math.floor(150 * scale), Render.TextSize(fontBold, titleSize, title).x)
+    title = TruncateToWidth(fontBold, titleSize, title, math.floor(170 * scale))
+    local textW = Render.TextSize(fontBold, titleSize, title).x
     local fullW = padX + iconSize + gap + textW + padX
     local bubbleW = math.floor(bubbleH + (fullW - bubbleH) * grow)
     local bx = math.floor(layout.x + layout.w + 8 * scale)
@@ -5829,11 +6285,20 @@ local function RenderDeferredNotifBubble(layout, notif)
 
     local iconX = math.floor(bx + padX)
     local iconY = math.floor(by + (bubbleH - iconSize) / 2)
+    local iconC = Vec2(iconX + iconSize / 2, iconY + iconSize / 2)
     local hIcon = GetCachedImage(notif.Icon, notif.FallbackSvg)
     if hIcon then
-        Render.Image(hIcon, Vec2(iconX, iconY), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 255), aMul), 3 * scale)
+        Render.Image(hIcon, Vec2(iconX, iconY), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 255), aMul), iconSize / 2)
     else
-        Render.FilledCircle(Vec2(iconX + iconSize / 2, iconY + iconSize / 2), iconSize * 0.4, FadeColor(notif.AccentColor or Config.Colors.Accent, aMul), 0, 1.0, 16)
+        Render.FilledCircle(iconC, iconSize * 0.4, FadeColor(notif.AccentColor or Config.Colors.Accent, aMul), 0, 1.0, 16)
+    end
+
+    local remain = math.max(0.0, 1.0 - elapsed / dur)
+    local ringR = iconSize / 2 + 2.5 * scale
+    local ringT = math.max(1.0, 1.4 * scale)
+    Render.Circle(iconC, ringR, FadeColor(Color(255, 255, 255, 34), aMul), ringT, 0, 1.0, false, 40)
+    if remain > 0.01 then
+        Render.Circle(iconC, ringR, FadeColor(notif.AccentColor or Config.Colors.Accent, aMul), ringT, 270, remain, true, 40)
     end
 
     local tx = iconX + iconSize + gap
@@ -5841,16 +6306,8 @@ local function RenderDeferredNotifBubble(layout, notif)
     if availW > 4 then
         local ts = Render.TextSize(fontBold, titleSize, title)
         Render.PushClip(Vec2(tx, by), Vec2(tx + availW, by + bubbleH), true)
-        RenderMarqueeText(fontBold, titleSize, title, tx, by + (bubbleH - ts.y) / 2 - 1, availW, FadeColor(Config.Colors.TextPrimary, aMul), scale, true)
+        Render.Text(fontBold, titleSize, title, Vec2(tx, by + (bubbleH - ts.y) / 2 - 1), FadeColor(Config.Colors.TextPrimary, aMul))
         Render.PopClip()
-    end
-
-    local remain = math.max(0.0, 1.0 - elapsed / dur)
-    local lineInset = bubbleR * 0.6
-    local lineW = (bubbleW - lineInset * 2) * remain
-    if lineW > 1 then
-        local ly = by + bubbleH - math.floor(2.5 * scale)
-        Render.FilledRect(Vec2(bx + lineInset, ly), Vec2(bx + lineInset + lineW, ly + math.max(1, math.floor(1.5 * scale))), FadeColor(notif.AccentColor or Config.Colors.Accent, aMul * 0.85), 1)
     end
 end
 
@@ -6012,23 +6469,35 @@ local function RenderSecondarySatelliteBubble(layout)
 end
 
 local function RenderMenuClosedHint(layout)
-    if not UI.Media.Hints:Get() then return end
     if not Menu.Opened or not Menu.Opened() then return end
     if HUDCustomizer.IsOpen then return end
     if DragState.IsDragging then return end
 
+    local lines = CollectStatusHints()
+    if UI.Media.Hints:Get() then
+        table.insert(lines, { text = L("Ctrl + ЛКМ : Перемещение   •   ПКМ : Редактор виджетов", "Ctrl + LMB : Drag   •   RMB : Quick HUD") })
+    end
+    if #lines == 0 then return end
+
     local scale = layout.scale
     local fontMain = Config.Fonts.Main
-    local hintText = L("Ctrl + ЛКМ : Перемещение   •   ПКМ : Редактор виджетов", "Ctrl + LMB : Drag   •   RMB : Quick HUD")
-    local htSize = Render.TextSize(fontMain, 9.5 * scale, hintText)
-    local hBoxW = math.floor(htSize.x + 18 * scale)
-    local hBoxH = math.floor(18 * scale)
-    local hBoxX = math.floor(layout.x + (layout.w - hBoxW) / 2)
-    local hintY = math.floor(layout.y + layout.h + 8 * scale)
-
-    Render.FilledRect(Vec2(hBoxX, hintY), Vec2(hBoxX + hBoxW, hintY + hBoxH), Config.Colors.HintBg, 9 * scale)
-    Render.Rect(Vec2(hBoxX, hintY), Vec2(hBoxX + hBoxW, hintY + hBoxH), Config.Colors.HintBorder, 9 * scale, Enum.DrawFlags.None, 1.0)
-    Render.Text(fontMain, 9.5 * scale, hintText, Vec2(hBoxX + 9 * scale, hintY + (hBoxH - htSize.y) / 2 - 1), Config.Colors.TextSecondary)
+    local boxH = math.floor(18 * scale)
+    local y = math.floor(layout.y + layout.h + 8 * scale)
+    for _, line in ipairs(lines) do
+        local ts = Render.TextSize(fontMain, 9.5 * scale, line.text)
+        local dotW = line.dot and math.floor(11 * scale) or 0
+        local boxW = math.floor(ts.x + 18 * scale + dotW)
+        local x = math.floor(layout.x + (layout.w - boxW) / 2)
+        Render.FilledRect(Vec2(x, y), Vec2(x + boxW, y + boxH), Config.Colors.HintBg, 9 * scale)
+        Render.Rect(Vec2(x, y), Vec2(x + boxW, y + boxH), Config.Colors.HintBorder, 9 * scale, Enum.DrawFlags.None, 1.0)
+        local tx = x + 9 * scale
+        if line.dot then
+            Render.FilledCircle(Vec2(tx + 3 * scale, y + boxH / 2), 3 * scale, line.dot, 0, 1.0, 12)
+            tx = tx + dotW
+        end
+        Render.Text(fontMain, 9.5 * scale, line.text, Vec2(tx, y + (boxH - ts.y) / 2 - 1), Config.Colors.TextSecondary)
+        y = y + boxH + math.floor(5 * scale)
+    end
 end
 
 local function RenderCompactMedia(layout, alphaMul, yOffset)
@@ -6597,14 +7066,25 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local progressW = math.floor(layout.w - pad * 2)
     local progressH = math.floor(4.5 * scale)
 
-    local curPos = MediaData.PosSmooth
     local duration = math.max(1, MediaData.Duration)
+    local curPos = MediaData.PosSmooth
+    local barX1 = layout.x + pad
+    local barX2 = layout.x + pad + progressW
+    if SeekDrag.Active then
+        local mx = Input.GetCursorPos()
+        SeekDrag.Frac = math.max(0.0, math.min(1.0, (mx - barX1) / math.max(1, progressW)))
+        curPos = SeekDrag.Frac * duration
+    end
     local progressPct = math.min(1.0, math.max(0.0, curPos / duration))
 
-    Render.FilledRect(Vec2(layout.x + pad, progressY), Vec2(layout.x + pad + progressW, progressY + progressH), FadeColor(Config.Colors.TrackProgressBg, aMul), 2.5 * scale)
+    local barH = progressH + 3.5 * scale * SeekDrag.Grow
+    local barY = progressY + progressH / 2 - barH / 2
+    local barR = barH / 2
+    Render.FilledRect(Vec2(barX1, barY), Vec2(barX2, barY + barH), FadeColor(Config.Colors.TrackProgressBg, aMul), barR)
     if progressPct > 0 then
-        Render.FilledRect(Vec2(layout.x + pad, progressY), Vec2(layout.x + pad + progressW * progressPct, progressY + progressH), FadeColor(Config.Colors.TextPrimary, aMul), 2.5 * scale)
+        Render.FilledRect(Vec2(barX1, barY), Vec2(barX1 + progressW * progressPct, barY + barH), FadeColor(Config.Colors.TextPrimary, aMul), barR)
     end
+    ButtonHits.MediaSeek = { x1 = barX1, y1 = progressY - 8 * scale, x2 = barX2, y2 = progressY + progressH + 8 * scale }
 
     local posText = FormatTime(curPos)
     local remSec = math.max(0, duration - curPos)
@@ -7461,11 +7941,15 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
     elseif state == StateMachine.States.LARGE_IDLE then
         RenderLargeIdle(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.MENU_IDLE then
-        RenderMenuIdlePill(layout, alphaMul, yOffset)
+        Journey.RenderIdle(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.MENU_SEARCHING then
-        RenderMenuSearchingPill(layout, alphaMul, yOffset)
+        Journey.RenderSearching(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.MENU_MATCH_FOUND then
-        RenderMenuMatchFoundPill(layout, alphaMul, yOffset)
+        Journey.RenderMatchFound(layout, alphaMul, yOffset)
+    elseif state == StateMachine.States.MENU_LOADING then
+        Journey.RenderLoading(layout, alphaMul, yOffset)
+    elseif state == StateMachine.States.DRAFT then
+        Journey.RenderDraft(layout, alphaMul, yOffset)
     end
 end
 
@@ -7771,6 +8255,7 @@ function DynamicIsland.OnUpdateEx()
     end
     HandleInteractions()
     PollMediaBridge()
+    PollBridgeStatus()
 end
 
 function DynamicIsland.OnScriptsLoaded()

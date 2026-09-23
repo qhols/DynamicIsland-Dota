@@ -12,7 +12,7 @@ namespace MediaBridge;
 public record CommandResponse(string status, int volume, bool is_liked);
 public record FocusResponse(string status, bool focused);
 public record SoundResponse(string status);
-public record StatusResponse(string status, int sounds_loaded, string sound_output, string sound_error, string media_sessions);
+public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions);
 
 [JsonSerializable(typeof(MediaInfo))]
 [JsonSerializable(typeof(CommandResponse))]
@@ -48,6 +48,7 @@ internal static class Program
 
         SoundEngine.Init(exeDir);
         AppAudioControl.StartFocusWatcher();
+        UpdateChecker.Start();
 
         var listener = new HttpListener();
         listener.Prefixes.Add("http://127.0.0.1:45455/");
@@ -140,6 +141,15 @@ internal static class Program
                 };
                 await WriteJsonAsync(response, data, AppJson.Context.MediaInfo);
             }
+            else if (path == "/media/seek")
+            {
+                bool ok = false;
+                if (double.TryParse(request.QueryString["pos"], NumberStyles.Float, CultureInfo.InvariantCulture, out double pos))
+                {
+                    ok = await MediaSessionService.SeekAsync(pos);
+                }
+                await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
+            }
             else if (path is "/media/playpause" or "/media/next" or "/media/prev" or "/media/shuffle"
                      or "/media/repeat" or "/media/like" or "/media/volup" or "/media/voldown")
             {
@@ -187,7 +197,7 @@ internal static class Program
             }
             else if (path == "/status")
             {
-                await WriteJsonAsync(response, new StatusResponse("ok", SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState), AppJson.Context.StatusResponse);
+                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState), AppJson.Context.StatusResponse);
             }
             else
             {

@@ -488,6 +488,38 @@ public static class MediaSessionService
 
     public static MediaInfo? LastValidData => _lastValidData;
 
+    public static async Task<bool> SeekAsync(double seconds)
+    {
+        try
+        {
+            var mgr = await GetManagerAsync();
+            if (mgr == null) return false;
+            GlobalSystemMediaTransportControlsSession? session;
+            try { session = FindBestSession(mgr); }
+            catch { DropManager(); return false; }
+            if (session == null) return false;
+
+            var timeline = session.GetTimelineProperties();
+            double start = timeline?.StartTime.TotalSeconds ?? 0;
+            double end = timeline?.EndTime.TotalSeconds ?? 0;
+            double target = Math.Max(0.0, seconds);
+            if (end > start) target = Math.Min(target, Math.Max(0.0, end - start - 0.5));
+
+            long ticks = Math.Max(1_000_000L, (long)((start + target) * 10_000_000));
+            bool ok = await WinRtAsync.WithTimeout(session.TryChangePlaybackPositionAsync(ticks), 800);
+            if (ok)
+            {
+                _posAnchorSeconds = target;
+                _posAnchorWallClock = DateTime.UtcNow;
+            }
+            return ok;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static async Task<float?> HandleMediaCommandAsync(string cmd)
     {
         try
