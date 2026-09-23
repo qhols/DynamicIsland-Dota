@@ -323,6 +323,9 @@ local DynamicIsland = {}
 
 local localization = qLocalization.new({
     en = {
+        di_ui_spotify_no_port = "Spotify is running without the debug port, likes won't work. Restart it",
+        di_ui_likes_unavailable = "Likes unavailable",
+        di_ui_restart_spotify = "Restart Spotify from the taskbar or Start",
         di_rampage_timer = "Rampage timer",
         di_rampage_timer_tip = "After an Ultra Kill, shows how long you have left to get the fifth",
         di_streak_mega_kill = "Mega Kill!",
@@ -714,6 +717,9 @@ local localization = qLocalization.new({
         di_priority_power_rune_cycle = "Power Rune Cycle"
     },
     ru = {
+        di_ui_spotify_no_port = "Спотифай запущен без порта, лайки не работают. Перезапусти его",
+        di_ui_likes_unavailable = "Лайки недоступны",
+        di_ui_restart_spotify = "Перезапусти Спотифай с панели задач или из Пуска",
         di_rampage_timer = "Таймер рампаги",
         di_rampage_timer_tip = "После Ультра-убийства показывает, сколько осталось до Рампаги",
         di_streak_mega_kill = "Мега-убийство!",
@@ -3571,6 +3577,7 @@ local function PollBridgeStatus()
         BridgeStatus.Version = string.match(body, '"version"%s*:%s*"([^"]*)"') or ""
         BridgeStatus.Latest = string.match(body, '"latest_version"%s*:%s*"([^"]*)"') or ""
         BridgeStatus.MediaSessions = string.match(body, '"media_sessions"%s*:%s*"([^"]*)"') or ""
+        BridgeStatus.SpotifyDebug = string.match(body, '"spotify_debug"%s*:%s*"([^"]*)"') or ""
     end, "bridge_status")
 end
 
@@ -3598,6 +3605,9 @@ local function CollectStatusHints()
         table.insert(out, { text = L("di_ui_bridge_offline"), dot = Color(255, 159, 10, 255) })
     elseif online and BridgeStatus.MediaSessions == "timeout" then
         table.insert(out, { text = L("di_ui_media_service_down"), dot = Color(255, 159, 10, 255) })
+    end
+    if online and BridgeStatus.SpotifyDebug == "closed" and UI and UI.Media and UI.Media.SpotifyLike:Get() then
+        table.insert(out, { text = L("di_ui_spotify_no_port"), dot = Color(255, 159, 10, 255) })
     end
 
     local latest = ParseVersion(BridgeStatus.Latest)
@@ -6351,6 +6361,18 @@ local function HandleInteractions()
                 clickedButton = true
             elseif ButtonHits.MediaLike and cx >= ButtonHits.MediaLike.x1 and cx <= ButtonHits.MediaLike.x2 and cy >= ButtonHits.MediaLike.y1 and cy <= ButtonHits.MediaLike.y2 then
                 ButtonSprings.MediaLike.scale = 0.65
+                if BridgeStatus.SpotifyDebug == "closed" and string.find(string.lower(MediaData.App or ""), "spotify", 1, true) then
+                    DynamicIsland.PushNotification({
+                        Type = "spotify_like",
+                        Tag = "SPOTIFY",
+                        Title = L("di_ui_likes_unavailable"),
+                        Subtitle = L("di_ui_restart_spotify"),
+                        AccentColor = Color(255, 159, 10, 255),
+                        IconType = "svg",
+                        FallbackSvg = "heart_outline"
+                    })
+                    return
+                end
                 local isNowLiked = not MediaData.IsLiked
                 MediaData.IsLiked = isNowLiked
                 if MediaData.LastTrackKey ~= "" then

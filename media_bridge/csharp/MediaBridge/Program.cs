@@ -12,7 +12,7 @@ namespace MediaBridge;
 public record CommandResponse(string status, int volume, bool is_liked);
 public record FocusResponse(string status, bool focused);
 public record SoundResponse(string status);
-public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions);
+public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions, string spotify_debug);
 
 [JsonSerializable(typeof(MediaInfo))]
 [JsonSerializable(typeof(CommandResponse))]
@@ -52,6 +52,7 @@ internal static class Program
         SoundEngine.Init(exeDir);
         AppAudioControl.StartFocusWatcher();
         UpdateChecker.Start();
+        SpotifyFlags.StartHealer();
         DotaLifetime.StartExitWatcher();
 
         var listener = new HttpListener();
@@ -201,7 +202,7 @@ internal static class Program
             }
             else if (path == "/status")
             {
-                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState), AppJson.Context.StatusResponse);
+                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync()), AppJson.Context.StatusResponse);
             }
             else
             {
