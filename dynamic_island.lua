@@ -323,6 +323,53 @@ local DynamicIsland = {}
 
 local localization = qLocalization.new({
     en = {
+        di_tab_focus = "Focus",
+        di_tab_focus_group = "Do Not Disturb",
+        di_tab_reminders_group = "Reminders",
+        di_focus_key = "Toggle key",
+        di_focus_key_tip = "Or tap the Do Not Disturb tile in the expanded island",
+        di_focus_until = "Turn off",
+        di_focus_until_off = "When I turn it off",
+        di_focus_until_10 = "In 10 minutes",
+        di_focus_until_20 = "In 20 minutes",
+        di_focus_until_match = "When the match ends",
+        di_focus_urgent = "Let urgent alerts through",
+        di_focus_urgent_tip = "Alerts with priority 5 still show up",
+        di_focus_name = "Do Not Disturb",
+        di_focus_on = "On",
+        di_focus_off = "Off",
+        di_focus_summary_tag = "DO NOT DISTURB",
+        di_focus_summary = "Alerts hidden: %d",
+        di_focus_summary_sub = "Notifications are back on",
+        di_rem_tag = "REMINDER",
+        di_rem_default = "Reminder %d",
+        di_rem_text_tip = "What the island shows",
+        di_rem_every_tip = "0 means once",
+        di_priority_reminder = "Custom Reminder",
+        di_rem_1 = "Reminder 1",
+        di_rem_gear_1 = "Reminder 1",
+        di_rem1_text = "Text",
+        di_rem1_min = "Minute",
+        di_rem1_sec = "Second",
+        di_rem1_every = "Repeat every, min",
+        di_rem_2 = "Reminder 2",
+        di_rem_gear_2 = "Reminder 2",
+        di_rem2_text = "Text",
+        di_rem2_min = "Minute",
+        di_rem2_sec = "Second",
+        di_rem2_every = "Repeat every, min",
+        di_rem_3 = "Reminder 3",
+        di_rem_gear_3 = "Reminder 3",
+        di_rem3_text = "Text",
+        di_rem3_min = "Minute",
+        di_rem3_sec = "Second",
+        di_rem3_every = "Repeat every, min",
+        di_rem_4 = "Reminder 4",
+        di_rem_gear_4 = "Reminder 4",
+        di_rem4_text = "Text",
+        di_rem4_min = "Minute",
+        di_rem4_sec = "Second",
+        di_rem4_every = "Repeat every, min",
         di_rune_names_double_damage = "Double Damage",
         di_rune_names_haste = "Haste",
         di_rune_names_illusion = "Illusion",
@@ -667,6 +714,53 @@ local localization = qLocalization.new({
         di_priority_spotify_like = "Spotify Like Confirmation",
     },
     ru = {
+        di_tab_focus = "Фокус",
+        di_tab_focus_group = "Не беспокоить",
+        di_tab_reminders_group = "Напоминания",
+        di_focus_key = "Клавиша",
+        di_focus_key_tip = "Или плитка «Не беспокоить» в развёрнутом островке",
+        di_focus_until = "Выключить",
+        di_focus_until_off = "Когда выключу сам",
+        di_focus_until_10 = "Через 10 минут",
+        di_focus_until_20 = "Через 20 минут",
+        di_focus_until_match = "После матча",
+        di_focus_urgent = "Пропускать срочные",
+        di_focus_urgent_tip = "Оповещения с приоритетом 5 всё равно покажутся",
+        di_focus_name = "Не беспокоить",
+        di_focus_on = "Вкл",
+        di_focus_off = "Выкл",
+        di_focus_summary_tag = "НЕ БЕСПОКОИТЬ",
+        di_focus_summary = "Скрыто уведомлений: %d",
+        di_focus_summary_sub = "Уведомления снова включены",
+        di_rem_tag = "НАПОМИНАНИЕ",
+        di_rem_default = "Напоминание %d",
+        di_rem_text_tip = "Что покажет островок",
+        di_rem_every_tip = "0 значит один раз",
+        di_priority_reminder = "Своё напоминание",
+        di_rem_1 = "Напоминание 1",
+        di_rem_gear_1 = "Напоминание 1",
+        di_rem1_text = "Текст",
+        di_rem1_min = "Минута",
+        di_rem1_sec = "Секунда",
+        di_rem1_every = "Повтор каждые, мин",
+        di_rem_2 = "Напоминание 2",
+        di_rem_gear_2 = "Напоминание 2",
+        di_rem2_text = "Текст",
+        di_rem2_min = "Минута",
+        di_rem2_sec = "Секунда",
+        di_rem2_every = "Повтор каждые, мин",
+        di_rem_3 = "Напоминание 3",
+        di_rem_gear_3 = "Напоминание 3",
+        di_rem3_text = "Текст",
+        di_rem3_min = "Минута",
+        di_rem3_sec = "Секунда",
+        di_rem3_every = "Повтор каждые, мин",
+        di_rem_4 = "Напоминание 4",
+        di_rem_gear_4 = "Напоминание 4",
+        di_rem4_text = "Текст",
+        di_rem4_min = "Минута",
+        di_rem4_sec = "Секунда",
+        di_rem4_every = "Повтор каждые, мин",
         di_rune_names_double_damage = "Двойной урон",
         di_rune_names_haste = "Ускорение",
         di_rune_names_illusion = "Иллюзии",
@@ -1231,7 +1325,8 @@ local StateMachine = {
         COURIER_DELIVERED = 13,
         COURIER_LARGE = 14,
         MENU_LOADING = 15,
-        DRAFT = 16
+        DRAFT = 16,
+        FOCUS_BANNER = 17
     },
     Current = 1,
     TargetState = 1,
@@ -1509,6 +1604,9 @@ local NotificationQueue = {
 local SatelliteBounds = nil
 local MenuStateCandidate = { state = nil, since = 0 }
 
+local Focus = { Active = false, Mode = 0, Until = 0, StartedAt = 0, Suppressed = 0, BannerUntil = 0, BannerOn = true, Vis = 0, LastDraw = 0, PressAt = -10, ButtonAt = -10, Accent = Color(94, 92, 230, 255) }
+local Reminders = { Fired = {} }
+local Odometer = { States = {}, Widths = {}, WidthCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
 local SCRIPT_VERSION = "2.0.0"
@@ -1661,6 +1759,8 @@ local VectorIcons = {
     ["search"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#FFF" stroke-width="2.2"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="#FFF" stroke-width="2.2" stroke-linecap="round"/></svg>',
     ["check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><polyline points="4,12 9,17 20,6" fill="none" stroke="#34C759" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
+    ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M20.6 14.6A8.6 8.6 0 0 1 9.4 3.4a8.8 8.8 0 1 0 11.2 11.2z" fill="#FFFFFF"/></svg>',
+    ["bell"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3a6 6 0 0 0-6 6v4.3L4.4 16v1.2h15.2V16L18 13.3V9a6 6 0 0 0-6-6z" fill="#FFFFFF"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0z" fill="#FFFFFF"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
     ["pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="11" fill="#FF9500"/><rect x="7.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/><rect x="13.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/></svg>',
     ["volume"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>',
@@ -2581,9 +2681,75 @@ local function InitMenu()
             Neutral = gPriority:Slider("di_priority_neutral", 1, 5, 2, "%d"),
             Level = gPriority:Slider("di_priority_level", 1, 5, 1, "%d"),
             SpotifyLike = gPriority:Slider("di_priority_spotify_like", 1, 5, 1, "%d"),
-            Stack = gPriority:Slider("di_priority_stack", 1, 5, 2, "%d")
+            Stack = gPriority:Slider("di_priority_stack", 1, 5, 2, "%d"),
+            Reminder = gPriority:Slider("di_priority_reminder", 1, 5, 4, "%d")
         }
     }
+
+    local tFocus = tab:Create(L("di_tab_focus"))
+    local gFocus = tFocus:Create("di_tab_focus_group", Enum.GroupSide.Left)
+    local gRem = tFocus:Create("di_tab_reminders_group", Enum.GroupSide.Right)
+    UI.Focus = {
+        Key = gFocus:Bind("di_focus_key", Enum.ButtonCode.KEY_NONE, "\u{f186}"),
+        Until = gFocus:Combo("di_focus_until", { "di_focus_until_off", "di_focus_until_10", "di_focus_until_20", "di_focus_until_match" }, 0),
+        Urgent = gFocus:Switch("di_focus_urgent", true, "\u{f0f3}")
+    }
+    UI.Focus.Key:ToolTip("di_focus_key_tip")
+    UI.Focus.Until:Icon("\u{f017}")
+    UI.Focus.Urgent:ToolTip("di_focus_urgent_tip")
+    UI.Focus.Key:Properties(L("di_focus_name"))
+
+    UI.Reminders = UI.Reminders or {}
+    UI.Reminders.On1 = gRem:Switch("di_rem_1", false, "\u{f0f3}")
+    local gearR1 = UI.Reminders.On1:Gear("di_rem_gear_1")
+    UI.Reminders.Text1 = gearR1:Input("di_rem1_text", "", "\u{f036}")
+    UI.Reminders.Text1:ToolTip("di_rem_text_tip")
+    UI.Reminders.Min1 = gearR1:Slider("di_rem1_min", 0, 90, 10, "%d")
+    UI.Reminders.Min1:Icon("\u{f017}")
+    UI.Reminders.Sec1 = gearR1:Slider("di_rem1_sec", 0, 59, 0, "%d")
+    UI.Reminders.Sec1:Icon("\u{f017}")
+    UI.Reminders.Every1 = gearR1:Slider("di_rem1_every", 0, 30, 0, "%d")
+    UI.Reminders.Every1:Icon("\u{f01e}")
+    UI.Reminders.Every1:ToolTip("di_rem_every_tip")
+
+    UI.Reminders = UI.Reminders or {}
+    UI.Reminders.On2 = gRem:Switch("di_rem_2", false, "\u{f0f3}")
+    local gearR2 = UI.Reminders.On2:Gear("di_rem_gear_2")
+    UI.Reminders.Text2 = gearR2:Input("di_rem2_text", "", "\u{f036}")
+    UI.Reminders.Text2:ToolTip("di_rem_text_tip")
+    UI.Reminders.Min2 = gearR2:Slider("di_rem2_min", 0, 90, 20, "%d")
+    UI.Reminders.Min2:Icon("\u{f017}")
+    UI.Reminders.Sec2 = gearR2:Slider("di_rem2_sec", 0, 59, 0, "%d")
+    UI.Reminders.Sec2:Icon("\u{f017}")
+    UI.Reminders.Every2 = gearR2:Slider("di_rem2_every", 0, 30, 0, "%d")
+    UI.Reminders.Every2:Icon("\u{f01e}")
+    UI.Reminders.Every2:ToolTip("di_rem_every_tip")
+
+    UI.Reminders = UI.Reminders or {}
+    UI.Reminders.On3 = gRem:Switch("di_rem_3", false, "\u{f0f3}")
+    local gearR3 = UI.Reminders.On3:Gear("di_rem_gear_3")
+    UI.Reminders.Text3 = gearR3:Input("di_rem3_text", "", "\u{f036}")
+    UI.Reminders.Text3:ToolTip("di_rem_text_tip")
+    UI.Reminders.Min3 = gearR3:Slider("di_rem3_min", 0, 90, 30, "%d")
+    UI.Reminders.Min3:Icon("\u{f017}")
+    UI.Reminders.Sec3 = gearR3:Slider("di_rem3_sec", 0, 59, 0, "%d")
+    UI.Reminders.Sec3:Icon("\u{f017}")
+    UI.Reminders.Every3 = gearR3:Slider("di_rem3_every", 0, 30, 0, "%d")
+    UI.Reminders.Every3:Icon("\u{f01e}")
+    UI.Reminders.Every3:ToolTip("di_rem_every_tip")
+
+    UI.Reminders = UI.Reminders or {}
+    UI.Reminders.On4 = gRem:Switch("di_rem_4", false, "\u{f0f3}")
+    local gearR4 = UI.Reminders.On4:Gear("di_rem_gear_4")
+    UI.Reminders.Text4 = gearR4:Input("di_rem4_text", "", "\u{f036}")
+    UI.Reminders.Text4:ToolTip("di_rem_text_tip")
+    UI.Reminders.Min4 = gearR4:Slider("di_rem4_min", 0, 90, 40, "%d")
+    UI.Reminders.Min4:Icon("\u{f017}")
+    UI.Reminders.Sec4 = gearR4:Slider("di_rem4_sec", 0, 59, 0, "%d")
+    UI.Reminders.Sec4:Icon("\u{f017}")
+    UI.Reminders.Every4 = gearR4:Slider("di_rem4_every", 0, 30, 0, "%d")
+    UI.Reminders.Every4:Icon("\u{f01e}")
+    UI.Reminders.Every4:ToolTip("di_rem_every_tip")
 
     if UI.Media.AccentColor and UI.Media.AccentColor.SetCallback then
         UI.Media.AccentColor:SetCallback(function(w)
@@ -2871,7 +3037,8 @@ local NotifPriorityKey = {
     lotus = "Lotus",
     neutral = "Neutral",
     level = "Level",
-    spotify_like = "SpotifyLike"
+    spotify_like = "SpotifyLike",
+    reminder = "Reminder"
 }
 
 local DEFAULT_NOTIF_PRIORITY = 3
@@ -2906,8 +3073,12 @@ function DynamicIsland.PushNotification(notif)
     if not notif.Duration and UI and UI.Timings and UI.Timings.ToastDuration then
         notif.Duration = UI.Timings.ToastDuration:Get()
     end
-    HapticPlaySound("notification_toast", 0.45)
     notif.Priority = GetNotifPriority(notif)
+    if Focus.Blocks(notif) then
+        Focus.Suppressed = Focus.Suppressed + 1
+        return
+    end
+    HapticPlaySound("notification_toast", 0.45)
 
     if NotificationQueue.Active and notif.Priority > (NotificationQueue.Active.Priority or DEFAULT_NOTIF_PRIORITY) then
         table.insert(NotificationQueue.List, 1, NotificationQueue.Active)
@@ -2923,6 +3094,96 @@ function DynamicIsland.PushNotification(notif)
         end
     else
         table.insert(NotificationQueue.List, notif)
+    end
+end
+
+function Focus.Blocks(notif)
+    if not Focus.Active or notif.FocusExempt then return false end
+    local urgent = UI and UI.Focus and UI.Focus.Urgent and UI.Focus.Urgent:Get()
+    if urgent and (notif.Priority or 0) >= 5 then return false end
+    return true
+end
+
+function Focus.Set(on)
+    if on == Focus.Active then return end
+    local now = os.clock()
+    Focus.Active = on
+    Focus.BannerOn = on
+    Focus.BannerUntil = now + 1.8
+    if on then
+        Focus.StartedAt = now
+        Focus.Suppressed = 0
+        Focus.Mode = (UI and UI.Focus and UI.Focus.Until) and UI.Focus.Until:Get() or 0
+        local d = (Focus.Mode == 1 and 600) or (Focus.Mode == 2 and 1200) or nil
+        Focus.Until = d and (now + d) or 0
+        HapticPlaySound("island_expand", 0.4)
+    else
+        Focus.Until = 0
+        HapticPlaySound("island_collapse", 0.4)
+        if Focus.Suppressed > 0 then
+            Focus.SummaryPending = Focus.Suppressed
+            Focus.Suppressed = 0
+        end
+    end
+end
+
+function Focus.Tick(nowClk)
+    local key = UI and UI.Focus and UI.Focus.Key
+    if key and key:IsPressed() and not (Input.IsInputCaptured and Input.IsInputCaptured()) then
+        Focus.Set(not Focus.Active)
+    end
+    if Focus.Active and Focus.Until > 0 and nowClk >= Focus.Until then
+        Focus.Set(false)
+    end
+    if Focus.SummaryPending and nowClk >= Focus.BannerUntil then
+        local n = Focus.SummaryPending
+        Focus.SummaryPending = nil
+        DynamicIsland.PushNotification({
+            Type = "focus",
+            FocusExempt = true,
+            PriorityOverride = 3,
+            Tag = L("di_focus_summary_tag"),
+            Title = string.format(L("di_focus_summary"), n),
+            Subtitle = L("di_focus_summary_sub"),
+            AccentColor = Focus.Accent,
+            IconType = "svg",
+            FallbackSvg = "moon",
+            Duration = 3.0
+        })
+    end
+end
+
+function Reminders.Tick()
+    local R = UI and UI.Reminders
+    if not R then return end
+    local okS, gs = pcall(GameRules.GetGameState)
+    if not okS or gs ~= 5 then return end
+    local mt = GetActualMatchTime()
+    if not mt or mt <= 0 then return end
+    for i = 1, 4 do
+        if R["On" .. i]:Get() then
+            local t0 = R["Min" .. i]:Get() * 60 + R["Sec" .. i]:Get()
+            local every = R["Every" .. i]:Get() * 60
+            if mt >= t0 then
+                local k = every > 0 and math.floor((mt - t0) / every) or 0
+                local target = t0 + k * every
+                if mt - target < 2 and Reminders.Fired[i] ~= target then
+                    Reminders.Fired[i] = target
+                    local txt = R["Text" .. i]:Get()
+                    if type(txt) ~= "string" or txt == "" then txt = string.format(L("di_rem_default"), i) end
+                    DynamicIsland.PushNotification({
+                        Type = "reminder",
+                        Tag = L("di_rem_tag"),
+                        Title = txt,
+                        Subtitle = FormatTime(target),
+                        AccentColor = Color(255, 159, 10, 255),
+                        IconType = "svg",
+                        FallbackSvg = "bell",
+                        Duration = 4.0
+                    })
+                end
+            end
+        end
     end
 end
 
@@ -5254,6 +5515,22 @@ local function HandleInteractions()
     MouseInput.LastWheelUp = isWheelUp
     MouseInput.LastWheelDown = isWheelDown
 
+    if isLeftClicked and not isCtrlOnly then
+        local fb = Focus.Bounds
+        if fb and cx >= fb.x1 and cx <= fb.x2 and cy >= fb.y1 and cy <= fb.y2 then
+            Focus.Set(false)
+            return
+        end
+        fb = Focus.Button
+        if fb and StateMachine.TargetState == StateMachine.States.LARGE_IDLE and (nowClk - Focus.ButtonAt) < 0.25
+            and cx >= fb.x1 and cx <= fb.x2 and cy >= fb.y1 and cy <= fb.y2 then
+            Focus.PressAt = nowClk
+            Focus.Set(not Focus.Active)
+            if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_MEDIUM) end
+            return
+        end
+    end
+
     local isHoverSatellite = false
     if SatelliteBounds and cx >= SatelliteBounds.x1 and cx <= SatelliteBounds.x2 and cy >= SatelliteBounds.y1 and cy <= SatelliteBounds.y2 then
         isHoverSatellite = true
@@ -5611,6 +5888,7 @@ local function HandleInteractions()
     end
 
     local inGame = Engine.IsInGame and Engine.IsInGame()
+    Focus.Tick(nowClk)
     local journeyPhase = Journey.GamePhase(inGame)
     if journeyPhase == "loading" then
         if Journey.LoadingSince == 0 then Journey.LoadingSince = nowClk end
@@ -5619,7 +5897,11 @@ local function HandleInteractions()
     end
     if journeyPhase then Journey.Reset() end
 
-    if journeyPhase and (not inGame or not NotificationQueue.Active) then
+    if Focus.BannerUntil > nowClk and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
+        if StateMachine.TargetState ~= StateMachine.States.FOCUS_BANNER then
+            TriggerStateTransition(StateMachine.States.FOCUS_BANNER)
+        end
+    elseif journeyPhase and (not inGame or not NotificationQueue.Active) then
         local want = (journeyPhase == "draft") and StateMachine.States.DRAFT or StateMachine.States.MENU_LOADING
         if want == StateMachine.States.DRAFT then Journey.PollDraft(nowClk) end
         if StateMachine.TargetState ~= want then
@@ -5680,7 +5962,7 @@ local function HandleInteractions()
                 if StateMachine.TargetState ~= StateMachine.States.COMPACT_FIGHT and StateMachine.TargetState ~= StateMachine.States.LARGE_FIGHT then
                     TriggerStateTransition(StateMachine.States.COMPACT_FIGHT)
                 end
-            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.MENU_LOADING or StateMachine.TargetState == StateMachine.States.DRAFT or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
+            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.MENU_LOADING or StateMachine.TargetState == StateMachine.States.DRAFT or StateMachine.TargetState == StateMachine.States.FOCUS_BANNER or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
                 local desired = (mediaActive and not HUDCustomizer.IsOpen) and StateMachine.States.COMPACT_MEDIA or StateMachine.States.COMPACT_IDLE
                 TriggerStateTransition(desired)
             elseif StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA or StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT then
@@ -5728,6 +6010,12 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetW = 268
         Config.Dimensions.CompactTargetH = 48
         Config.Dimensions.CompactTargetR = 24
+    elseif StateMachine.TargetState == StateMachine.States.FOCUS_BANNER then
+        local right = Focus.BannerOn and L("di_focus_on") or L("di_focus_off")
+        local contentW = Journey.LineWidth(layout.scale, L("di_focus_name"), right, true)
+        Config.Dimensions.CompactTargetW = math.max(170, math.ceil(((contentW / layout.scale) + 32) / 4) * 4)
+        Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
+        Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.DRAFT then
         local d = Journey.Draft
         Config.Dimensions.CompactTargetW = 340
@@ -6038,7 +6326,7 @@ local function DrawAlbumThumbnail(x, y, size, radius, alphaMul, scaleMul, custom
     end
 end
 
-function Journey.DrawLine(layout, aMul, yOff, drawIcon, label, labelCol, right, rightCol)
+function Journey.DrawLine(layout, aMul, yOff, drawIcon, label, labelCol, right, rightCol, rightId)
     local scale = layout.scale
     local fontBold = Config.Fonts.Bold
     local padX = math.floor(16 * scale)
@@ -6052,7 +6340,7 @@ function Journey.DrawLine(layout, aMul, yOff, drawIcon, label, labelCol, right, 
     Render.Text(fontBold, 11 * scale, label, Vec2(x, ty), FadeColor(labelCol, aMul))
     if right and right ~= "" then
         local sR = Render.TextSize(fontBold, 11 * scale, right)
-        Render.Text(fontBold, 11 * scale, right, Vec2(math.floor(layout.x + layout.w - padX - sR.x), ty), FadeColor(rightCol, aMul))
+        Odometer.Text(rightId, fontBold, 11 * scale, right, Vec2(math.floor(layout.x + layout.w - padX - sR.x), ty), FadeColor(rightCol, aMul))
     end
 end
 
@@ -6071,7 +6359,7 @@ function Journey.RenderIdle(layout, alphaMul, yOffset)
         if h then
             Render.Image(h, Vec2(x, math.floor(midY - sz / 2 + MenuIconOffsetY * layout.scale)), Vec2(sz, sz), FadeColor(Color(255, 255, 255, 150), aMul), 0)
         end
-    end, label, Config.Colors.TextSecondary, right, Config.Colors.TextPrimary)
+    end, label, Config.Colors.TextSecondary, right, Config.Colors.TextPrimary, "journey_clock")
 end
 
 function Journey.RenderSearching(layout, alphaMul, yOffset)
@@ -6079,7 +6367,7 @@ function Journey.RenderSearching(layout, alphaMul, yOffset)
     local label, right = Journey.SearchTexts()
     Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
         Journey.Spinner(x + sz / 2, midY, sz * 0.42, Config.Colors.Blue, aMul)
-    end, label, Config.Colors.TextPrimary, right, Color(100, 170, 255, 255))
+    end, label, Config.Colors.TextPrimary, right, Color(100, 170, 255, 255), "journey_search")
 end
 
 function Journey.RenderLoading(layout, alphaMul, yOffset)
@@ -6087,7 +6375,7 @@ function Journey.RenderLoading(layout, alphaMul, yOffset)
     local label, right = Journey.LoadingTexts(os.clock())
     Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
         Journey.Spinner(x + sz / 2, midY, sz * 0.42, Color(255, 255, 255, 230), aMul)
-    end, label, Config.Colors.TextPrimary, right, Config.Colors.TextMuted)
+    end, label, Config.Colors.TextPrimary, right, Config.Colors.TextMuted, "journey_load")
 end
 
 function Journey.RenderMatchFound(layout, alphaMul, yOffset)
@@ -6137,7 +6425,7 @@ function Journey.RenderMatchFound(layout, alphaMul, yOffset)
     end
     if centerTxt then
         local sC = Render.TextSize(fontBold, 11 * scale, centerTxt)
-        Render.Text(fontBold, 11 * scale, centerTxt, Vec2(math.floor(ringC.x - sC.x / 2), math.floor(midY - sC.y / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
+        Odometer.Text("journey_accept", fontBold, 11 * scale, centerTxt, Vec2(math.floor(ringC.x - sC.x / 2), math.floor(midY - sC.y / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
     else
         local h = GetVectorIcon(declined and "close" or "check")
         local isz = math.floor(12 * scale)
@@ -6227,7 +6515,7 @@ function Journey.RenderDraft(layout, alphaMul, yOffset)
         local sT = Render.TextSize(fontBold, 12 * scale, tTxt)
         local urgent = d.remaining <= 10
         local tCol = urgent and Color(255, 159, 10, 255) or Config.Colors.TextPrimary
-        Render.Text(fontBold, 12 * scale, tTxt, Vec2(x2 - sT.x, top), FadeColor(tCol, aMul))
+        Odometer.Text("journey_draft", fontBold, 12 * scale, tTxt, Vec2(x2 - sT.x, top), FadeColor(tCol, aMul))
         local rr = 5.5 * scale
         local rc = Vec2(math.floor(x2 - sT.x - 7 * scale - rr), math.floor(top + sT.y / 2))
         local frac = (d.phaseMax and d.phaseMax > 0) and math.min(1, d.remaining / d.phaseMax) or 1
@@ -6331,11 +6619,11 @@ local function RenderModularIdlePill(layout, alphaMul, yOffset)
             end
 
             local tx = drawX + iconSz + math.floor(5 * scale)
-            Render.Text(chip.font, 11 * scale, chip.text, Vec2(tx, ty), chip.color)
+            Odometer.Text((chip.id ~= "fps" and chip.id ~= "ping") and ("chip_" .. chip.id) or nil, chip.font, 11 * scale, chip.text, Vec2(tx, ty), chip.color)
             curX = curX + chip.width
         else
             local tx = drawX
-            Render.Text(chip.font, 11 * scale, chip.text, Vec2(tx, ty), chip.color)
+            Odometer.Text((chip.id ~= "fps" and chip.id ~= "ping") and ("chip_" .. chip.id) or nil, chip.font, 11 * scale, chip.text, Vec2(tx, ty), chip.color)
             curX = curX + chip.width
         end
 
@@ -6383,6 +6671,165 @@ end
 local function EaseOutBack(x)
     local u = math.min(1, math.max(0, x)) - 1
     return 1 + 2.05 * u * u * u + 1.05 * u * u
+end
+
+function Odometer.Width(font, size, str)
+    local key = str .. "|" .. size .. "|" .. tostring(font)
+    local w = Odometer.Widths[key]
+    if not w then
+        if Odometer.WidthCount > 3000 then
+            Odometer.Widths, Odometer.WidthCount = {}, 0
+        end
+        w = Render.TextSize(font, size, str).x
+        Odometer.Widths[key] = w
+        Odometer.WidthCount = Odometer.WidthCount + 1
+    end
+    return w
+end
+
+function Odometer.Chars(str)
+    local t = {}
+    for ch in string.gmatch(str, "[\0-\x7F\xC2-\xF4][\x80-\xBF]*") do
+        t[#t + 1] = ch
+    end
+    return t
+end
+
+function Odometer.Text(id, font, size, text, pos, col)
+    if not id then
+        Render.Text(font, size, text, pos, col)
+        return
+    end
+    local now = os.clock()
+    local st = Odometer.States[id]
+    if not st then
+        st = { cur = text, prev = nil, t0 = 0, dir = 1 }
+        Odometer.States[id] = st
+    elseif st.cur ~= text then
+        local a = tonumber((st.cur:gsub("%D", "")))
+        local b = tonumber((text:gsub("%D", "")))
+        st.dir = (a and b and b < a) and -1 or 1
+        st.prev, st.cur, st.t0 = st.cur, text, now
+    end
+    local p = (now - st.t0) / 0.42
+    if not st.prev or p >= 1 then
+        st.prev = nil
+        Render.Text(font, size, text, pos, col)
+        return
+    end
+    local e = EaseOutCubic(p)
+    local lh = Render.TextSize(font, size, "0").y
+    local shift = lh * 0.95
+    local alpha = col.a or 255
+    local oldCol = Color(col.r, col.g, col.b, math.floor(alpha * (1 - e)))
+    local newCol = Color(col.r, col.g, col.b, math.floor(alpha * e))
+    local newC, oldC = Odometer.Chars(text), Odometer.Chars(st.prev)
+    local wMax = math.max(Odometer.Width(font, size, text), Odometer.Width(font, size, st.prev))
+    Render.PushClip(Vec2(pos.x - 2, pos.y), Vec2(pos.x + wMax + 2, pos.y + lh), true)
+    if #newC == #oldC then
+        local prefix = ""
+        for i = 1, #newC do
+            local x = pos.x + (i > 1 and Odometer.Width(font, size, prefix) or 0)
+            if newC[i] == oldC[i] then
+                Render.Text(font, size, newC[i], Vec2(x, pos.y), col)
+            else
+                Render.Text(font, size, oldC[i], Vec2(x, pos.y - st.dir * shift * e), oldCol)
+                Render.Text(font, size, newC[i], Vec2(x, pos.y + st.dir * shift * (1 - e)), newCol)
+            end
+            prefix = prefix .. newC[i]
+        end
+    else
+        Render.Text(font, size, st.prev, Vec2(pos.x, pos.y - st.dir * shift * e), oldCol)
+        Render.Text(font, size, text, Vec2(pos.x, pos.y + st.dir * shift * (1 - e)), newCol)
+    end
+    Render.PopClip()
+end
+
+function Focus.RenderBanner(layout, alphaMul, yOffset)
+    local aMul = alphaMul or 1.0
+    local on = Focus.BannerOn
+    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+        local h = GetVectorIcon("moon")
+        if h then
+            Render.Image(h, Vec2(x, math.floor(midY - sz / 2)), Vec2(sz, sz), FadeColor(on and Focus.Accent or Color(255, 255, 255, 150), aMul), 0)
+        end
+    end, L("di_focus_name"), Config.Colors.TextPrimary, on and L("di_focus_on") or L("di_focus_off"), on and Focus.Accent or Config.Colors.TextMuted)
+end
+
+function Focus.RenderBubble(layout)
+    local now = os.clock()
+    local dtl = math.min(0.05, math.max(0, now - Focus.LastDraw))
+    Focus.LastDraw = now
+    local st = StateMachine.TargetState
+    local want = Focus.Active and not HUDCustomizer.IsOpen and st ~= StateMachine.States.FOCUS_BANNER and st ~= StateMachine.States.MENU_MATCH_FOUND
+    Focus.Vis = Focus.Vis + ((want and 1 or 0) - Focus.Vis) * math.min(1, dtl * 12)
+    if Focus.Vis < 0.02 then
+        Focus.Bounds = nil
+        return
+    end
+    local v = math.min(1, Focus.Vis)
+    local scale = layout.scale
+    local full = math.floor(Config.Dimensions.CompactH * scale)
+    local size = math.floor(full * (0.55 + 0.45 * EaseOutBack(v)))
+    local cxm = math.floor(layout.x - 8 * scale - full / 2)
+    local cym = math.floor(layout.y + full / 2)
+    local p1 = Vec2(math.floor(cxm - size / 2), math.floor(cym - size / 2))
+    local p2 = Vec2(p1.x + size, p1.y + size)
+    Focus.Bounds = { x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y }
+    if UI.Media.Shadow:Get() then
+        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, v), 14, math.floor(size / 2), Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+    end
+    IslandSurface(p1, p2, math.floor(size / 2), Config.Colors.Border, nil, v)
+    local isz = math.floor(size * 0.42)
+    local h = GetVectorIcon("moon")
+    if h then
+        Render.Image(h, Vec2(math.floor(cxm - isz / 2), math.floor(cym - isz / 2)), Vec2(isz, isz), FadeColor(Focus.Accent, v), 0)
+    end
+    if Focus.Until > Focus.StartedAt then
+        local frac = math.max(0, math.min(1, (Focus.Until - now) / (Focus.Until - Focus.StartedAt)))
+        local rr = size / 2 - 4 * scale
+        local rt = math.max(1.2, 1.5 * scale)
+        Render.Circle(Vec2(cxm, cym), rr, FadeColor(Color(255, 255, 255, 34), v), rt, 0, 1.0, false, 40)
+        if frac > 0.002 then
+            Render.Circle(Vec2(cxm, cym), rr, FadeColor(Focus.Accent, v), rt, 270, frac, true, 40)
+        end
+    end
+end
+
+function Focus.RenderTile(layout, x1, x2, y1, aMul)
+    local scale = layout.scale
+    local now = os.clock()
+    local on = Focus.Active
+    local tileH = math.floor(26 * scale)
+    local pt = now - Focus.PressAt
+    local press = 1 - 0.07 * math.exp(-pt * 11) * math.cos(pt * 24)
+    local cxT = (x1 + x2) / 2
+    local cyT = y1 + tileH / 2
+    local w = (x2 - x1) * press
+    local hh = tileH * press
+    local q1 = Vec2(math.floor(cxT - w / 2), math.floor(cyT - hh / 2))
+    local q2 = Vec2(math.floor(cxT + w / 2), math.floor(cyT + hh / 2))
+    Render.FilledRect(q1, q2, FadeColor(on and Color(255, 255, 255, 235) or Color(255, 255, 255, 22), aMul), math.floor(hh / 2))
+    local cr = math.floor(hh / 2 - 3 * scale)
+    local cc = Vec2(math.floor(q1.x + hh / 2), math.floor(cyT))
+    Render.FilledCircle(cc, cr, FadeColor(on and Focus.Accent or Color(255, 255, 255, 40), aMul), 0, 1.0, 24)
+    local isz = math.floor(cr * 1.15)
+    local moon = GetVectorIcon("moon")
+    if moon then
+        Render.Image(moon, Vec2(math.floor(cc.x - isz / 2), math.floor(cc.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul), 0)
+    end
+    local fontBold = Config.Fonts.Bold
+    local label = L("di_focus_name")
+    local ls = Render.TextSize(fontBold, 10.5 * scale, label)
+    local textCol = on and Color(22, 22, 26, 255) or Config.Colors.TextPrimary
+    Render.Text(fontBold, 10.5 * scale, label, Vec2(math.floor(cc.x + cr + 7 * scale), math.floor(cyT - ls.y / 2)), FadeColor(textCol, aMul))
+    if on then
+        local right = Focus.Until > 0 and FormatTime(math.max(0, Focus.Until - now)) or L("di_focus_on")
+        local rs = Render.TextSize(fontBold, 10.5 * scale, right)
+        Odometer.Text("focus_tile", fontBold, 10.5 * scale, right, Vec2(math.floor(q2.x - 10 * scale - rs.x), math.floor(cyT - rs.y / 2)), FadeColor(Focus.Accent, aMul))
+    end
+    Focus.Button = { x1 = x1, y1 = y1, x2 = x2, y2 = y1 + tileH }
+    Focus.ButtonAt = now
 end
 
 local function RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, action)
@@ -7919,11 +8366,11 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     local timeSec = os.date(":%S")
 
     local hmSize = Render.TextSize(fontBold, 26 * scale, timeHM)
-    Render.Text(fontBold, 26 * scale, timeHM, Vec2(leftX, leftY + 2 * scale), textCol)
+    Odometer.Text("large_hm", fontBold, 26 * scale, timeHM, Vec2(leftX, leftY + 2 * scale), textCol)
 
     local secX = math.floor(leftX + hmSize.x + 3 * scale)
     local secY = math.floor(leftY + 11 * scale)
-    Render.Text(fontMain, 13 * scale, timeSec, Vec2(secX, secY), subCol)
+    Odometer.Text("large_sec", fontMain, 13 * scale, timeSec, Vec2(secX, secY), subCol)
 
     local matchTime = GetActualMatchTime()
     local subInfo = ""
@@ -7944,13 +8391,13 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     local kdaSvg = GetVectorIcon("kda")
     if kdaSvg then Render.Image(kdaSvg, Vec2(rightX, row1Y), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
     local kdaTxt = string.format("%d / %d / %d", HeroData.Kills, HeroData.Deaths, HeroData.Assists)
-    Render.Text(fontBold, 11 * scale, kdaTxt, Vec2(rightX + 16 * scale, row1Y - 1 * scale), textCol)
+    Odometer.Text("large_kda", fontBold, 11 * scale, kdaTxt, Vec2(rightX + 16 * scale, row1Y - 1 * scale), textCol)
 
     local goldSvg = GetVectorIcon("gold")
     local goldX = math.floor(rightX + 85 * scale)
     if goldSvg then Render.Image(goldSvg, Vec2(goldX, row1Y), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
     local goldTxt = string.format("%d G", HeroData.Gold)
-    Render.Text(fontBold, 11 * scale, goldTxt, Vec2(goldX + 16 * scale, row1Y - 1 * scale), textCol)
+    Odometer.Text("large_gold", fontBold, 11 * scale, goldTxt, Vec2(goldX + 16 * scale, row1Y - 1 * scale), textCol)
 
     local fpsSvg = GetVectorIcon("fps")
     if fpsSvg then Render.Image(fpsSvg, Vec2(rightX, row2Y + 4 * scale), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
@@ -7961,6 +8408,8 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     if pingSvg then Render.Image(pingSvg, Vec2(goldX, row2Y + 4 * scale), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
     local pingTxt = string.format("%d ms", PerformanceData.Ping)
     Render.Text(fontMain, 10.5 * scale, pingTxt, Vec2(goldX + 16 * scale, row2Y + 3 * scale), FadeColor(Color(255, 255, 255, 240), aMul))
+
+    Focus.RenderTile(layout, rightX, math.floor(layout.x + layout.w - 14 * scale), math.floor(layout.y + layout.h - 12 * scale - 26 * scale + yOff), aMul)
 end
 
 local function RenderGamePausedPill(layout, alphaMul, yOffset)
@@ -7993,7 +8442,7 @@ local function RenderGamePausedPill(layout, alphaMul, yOffset)
 
     Render.Text(fontMain, 11 * scale, pText, Vec2(textStartX, textY1), FadeColor(Color(255, 255, 255, 210), alphaMul))
     Render.Text(fontMain, 11 * scale, dotStr, Vec2(textStartX + tSize1.x, textY1), FadeColor(Color(255, 255, 255, 120), alphaMul))
-    Render.Text(fontBold, 11.5 * scale, timeText, Vec2(textStartX + tSize1.x + tSizeDot.x, textY2), FadeColor(Color(255, 255, 255, 255), alphaMul))
+    Odometer.Text("pause_time", fontBold, 11.5 * scale, timeText, Vec2(textStartX + tSize1.x + tSizeDot.x, textY2), FadeColor(Color(255, 255, 255, 255), alphaMul))
 end
 
 local function RenderCourierDeliveryPill(layout, alphaMul, yOffset)
@@ -8012,7 +8461,7 @@ local function RenderCourierDeliveryPill(layout, alphaMul, yOffset)
     local etaStr = (CourierTracker.ETA > 0) and (L("di_courier_eta") .. " " .. FormatTime(CourierTracker.ETA)) or L("di_ui_courier_delivering_short")
     local etaSize = Render.TextSize(fontBold, 10.5 * scale, etaStr)
     local rightX = math.floor(layout.x + layout.w - 12 * scale - etaSize.x)
-    Render.Text(fontBold, 10.5 * scale, etaStr, Vec2(rightX, centerY - math.floor(etaSize.y / 2) - 1 * scale), FadeColor(Color(255, 255, 255, 235), alphaMul))
+    Odometer.Text("courier_eta", fontBold, 10.5 * scale, etaStr, Vec2(rightX, centerY - math.floor(etaSize.y / 2) - 1 * scale), FadeColor(Color(255, 255, 255, 235), alphaMul))
 
     local trackStartX = math.floor(leftX + iconSize + 10 * scale)
     local trackEndX = math.floor(rightX - 10 * scale)
@@ -8622,6 +9071,8 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
         Journey.RenderLoading(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.DRAFT then
         Journey.RenderDraft(layout, alphaMul, yOffset)
+    elseif state == StateMachine.States.FOCUS_BANNER then
+        Focus.RenderBanner(layout, alphaMul, yOffset)
     end
 end
 
@@ -8864,6 +9315,7 @@ function DynamicIsland.OnFrame()
     Render.PopClip()
 
     RenderSecondarySatelliteBubble(layout)
+    Focus.RenderBubble(layout)
     RenderMenuClosedHint(layout)
     RenderHUDDrawer(layout, dt)
 end
@@ -8880,11 +9332,16 @@ function DynamicIsland.OnUpdateEx()
             ProcessFightDetector()
         end
         ProcessGameEvents()
+        Reminders.Tick()
         ProcessPauseTracker()
         ProcessCourierTracker()
     else
         if WasInGame then
             WasInGame = false
+            Reminders.Fired = {}
+            if Focus.Active and Focus.Mode == 3 then
+                Focus.Set(false)
+            end
             GameTracker.Towers.LastHP = {}
             GameTracker.Towers.LastAlert = {}
             GameTracker.Couriers.LastHP = {}
