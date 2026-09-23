@@ -32,6 +32,8 @@ To start it together with dota, put it in front of `%command%` in steam launch o
 
 It closes by itself a few seconds after dota closes. Run it with `--stay` if you want it to keep running.
 
+Step by step guide (english and russian): [docs/autostart.md](docs/autostart.md)
+
 ## Spotify likes
 
 Needs [spicetify](https://spicetify.app) and spotify started with `--remote-debugging-port=9222`. The bridge adds that flag to your spotify shortcuts and `spotify:` links on its own, so after the first restart it just works. If spotify was started without it, the island tells you.

@@ -3,6 +3,9 @@
 !/README.md
 !/dynamic_island.lua
 !/media_bridge/
+!/docs/
+/docs/*
+!/docs/autostart.md
 
 /media_bridge/*
 !/media_bridge/README.md
