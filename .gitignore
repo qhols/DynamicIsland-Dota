@@ -3,7 +3,6 @@
 !/.gitignore
 !/README.md
 !/dynamic_island.lua
-!/\!_qLocalizer.lua
 !/media_bridge/
 
 # inside media_bridge: sources only, binaries go to releases

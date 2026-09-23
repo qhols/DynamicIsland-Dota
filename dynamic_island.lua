@@ -1,381 +1,1032 @@
+--[[
+     ~ qLocalization
+     ~ automatic localization wrapper for Lua menu interfaces
+
+     ~ author: qfun (qfun_g9s)
+]]
+
+local qLocalization = (function()
+	local lib = {}
+
+	local a = function(...)
+		return ...
+	end
+
+	local state = {
+		lang = Menu.Find("SettingsHidden", "", "", "", "Main", "Language"),
+		instances = {},
+	}
+
+	local setters = {
+		ToolTip = "tooltip",
+	}
+
+	local helpers
+	do
+		helpers = {
+			resolve = a(function(root, path)
+				for key in path:gmatch("[^.]+") do
+					if type(root) ~= "table" then
+						return
+					end
+
+					root = root[key]
+				end
+
+				return root
+			end),
+
+			is_object = a(function(value)
+				return type(value) == "table" or type(value) == "userdata"
+			end),
+
+			has_method = a(function(object, name)
+				return helpers.is_object(object) and type(object[name]) == "function"
+			end),
+
+			is_menu_object = a(function(value)
+				return helpers.has_method(value, "Name") and helpers.has_method(value, "Type")
+			end),
+
+			is_list = a(function(value)
+				if type(value) ~= "table" or #value == 0 then
+					return false
+				end
+
+				for i = 1, #value do
+					if type(value[i]) ~= "string" then
+						return false
+					end
+				end
+
+				return true
+			end),
+
+			is_indexed_list = a(function(object)
+				return helpers.has_method(object, "List") and not helpers.has_method(object, "ListEnabled")
+			end),
+		}
+	end
+
+	function lib.new(translations)
+		local languages = {}
+
+		for i, name in ipairs(state.lang and state.lang:List() or {}) do
+			local code = name:match("%a+")
+
+			if code and translations[code] then
+				languages[i - 1] = code
+			end
+		end
+
+		local localization = {
+			translations = translations,
+			languages = languages,
+			objects = {},
+		}
+
+		local methods
+		do
+			methods = {
+				get_language = a(function(language_index)
+					if language_index == nil and state.lang then
+						language_index = state.lang:Get()
+					end
+
+					return localization.languages[language_index] or "en"
+				end),
+
+				localize = a(function(path, language_index)
+					if type(path) ~= "string" then
+						return path
+					end
+
+					local language = methods.get_language(language_index)
+
+					return helpers.resolve(localization.translations[language], path)
+						or helpers.resolve(localization.translations.en, path)
+						or path
+				end),
+
+				has = a(function(path)
+					if type(path) ~= "string" then
+						return false
+					end
+
+					return helpers.resolve(localization.translations.en, path) ~= nil
+						or helpers.resolve(localization.translations[methods.get_language()], path) ~= nil
+				end),
+
+				localize_items = a(function(items, language_index)
+					local result, localized = {}, false
+
+					for i = 1, #items do
+						local value = items[i]
+
+						if methods.has(value) then
+							result[i] = methods.localize(value, language_index)
+							localized = true
+						else
+							result[i] = value
+						end
+					end
+
+					return result, localized
+				end),
+
+				apply = a(function(object, kind, path, language_index)
+					if kind == "label" then
+						object:ForceLocalization(methods.localize(path, language_index))
+					elseif kind == "tooltip" then
+						object:ToolTip(methods.localize(path, language_index))
+					elseif kind == "items" then
+						local value = object:Get()
+
+						object:Update((methods.localize_items(path, language_index)))
+						object:Set(value)
+					end
+				end),
+
+				track = a(function(object, kind, path, apply_now)
+					local record = localization.objects[object]
+
+					if record == nil then
+						record = {}
+						localization.objects[object] = record
+					end
+
+					record[kind] = path
+
+					if apply_now then
+						methods.apply(object, kind, path)
+					end
+				end),
+
+				register = a(function(object, path)
+					if not methods.has(path) or not helpers.has_method(object, "ForceLocalization") then
+						return
+					end
+
+					methods.track(object, "label", path, true)
+				end),
+
+				update = a(function(language_index)
+					for object, record in pairs(localization.objects) do
+						for kind, path in pairs(record) do
+							methods.apply(object, kind, path, language_index)
+						end
+					end
+				end),
+
+				wrap = a(function(target, bind_self)
+					if not helpers.is_object(target) then
+						return target
+					end
+
+					local proxy
+
+					proxy = setmetatable({}, {
+						__index = function(_, key)
+							local member = target[key]
+
+							if type(member) ~= "function" then
+								return member
+							end
+
+							return function(...)
+								local args = table.pack(...)
+
+								if bind_self and args[1] == proxy then
+									table.remove(args, 1)
+									args.n = args.n - 1
+								end
+
+								if key == "Switch" and args.n < 2 then
+									args[2] = false
+									args.n = 2
+								end
+
+								local name_path, item_paths
+
+								if setters[key] then
+									if methods.has(args[1]) then
+										methods.track(target, setters[key], args[1], false)
+
+										args[1] = methods.localize(args[1])
+									end
+								else
+									local name_index = bind_self and 1 or args.n
+
+									if methods.has(args[name_index]) then
+										name_path = args[name_index]
+									end
+
+									local items_index
+
+									if key == "Combo" then
+										items_index = 2
+									elseif key == "Update" and helpers.is_indexed_list(target) then
+										items_index = 1
+									end
+
+									if items_index ~= nil and helpers.is_list(args[items_index]) then
+										local items, localized = methods.localize_items(args[items_index])
+
+										if localized then
+											item_paths = args[items_index]
+											args[items_index] = items
+										end
+									end
+								end
+
+								local results
+
+								if bind_self then
+									results = table.pack(member(target, table.unpack(args, 1, args.n)))
+								else
+									results = table.pack(member(table.unpack(args, 1, args.n)))
+								end
+
+								for i = 1, results.n do
+									local result = results[i]
+
+									if helpers.is_menu_object(result) then
+										if name_path then
+											methods.register(result, name_path)
+										end
+
+										if item_paths then
+											methods.track(result, "items", item_paths, false)
+											item_paths = nil
+										end
+
+										results[i] = methods.wrap(result, true)
+									end
+								end
+
+								if item_paths then
+									methods.track(target, "items", item_paths, false)
+								end
+
+								return table.unpack(results, 1, results.n)
+							end
+						end,
+
+						__newindex = function(_, key, value)
+							target[key] = value
+						end,
+					})
+
+					return proxy
+				end),
+			}
+		end
+
+		state.instances[methods] = true
+
+		return {
+			GetLanguage = methods.get_language,
+
+			Get = methods.localize,
+			Localize = methods.localize,
+
+			Update = methods.update,
+			Register = methods.register,
+
+			Wrap = methods.wrap,
+
+			WrapLibrary = function(library)
+				return methods.wrap(library, false)
+			end,
+		}
+	end
+
+	if state.lang then
+		state.lang:SetCallback(function(this)
+			local language_index = this:Get()
+
+			for methods in pairs(state.instances) do
+				methods.update(language_index)
+			end
+		end, true)
+	else
+		Log.Write("[qLocalization] Language widget not found, using English fallback")
+	end
+
+	return lib
+end)()
+
 local MenuTextOffsetY = 0.0
 local MenuIconOffsetY = 0.0
 
 local DynamicIsland = {}
 
-local Translations = {
+local localization = qLocalization.new({
     en = {
-        tab = {
-            general = "General",
-            settings = "Settings",
-            position = "Position & Size",
-            geometry = "Geometry",
-            appearance = "Appearance",
-            style = "Style",
-            combat = "Combat & Radar",
-            radar = "Radar",
-            alerts = "Alerts",
-            notifications = "Notifications",
-            runes = "Runes & Objectives",
-            events = "Events",
-            timings = "Timings",
-            seconds = "Lead Times",
-            media = "Media",
-            parameters = "Parameters",
-            haptics = "Haptic Engine",
-            tactile = "Tactile Feedback",
-            priority = "Priorities",
-            priority_group = "Alert Priority"
-        },
-        main = {
-            enabled = "Enable Island",
-            only_in_game = "Only In-Game",
-            preset = "Position Preset",
-            offset_y = "Vertical Offset (Y)",
-            offset_x = "Horizontal Offset (X)",
-            scale = "Island Scale",
-            custom_label = "Hero Tag",
-            bg_color = "Island Background Color",
-            pure_glass = "Aka Glass",
-            border_thickness = "Border Thickness",
-            widget_editor = "Widget Editor (RMB)",
-            reset_pos = "Reset Position"
-        },
-        preset = {
-            top_center = "Top Center",
-            custom = "Custom (Draggable)",
-            top_left = "Top Left",
-            top_right = "Top Right",
-            screen_center = "Screen Center",
-            bottom_center = "Bottom Center"
-        },
-        combat = {
-            fight_hud = "Live Combat Radar",
-            fight_scope = "Fight Scope",
-            scope_local = "Local Hero Only",
-            scope_any = "Any Fight on Map",
-            min_heroes = "Min Heroes in Fight",
-            fight_radius = "Fight Detection Radius",
-            radar_zoom = "Radar Zoom Range",
-            fight_timeout = "Fight Completion Timeout",
-            fight_large_w = "Fight Card Width",
-            fight_large_h = "Fight Card Height",
-            kills = "Kill Streaks",
-            invis = "Enemy Invis & Smoke",
-            teleports = "Enemy Teleports",
-            key_enemy_items = "Key Enemy Items",
-            couriers = "Courier Under Attack",
-            towers = "Tower Under Attack",
-            buybacks = "Player Buybacks",
-            low_hp = "Low HP Kill Opportunities",
-            level_up = "Hero Level Up",
-            courier_delivery = "Courier Delivery Activity",
-            pause_alert = "Pause Notification Pill"
-        },
-        runes = {
-            active_runes = "Active Power Runes",
-            water_runes = "Water Runes",
-            bounty_runes = "Bounty Runes",
-            wisdom_runes = "Wisdom Runes",
-            rune_pickups = "Rune Pickups",
-            rune_world_spawn = "Rune World Spawns",
-            lotus = "Lotus Pools",
-            tormentor = "Tormentor Objective",
-            roshan = "Roshan & Aegis",
-            stacks = "Camp Stack Reminder"
-        },
-        timings = {
-            toast_duration = "Toast Duration",
-            stack_time = "Stack Reminder Lead (pull at :53)",
-            power_rune_time = "Power Runes Lead Time",
-            water_rune_time = "Water Runes Lead Time",
-            bounty_rune_time = "Bounty Runes Lead Time",
-            wisdom_rune_time = "Wisdom Runes Lead Time",
-            lotus_time = "Lotus Fruit Lead Time",
-            tormentor1_time = "Tormentor 1st Warning",
-            tormentor2_time = "Tormentor 2nd Warning"
-        },
-        media = {
-            enabled = "Media Sync",
-            spotify_like = "Spotify Like Button",
-            volume_wheel = "Scroll Wheel Volume Control",
-            marquee_speed = "Marquee Speed",
-            secondary_bubble = "Satellite Bubble",
-            shadow = "Soft Shadows",
-            blur = "Backdrop Glass Blur",
-            hints = "Control Hints",
-            accent_color = "Primary Theme Color",
-            export_cfg = "Export All Settings to File",
-            import_cfg = "Import All Settings from File"
-        },
-        courier = {
-            delivering = "Delivering Items",
-            delivered = "Delivered!",
-            eta = "ETA",
-            speed = "Speed",
-            hp = "HP"
-        },
-        island = {
-            in_menu = "In Menu",
-            finding_match = "Finding Match ",
-            match_found = "Match Found!",
-            main_menu = "Main Menu",
-            match = "Match ",
-            clock = "Clock",
-            kda = "KDA",
-            gold = "Gold",
-            networth = "NW",
-            lasthits = "CS",
-            hero = "Hero",
-            fps = "FPS",
-            ping = "Ping",
-            music = "Music",
-            fight = "Fight",
-            map = "Map",
-            success = "Success!",
-            notification = "ALERT",
-            track = "Track",
-            volume = "Volume",
-            paused = "Paused"
-        },
-        haptics = {
-            enabled = "Enable Haptic Engine",
-            visual = "Visual Haptics (Squish & Bounce)",
-            audio = "Acoustic Taptic Clicks",
-            volume = "Taptic Click Volume",
-            intensity = "Kinetic Intensity",
-            combat_filter = "Combat Anti-Spam Filter",
-            audio_ducking = "Audio Auto-Ducking",
-            ducking_amount = "Ducking Strength",
-            ducking_alerts = "Ducking: Critical Alerts",
-            ducking_courier = "Ducking: Courier",
-            ducking_notifs = "Ducking: Notifications",
-            ducking_motion = "Ducking: Island Motion",
-            ducking_taptics = "Ducking: Clicks & Taptics",
-            test_ducking = "Audition Ducking"
-        },
-        priority = {
-            group = "Priority per Alert Type (1 low - 5 high)",
-            media = "Music Player (alerts at or below this don't cover it)",
-            stack = "Camp Stack Reminder",
-            roshan_kill = "Roshan Killed",
-            aegis = "Aegis Picked Up",
-            buyback = "Player Buyback",
-            low_hp = "Low HP Kill Opportunity",
-            roshan_attack = "Roshan Under Attack",
-            tower = "Tower Under Attack",
-            invis = "Enemy Invis & Smoke",
-            teleport = "Enemy Teleport",
-            kill = "Kill Streak",
-            courier = "Courier Under Attack",
-            enemy_item = "Key Enemy Item Purchased",
-            tormentor = "Tormentor Objective",
-            fight_summary = "Fight Summary",
-            rune = "Rune Spawn Reminder",
-            rune_world = "World Rune Spawned",
-            rune_pickup = "Ally Rune Pickup",
-            power_rune_cycle = "Power Rune Cycle",
-            lotus = "Lotus Pool",
-            neutral = "Neutral Item Tier",
-            level = "Hero Level Up",
-            spotify_like = "Spotify Like Confirmation"
-        }
+        di_rune_names_double_damage = "Double Damage",
+        di_rune_names_haste = "Haste",
+        di_rune_names_illusion = "Illusion",
+        di_rune_names_invisibility = "Invisibility",
+        di_rune_names_regeneration = "Regeneration",
+        di_rune_names_bounty = "Bounty",
+        di_rune_names_arcane = "Arcane",
+        di_rune_names_water = "Water",
+        di_rune_names_wisdom = "Wisdom",
+        di_rune_names_shield = "Shield",
+        di_rune_names_rune = "Rune",
+        di_towers_goodguys_tower1_mid = "Radiant Mid T1",
+        di_towers_goodguys_tower2_mid = "Radiant Mid T2",
+        di_towers_goodguys_tower3_mid = "Radiant Mid T3",
+        di_towers_goodguys_tower1_top = "Radiant Top T1",
+        di_towers_goodguys_tower2_top = "Radiant Top T2",
+        di_towers_goodguys_tower3_top = "Radiant Top T3",
+        di_towers_goodguys_tower1_bot = "Radiant Bot T1",
+        di_towers_goodguys_tower2_bot = "Radiant Bot T2",
+        di_towers_goodguys_tower3_bot = "Radiant Bot T3",
+        di_towers_badguys_tower1_mid = "Dire Mid T1",
+        di_towers_badguys_tower2_mid = "Dire Mid T2",
+        di_towers_badguys_tower3_mid = "Dire Mid T3",
+        di_towers_badguys_tower1_top = "Dire Top T1",
+        di_towers_badguys_tower2_top = "Dire Top T2",
+        di_towers_badguys_tower3_top = "Dire Top T3",
+        di_towers_badguys_tower1_bot = "Dire Bot T1",
+        di_towers_badguys_tower2_bot = "Dire Bot T2",
+        di_towers_badguys_tower3_bot = "Dire Bot T3",
+        di_landmarks_top_roshan_river = "Top Roshan (River)",
+        di_landmarks_bot_roshan_river = "Bot Roshan (River)",
+        di_landmarks_top_river_rune = "Top River Rune",
+        di_landmarks_bot_river_rune = "Bot River Rune",
+        di_landmarks_river_center = "River Center",
+        di_landmarks_radiant_triangle = "Radiant Triangle",
+        di_landmarks_dire_triangle = "Dire Triangle",
+        di_landmarks_radiant_jungle = "Radiant Jungle",
+        di_landmarks_dire_jungle = "Dire Jungle",
+        di_landmarks_radiant_tormentor = "Radiant Tormentor",
+        di_landmarks_dire_tormentor = "Dire Tormentor",
+        di_landmarks_lotus_pool_top = "Lotus Pool (Top)",
+        di_landmarks_lotus_pool_bot = "Lotus Pool (Bot)",
+        di_landmarks_wisdom_shrine_radiant = "Wisdom Shrine (Radiant)",
+        di_landmarks_wisdom_shrine_dire = "Wisdom Shrine (Dire)",
+        di_landmarks_twin_gate_top = "Twin Gate (Top)",
+        di_landmarks_twin_gate_bot = "Twin Gate (Bot)",
+        di_landmarks_mid_lane = "Mid lane",
+        di_landmarks_top_lane = "Top lane",
+        di_landmarks_bot_lane = "Bot lane",
+        di_landmarks_radiant_base = "Radiant Base",
+        di_landmarks_dire_base = "Dire Base",
+        di_drawer_bold = "Bold",
+        di_drawer_regular = "Regular",
+        di_drawer_white = "White",
+        di_drawer_dim = "Dim",
+        di_drawer_custom = "Custom",
+        di_drawer_standard = "Standard",
+        di_drawer_minimal = "Minimal",
+        di_drawer_detailed = "Detailed",
+        di_streak_rampage = "RAMPAGE!",
+        di_streak_ultra_kill = "Ultra Kill!",
+        di_streak_triple_kill = "Triple Kill!",
+        di_streak_double_kill = "Double Kill!",
+        di_streak_first_blood = "First Blood!",
+        di_streak_beyond_godlike = "BEYOND GODLIKE!",
+        di_streak_monster_kill = "Monster Kill!",
+        di_streak_dominating = "Dominating!",
+        di_streak_killing_spree = "Killing Spree!",
+        di_streak_holy_shit = "HOLY SHIT! (%d Kills)",
+        di_ui_courier_delivering_short = "Delivering",
+        di_ui_enemy_hero = "Enemy Hero",
+        di_ui_lane = "Lane",
+        di_ui_bridge_offline = "MediaBridge isn't running, music and sounds are off",
+        di_ui_media_service_down = "Windows media service isn't responding, restart your PC",
+        di_ui_update_available = "Update available: ",
+        di_ui_skirmish_concluded = "Skirmish Concluded",
+        di_ui_all_combatants_retreated = "All combatants retreated",
+        di_ui_fight_won = "Fight Won!",
+        di_ui_enemies_slain_n_losses_n = "Enemies slain: %d  •  Losses: %d",
+        di_ui_fight_lost = "Fight Lost",
+        di_ui_team_losses_n_kills_n = "Team losses: %d  •  Kills: %d",
+        di_ui_even_trade = "Even Trade",
+        di_ui_traded_n_for_n = "Traded %d for %d",
+        di_ui_fight_outcome = "FIGHT OUTCOME",
+        di_ui_level_up = "LEVEL UP",
+        di_ui_level_n_reached = "Level %d Reached",
+        di_ui_enemy_slain = "Enemy Slain!",
+        di_ui_enemy = "Enemy",
+        di_ui_kill_streak = "KILL STREAK",
+        di_ui_eliminated = "Eliminated ",
+        di_ui_item_alert = "ITEM ALERT",
+        di_ui_purchased_item = " purchased item",
+        di_ui_spawned_in_river = "spawned in river",
+        di_ui_spawned_at_shrine = "spawned at Shrine",
+        di_ui_spawned_top_river = "spawned Top River",
+        di_ui_spawned_bottom_river = "spawned Bottom River",
+        di_ui_rune_spawned = "RUNE SPAWNED",
+        di_ui_stack = "STACK",
+        di_ui_stack_in_n_s = "Stack in %ds",
+        di_ui_pull_the_camp_at_n_53 = "Pull the camp at %d:53",
+        di_ui_wisdom_rune = "WISDOM RUNE",
+        di_ui_wisdom_runes_in_n_s = "Wisdom Runes in %ds",
+        di_ui_side_lane_shrines = "Side lane shrines",
+        di_ui_water_rune = "WATER RUNE",
+        di_ui_water_runes_in_n_s = "Water Runes in %ds",
+        di_ui_river_spawn_points = "River spawn points",
+        di_ui_power_rune = "POWER RUNE",
+        di_ui_power_runes_in_n_s = "Power Runes in %ds",
+        di_ui_bounty_rune = "BOUNTY RUNE",
+        di_ui_bounty_runes_in_n_s = "Bounty Runes in %ds",
+        di_ui_bounty_spawn_spots = "Bounty spawn spots",
+        di_ui_objective = "OBJECTIVE",
+        di_ui_tormentor_soon_s = "Tormentor Soon (%s)",
+        di_ui_spawns_at_20_00 = "Spawns at 20:00",
+        di_ui_tormentor_in_n_s = "Tormentor in %ds",
+        di_ui_spawns_at_20_00_2 = "Spawns at 20:00",
+        di_ui_initial_bounty_spawns = "Initial bounty spawns",
+        di_ui_neutrals_unlocked = "NEUTRALS UNLOCKED",
+        di_ui_tier_1_neutrals_ready = "Tier 1 Neutrals Ready",
+        di_ui_n_7_00_match_time_reached = "7:00 match time reached",
+        di_ui_tier_2_neutrals_ready = "Tier 2 Neutrals Ready",
+        di_ui_n_17_00_match_time_reached = "17:00 match time reached",
+        di_ui_tier_3_neutrals_ready = "Tier 3 Neutrals Ready",
+        di_ui_n_27_00_match_time_reached = "27:00 match time reached",
+        di_ui_tier_4_neutrals_ready = "Tier 4 Neutrals Ready",
+        di_ui_n_37_00_match_time_reached = "37:00 match time reached",
+        di_ui_tier_5_neutrals_ready = "Tier 5 Neutrals Ready",
+        di_ui_n_60_00_match_time_reached = "60:00 match time reached",
+        di_ui_lotus_pool = "LOTUS POOL",
+        di_ui_lotus_fruit_in_n_s = "Lotus Fruit in %ds",
+        di_ui_side_lane_pools = "Side lane pools",
+        di_ui_courier_warning = "COURIER WARNING",
+        di_ui_courier_under_attack = "Courier Under Attack!",
+        di_ui_n_hp_remaining = "%d HP remaining",
+        di_ui_tower_defense = "TOWER DEFENSE",
+        di_ui_ally_tower_attacked = "Ally Tower Attacked",
+        di_ui_health_dropped_to_n_pct = "Health dropped to %d%%",
+        di_ui_kill_opportunity = "KILL OPPORTUNITY",
+        di_ui_rune_pickup = "RUNE PICKUP",
+        di_ui_picked_up = "picked up ",
+        di_ui_invisibility_alert = "INVISIBILITY ALERT",
+        di_ui_enemy_entered_stealth = "Enemy entered stealth",
+        di_ui_teleport_warning = "TELEPORT WARNING",
+        di_ui_teleporting = " Teleporting",
+        di_ui_teleporting_to = "Teleporting to ",
+        di_ui_aegis_claimed = "AEGIS CLAIMED",
+        di_ui_claimed_aegis = " Claimed Aegis",
+        di_ui_enemy_secured_immortal = "Enemy secured immortal",
+        di_ui_ally_secured_immortal = "Ally secured immortal",
+        di_ui_roshan_pit_alert = "ROSHAN PIT ALERT",
+        di_ui_roshan_under_attack = "Roshan Under Attack!",
+        di_ui_combat_audio_detected_in_pit = "Combat audio detected in pit",
+        di_ui_player = "Player",
+        di_ui_buyback_alert = "BUYBACK ALERT",
+        di_ui_bought_back = " Bought Back!",
+        di_ui_hero_returned_to_match = "Hero returned to match",
+        di_ui_roshan_slain = "ROSHAN SLAIN",
+        di_ui_roshan_killed = "Roshan Killed!",
+        di_ui_aegis_dropped_in_pit = "Aegis dropped in pit",
+        di_ui_tormentor_spawn = "TORMENTOR SPAWN",
+        di_ui_tormentor_spawned = "Tormentor Spawned!",
+        di_ui_objective_available = "Objective available",
+        di_ui_tormentor_defeated = "TORMENTOR DEFEATED",
+        di_ui_tormentor_defeated_2 = "Tormentor Defeated!",
+        di_ui_shard_granted_to_team = "Shard granted to team",
+        di_ui_hero = "Hero",
+        di_ui_main_menu = "Main Menu",
+        di_ui_finding_match = "Finding Match",
+        di_ui_loading_match = "Loading Match",
+        di_ui_waiting_for_players = "Waiting for Players",
+        di_ui_liked_songs = "Liked Songs",
+        di_ui_removed_from_favorites = "Removed from Favorites",
+        di_ui_saved_to_library = "Saved to Library",
+        di_ui_removed_from_spotify = "Removed from Spotify",
+        di_ui_match_declined = "Match Declined",
+        di_ui_returning_to_queue = "Returning to queue",
+        di_ui_accepted = "Accepted",
+        di_ui_waiting_for_players_2 = "Waiting for players",
+        di_ui_match_found = "Match Found",
+        di_ui_click_to_accept = "Click to accept",
+        di_ui_accept = "Accept",
+        di_ui_strategy_time = "Strategy Time",
+        di_ui_team_showcase = "Team Showcase",
+        di_ui_hero_selection = "Hero Selection",
+        di_ui_bans = "Bans",
+        di_ui_weight = "Weight",
+        di_ui_color = "Color",
+        di_ui_palette = "Palette",
+        di_ui_format = "Format",
+        di_ui_icon = "Icon",
+        di_ui_color_picker = "Color Picker",
+        di_ui_reset = "Reset",
+        di_ui_widgets = "Widgets",
+        di_ui_drawer_hint = "RMB: settings  \u{2022}  LMB: toggle  \u{2022}  drag: reorder",
+        di_ui_controls_hint = "Ctrl + LMB : Drag   •   RMB : Quick HUD",
+        di_ui_music = "Music",
+        di_ui_fight = "Fight",
+        di_ui_map = "Map",
+        di_ui_success = "Success!",
+        di_ui_notification = "NOTIFICATION",
+        di_ui_track = "Track",
+        di_ui_match = "Match ",
+        di_tab_general = "General",
+        di_tab_settings = "Settings",
+        di_tab_position = "Position & Size",
+        di_tab_geometry = "Geometry",
+        di_tab_appearance = "Appearance",
+        di_tab_style = "Style",
+        di_tab_combat = "Combat & Radar",
+        di_tab_radar = "Radar",
+        di_tab_alerts = "Alerts",
+        di_tab_notifications = "Notifications",
+        di_tab_runes = "Runes & Objectives",
+        di_tab_events = "Events",
+        di_tab_timings = "Timings",
+        di_tab_seconds = "Lead Times",
+        di_tab_media = "Media",
+        di_tab_parameters = "Parameters",
+        di_tab_haptics = "Haptic Engine",
+        di_tab_tactile = "Tactile Feedback",
+        di_tab_priority = "Priorities",
+        di_tab_priority_group = "Alert Priority",
+        di_main_enabled = "Enable Island",
+        di_main_only_in_game = "Only In-Game",
+        di_main_preset = "Position Preset",
+        di_main_offset_y = "Vertical Offset (Y)",
+        di_main_offset_x = "Horizontal Offset (X)",
+        di_main_scale = "Island Scale",
+        di_main_custom_label = "Hero Tag",
+        di_main_bg_color = "Island Background Color",
+        di_main_pure_glass = "Aka Glass",
+        di_main_border_thickness = "Border Thickness",
+        di_main_widget_editor = "Widget Editor (RMB)",
+        di_main_reset_pos = "Reset Position",
+        di_preset_top_center = "Top Center",
+        di_preset_custom = "Custom (Draggable)",
+        di_preset_top_left = "Top Left",
+        di_preset_top_right = "Top Right",
+        di_preset_screen_center = "Screen Center",
+        di_preset_bottom_center = "Bottom Center",
+        di_combat_fight_hud = "Live Combat Radar",
+        di_combat_fight_scope = "Fight Scope",
+        di_combat_scope_local = "Local Hero Only",
+        di_combat_scope_any = "Any Fight on Map",
+        di_combat_min_heroes = "Min Heroes in Fight",
+        di_combat_fight_radius = "Fight Detection Radius",
+        di_combat_radar_zoom = "Radar Zoom Range",
+        di_combat_fight_timeout = "Fight Completion Timeout",
+        di_combat_fight_large_w = "Fight Card Width",
+        di_combat_fight_large_h = "Fight Card Height",
+        di_combat_kills = "Kill Streaks",
+        di_combat_invis = "Enemy Invis & Smoke",
+        di_combat_teleports = "Enemy Teleports",
+        di_combat_key_enemy_items = "Key Enemy Items",
+        di_combat_couriers = "Courier Under Attack",
+        di_combat_towers = "Tower Under Attack",
+        di_combat_buybacks = "Player Buybacks",
+        di_combat_low_hp = "Low HP Kill Opportunities",
+        di_combat_level_up = "Hero Level Up",
+        di_combat_courier_delivery = "Courier Delivery Activity",
+        di_combat_pause_alert = "Pause Notification Pill",
+        di_runes_active_runes = "Active Power Runes",
+        di_runes_water_runes = "Water Runes",
+        di_runes_bounty_runes = "Bounty Runes",
+        di_runes_wisdom_runes = "Wisdom Runes",
+        di_runes_rune_pickups = "Rune Pickups",
+        di_runes_rune_world_spawn = "Rune World Spawns",
+        di_runes_lotus = "Lotus Pools",
+        di_runes_tormentor = "Tormentor Objective",
+        di_runes_roshan = "Roshan & Aegis",
+        di_runes_stacks = "Camp Stack Reminder",
+        di_timings_toast_duration = "Toast Duration",
+        di_timings_stack_time = "Stack Reminder Lead (pull at :53)",
+        di_timings_power_rune_time = "Power Runes Lead Time",
+        di_timings_water_rune_time = "Water Runes Lead Time",
+        di_timings_bounty_rune_time = "Bounty Runes Lead Time",
+        di_timings_wisdom_rune_time = "Wisdom Runes Lead Time",
+        di_timings_lotus_time = "Lotus Fruit Lead Time",
+        di_timings_tormentor1_time = "Tormentor 1st Warning",
+        di_timings_tormentor2_time = "Tormentor 2nd Warning",
+        di_media_enabled = "Media Sync",
+        di_media_spotify_like = "Spotify Like Button",
+        di_media_volume_wheel = "Scroll Wheel Volume Control",
+        di_media_marquee_speed = "Marquee Speed",
+        di_media_secondary_bubble = "Satellite Bubble",
+        di_media_shadow = "Soft Shadows",
+        di_media_blur = "Backdrop Glass Blur",
+        di_media_hints = "Control Hints",
+        di_media_accent_color = "Primary Theme Color",
+        di_media_export_cfg = "Export All Settings to File",
+        di_media_import_cfg = "Import All Settings from File",
+        di_courier_delivering = "Delivering Items",
+        di_courier_delivered = "Delivered!",
+        di_courier_eta = "ETA",
+        di_courier_speed = "Speed",
+        di_courier_hp = "HP",
+        di_island_clock = "Clock",
+        di_island_kda = "KDA",
+        di_island_gold = "Gold",
+        di_island_networth = "NW",
+        di_island_lasthits = "CS",
+        di_island_hero = "Hero",
+        di_island_fps = "FPS",
+        di_island_ping = "Ping",
+        di_island_paused = "Paused",
+        di_haptics_enabled = "Enable Haptic Engine",
+        di_haptics_visual = "Visual Haptics (Squish & Bounce)",
+        di_haptics_audio = "Acoustic Taptic Clicks",
+        di_haptics_volume = "Taptic Click Volume",
+        di_haptics_intensity = "Kinetic Intensity",
+        di_haptics_combat_filter = "Combat Anti-Spam Filter",
+        di_haptics_audio_ducking = "Audio Auto-Ducking",
+        di_haptics_ducking_amount = "Ducking Strength",
+        di_haptics_ducking_alerts = "Ducking: Critical Alerts",
+        di_haptics_ducking_courier = "Ducking: Courier",
+        di_haptics_ducking_notifs = "Ducking: Notifications",
+        di_haptics_ducking_motion = "Ducking: Island Motion",
+        di_haptics_ducking_taptics = "Ducking: Clicks & Taptics",
+        di_haptics_test_ducking = "Audition Ducking",
+        di_priority_media = "Music Player (alerts at or below this don't cover it)",
+        di_priority_stack = "Camp Stack Reminder",
+        di_priority_roshan_kill = "Roshan Killed",
+        di_priority_aegis = "Aegis Picked Up",
+        di_priority_buyback = "Player Buyback",
+        di_priority_low_hp = "Low HP Kill Opportunity",
+        di_priority_roshan_attack = "Roshan Under Attack",
+        di_priority_tower = "Tower Under Attack",
+        di_priority_invis = "Enemy Invis & Smoke",
+        di_priority_teleport = "Enemy Teleport",
+        di_priority_kill = "Kill Streak",
+        di_priority_courier = "Courier Under Attack",
+        di_priority_enemy_item = "Key Enemy Item Purchased",
+        di_priority_tormentor = "Tormentor Objective",
+        di_priority_fight_summary = "Fight Summary",
+        di_priority_rune = "Rune Spawn Reminder",
+        di_priority_rune_world = "World Rune Spawned",
+        di_priority_rune_pickup = "Ally Rune Pickup",
+        di_priority_power_rune_cycle = "Power Rune Cycle",
+        di_priority_lotus = "Lotus Pool",
+        di_priority_neutral = "Neutral Item Tier",
+        di_priority_level = "Hero Level Up",
+        di_priority_spotify_like = "Spotify Like Confirmation",
     },
     ru = {
-        tab = {
-            general = "Главная",
-            settings = "Настройки",
-            position = "Позиция и размер",
-            geometry = "Геометрия",
-            appearance = "Внешний вид",
-            style = "Стиль",
-            combat = "Бой и радар",
-            radar = "Радар",
-            alerts = "Оповещения",
-            notifications = "Уведомления",
-            runes = "Руны и объекты",
-            events = "События",
-            timings = "Тайминги",
-            seconds = "Пре-таймеры",
-            media = "Медиа",
-            parameters = "Параметры",
-            haptics = "Тактильный отклик",
-            tactile = "Параметры тактилки",
-            priority = "Приоритеты",
-            priority_group = "Приоритет оповещений"
-        },
-        main = {
-            enabled = "Включить Island",
-            only_in_game = "Только в игре",
-            preset = "Пресет позиции",
-            offset_y = "Смещение (Y)",
-            offset_x = "Смещение (X)",
-            scale = "Масштаб",
-            custom_label = "Тег героя",
-            bg_color = "Цвет фона островка",
-            pure_glass = "Стиль стекла",
-            border_thickness = "Толщина обводки",
-            widget_editor = "Редактор виджетов (ПКМ)",
-            reset_pos = "Сбросить позицию"
-        },
-        preset = {
-            top_center = "Сверху по центру",
-            custom = "Своя (Ctrl + ЛКМ)",
-            top_left = "Сверху слева",
-            top_right = "Сверху справа",
-            screen_center = "По центру экрана",
-            bottom_center = "Снизу по центру"
-        },
-        combat = {
-            fight_hud = "Радар боя (Fight HUD)",
-            fight_scope = "Область боя",
-            scope_local = "Только вокруг своего героя",
-            scope_any = "Любой бой на карте",
-            min_heroes = "Мин. героев для драки",
-            fight_radius = "Радиус захвата драки",
-            radar_zoom = "Масштаб радара",
-            fight_timeout = "Задержка закрытия после драки",
-            fight_large_w = "Ширина карточки боя",
-            fight_large_h = "Высота карточки боя",
-            kills = "Серии убийств",
-            invis = "Невидимость и Smoke врага",
-            teleports = "Телепорты врагов",
-            key_enemy_items = "Важные предметы врага",
-            couriers = "Атака курьера",
-            towers = "Атака вышек",
-            buybacks = "Выкупы игроков",
-            low_hp = "Добивание Low HP",
-            level_up = "Повышение уровня",
-            courier_delivery = "Активность доставки курьера",
-            pause_alert = "Оповещение паузы игры"
-        },
-        runes = {
-            active_runes = "Активные руны (Power)",
-            water_runes = "Водные руны",
-            bounty_runes = "Руны богатства (Bounty)",
-            wisdom_runes = "Руны мудрости (Wisdom)",
-            rune_pickups = "Подбор рун союзником",
-            rune_world_spawn = "Появление рун на карте",
-            lotus = "Пруды лотосов",
-            tormentor = "Терзатель",
-            roshan = "Рошан и Эгида",
-            stacks = "Напоминание о стаке кемпов"
-        },
-        timings = {
-            toast_duration = "Длительность уведомлений",
-            stack_time = "Пре-таймер стака (агр на :53)",
-            power_rune_time = "Пре-таймер: Power руны",
-            water_rune_time = "Пре-таймер: Водные руны",
-            bounty_rune_time = "Пре-таймер: Bounty руны",
-            wisdom_rune_time = "Пре-таймер: Wisdom руны",
-            lotus_time = "Пре-таймер: Лотосы",
-            tormentor1_time = "1-е опов. Терзателя",
-            tormentor2_time = "2-е опов. Терзателя"
-        },
-        media = {
-            enabled = "Медиа плеер",
-            spotify_like = "Лайк трека Spotify",
-            volume_wheel = "Громкость колесиком мыши",
-            marquee_speed = "Скорость бегущей строки",
-            secondary_bubble = "Второй островок/баббл",
-            shadow = "Мягкие тени",
-            blur = "Размытие фона (Blur)",
-            hints = "Подсказки управления",
-            accent_color = "Основной цвет темы",
-            export_cfg = "Экспорт всех настроек в файл",
-            import_cfg = "Импорт всех настроек из файла"
-        },
-        courier = {
-            delivering = "Доставка вещей",
-            delivered = "Доставлено!",
-            eta = "ETA",
-            speed = "Скор.",
-            hp = "ХП"
-        },
-        island = {
-            in_menu = "В меню",
-            finding_match = "Поиск матча ",
-            match_found = "Матч найден!",
-            main_menu = "Главное меню",
-            match = "Матч ",
-            clock = "Часы",
-            kda = "КДА",
-            gold = "Золото",
-            networth = "NW",
-            lasthits = "CS",
-            hero = "Герой",
-            fps = "ФПС",
-            ping = "Пинг",
-            music = "Музыка",
-            fight = "Драка",
-            map = "Карта",
-            success = "Успешно!",
-            notification = "ОПОВЕЩЕНИЕ",
-            track = "Трек",
-            volume = "Громкость",
-            paused = "Пауза"
-        },
-        haptics = {
-            enabled = "Включить тактильный движок",
-            visual = "Визуальная тактильность (Сквиш)",
-            audio = "Акустические микро-клики",
-            volume = "Громкость щелчков",
-            intensity = "Сила кинетического импульса",
-            combat_filter = "Умный фильтр в драках",
-            audio_ducking = "Затихание остальных звуков",
-            ducking_amount = "Сила затихания",
-            ducking_alerts = "Затихание: Важные алерты",
-            ducking_courier = "Затихание: Курьер",
-            ducking_notifs = "Затихание: Уведомления",
-            ducking_motion = "Затихание: Движение острова",
-            ducking_taptics = "Затихание: Клики и кнопки",
-            test_ducking = "Проверить звук"
-        },
-        priority = {
-            group = "Приоритет по типу оповещения (1 низкий - 5 высокий)",
-            media = "Музыкальный плеер (оповещения не выше него его не перекрывают)",
-            stack = "Напоминание о стаке",
-            roshan_kill = "Убийство Рошана",
-            aegis = "Подбор Эгиды",
-            buyback = "Выкуп игрока",
-            low_hp = "Добивание Low HP",
-            roshan_attack = "Атака на Рошана",
-            tower = "Атака на вышку",
-            invis = "Невидимость и Smoke врага",
-            teleport = "Телепорт врага",
-            kill = "Серия убийств",
-            courier = "Атака на курьера",
-            enemy_item = "Покупка важного предмета врагом",
-            tormentor = "Терзатель",
-            fight_summary = "Итог боя",
-            rune = "Напоминание о руне",
-            rune_world = "Появление руны на карте",
-            rune_pickup = "Подбор руны союзником",
-            power_rune_cycle = "Цикл Power рун",
-            lotus = "Пруд лотоса",
-            neutral = "Тир нейтрального предмета",
-            level = "Повышение уровня",
-            spotify_like = "Подтверждение лайка Spotify"
-        }
-    }
-}
+        di_rune_names_double_damage = "Двойной урон",
+        di_rune_names_haste = "Ускорение",
+        di_rune_names_illusion = "Иллюзии",
+        di_rune_names_invisibility = "Невидимость",
+        di_rune_names_regeneration = "Регенерация",
+        di_rune_names_bounty = "Богатство",
+        di_rune_names_arcane = "Волшебство",
+        di_rune_names_water = "Вода",
+        di_rune_names_wisdom = "Мудрость",
+        di_rune_names_shield = "Щит",
+        di_rune_names_rune = "Руна",
+        di_towers_goodguys_tower1_mid = "Мид Т1 Света",
+        di_towers_goodguys_tower2_mid = "Мид Т2 Света",
+        di_towers_goodguys_tower3_mid = "Мид Т3 Света",
+        di_towers_goodguys_tower1_top = "Топ Т1 Света",
+        di_towers_goodguys_tower2_top = "Топ Т2 Света",
+        di_towers_goodguys_tower3_top = "Топ Т3 Света",
+        di_towers_goodguys_tower1_bot = "Бот Т1 Света",
+        di_towers_goodguys_tower2_bot = "Бот Т2 Света",
+        di_towers_goodguys_tower3_bot = "Бот Т3 Света",
+        di_towers_badguys_tower1_mid = "Мид Т1 Тьмы",
+        di_towers_badguys_tower2_mid = "Мид Т2 Тьмы",
+        di_towers_badguys_tower3_mid = "Мид Т3 Тьмы",
+        di_towers_badguys_tower1_top = "Топ Т1 Тьмы",
+        di_towers_badguys_tower2_top = "Топ Т2 Тьмы",
+        di_towers_badguys_tower3_top = "Топ Т3 Тьмы",
+        di_towers_badguys_tower1_bot = "Бот Т1 Тьмы",
+        di_towers_badguys_tower2_bot = "Бот Т2 Тьмы",
+        di_towers_badguys_tower3_bot = "Бот Т3 Тьмы",
+        di_landmarks_top_roshan_river = "Верхний Рошан (Река)",
+        di_landmarks_bot_roshan_river = "Нижний Рошан (Река)",
+        di_landmarks_top_river_rune = "Верхняя руна реки",
+        di_landmarks_bot_river_rune = "Нижняя руна реки",
+        di_landmarks_river_center = "Центр реки",
+        di_landmarks_radiant_triangle = "Тройка Света",
+        di_landmarks_dire_triangle = "Тройка Тьмы",
+        di_landmarks_radiant_jungle = "Лес Света",
+        di_landmarks_dire_jungle = "Лес Тьмы",
+        di_landmarks_radiant_tormentor = "Терзатель Света",
+        di_landmarks_dire_tormentor = "Терзатель Тьмы",
+        di_landmarks_lotus_pool_top = "Пруд Лотосов (Топ)",
+        di_landmarks_lotus_pool_bot = "Пруд Лотосов (Бот)",
+        di_landmarks_wisdom_shrine_radiant = "Святилище Мудрости (Свет)",
+        di_landmarks_wisdom_shrine_dire = "Святилище Мудрости (Тьма)",
+        di_landmarks_twin_gate_top = "Парный Портал (Топ)",
+        di_landmarks_twin_gate_bot = "Парный Портал (Бот)",
+        di_landmarks_mid_lane = "Мид линия",
+        di_landmarks_top_lane = "Топ линия",
+        di_landmarks_bot_lane = "Бот линия",
+        di_landmarks_radiant_base = "База Сил Света",
+        di_landmarks_dire_base = "База Сил Тьмы",
+        di_drawer_bold = "Жирный",
+        di_drawer_regular = "Обычный",
+        di_drawer_white = "Белый",
+        di_drawer_dim = "Серый",
+        di_drawer_custom = "Свой",
+        di_drawer_standard = "Стандарт",
+        di_drawer_minimal = "Кратко",
+        di_drawer_detailed = "Детали",
+        di_streak_rampage = "БЕСЧИНСТВО!",
+        di_streak_ultra_kill = "Ультра-убийство!",
+        di_streak_triple_kill = "Тройное убийство!",
+        di_streak_double_kill = "Двойное убийство!",
+        di_streak_first_blood = "Первая кровь!",
+        di_streak_beyond_godlike = "ЗА ГРАНЬЮ БОЖЕСТВЕННОГО!",
+        di_streak_monster_kill = "Чудовищно!",
+        di_streak_dominating = "Доминирование!",
+        di_streak_killing_spree = "Серия убийств!",
+        di_streak_holy_shit = "ОХРЕНЕТЬ! (%d убийств)",
+        di_ui_courier_delivering_short = "Доставка",
+        di_ui_enemy_hero = "Вражеский герой",
+        di_ui_lane = "Линия",
+        di_ui_bridge_offline = "MediaBridge не запущен, музыка и звуки выключены",
+        di_ui_media_service_down = "Служба медиа Windows не отвечает, перезагрузи ПК",
+        di_ui_update_available = "Доступно обновление ",
+        di_ui_skirmish_concluded = "Стычка окончена",
+        di_ui_all_combatants_retreated = "Все участники разошлись",
+        di_ui_fight_won = "Победа в файте!",
+        di_ui_enemies_slain_n_losses_n = "Врагов убито: %d  •  Потерь: %d",
+        di_ui_fight_lost = "Файт проигран",
+        di_ui_team_losses_n_kills_n = "Потери команды: %d  •  Убито: %d",
+        di_ui_even_trade = "Размен в файте",
+        di_ui_traded_n_for_n = "Размен %d в %d",
+        di_ui_fight_outcome = "ИТОГИ СРАЖЕНИЯ",
+        di_ui_level_up = "НОВЫЙ УРОВЕНЬ",
+        di_ui_level_n_reached = "Уровень %d получен",
+        di_ui_enemy_slain = "Враг повержен!",
+        di_ui_enemy = "Враг",
+        di_ui_kill_streak = "СЕРИЯ УБИЙСТВ",
+        di_ui_eliminated = "Уничтожен ",
+        di_ui_item_alert = "ПРЕДМЕТ ВРАГА",
+        di_ui_purchased_item = " купил предмет",
+        di_ui_spawned_in_river = "появилась на реке",
+        di_ui_spawned_at_shrine = "появилась у Алтаря",
+        di_ui_spawned_top_river = "появилась Сверху (Топ)",
+        di_ui_spawned_bottom_river = "появилась Снизу (Бот)",
+        di_ui_rune_spawned = "ПОЯВЛЕНИЕ РУНЫ",
+        di_ui_stack = "СТАК",
+        di_ui_stack_in_n_s = "Стак через %dс",
+        di_ui_pull_the_camp_at_n_53 = "Агрить кемп на %d:53",
+        di_ui_wisdom_rune = "МУДРОСТЬ",
+        di_ui_wisdom_runes_in_n_s = "Руны мудрости через %dс",
+        di_ui_side_lane_shrines = "Боковые алтари мудрости",
+        di_ui_water_rune = "РУНА ВОДЫ",
+        di_ui_water_runes_in_n_s = "Руны воды через %dс",
+        di_ui_river_spawn_points = "Точки спавна на реке",
+        di_ui_power_rune = "АКТИВНАЯ РУНА",
+        di_ui_power_runes_in_n_s = "Руны усиления через %dс",
+        di_ui_bounty_rune = "БОГАТСТВО",
+        di_ui_bounty_runes_in_n_s = "Руны богатства через %dс",
+        di_ui_bounty_spawn_spots = "Точки спавна богатства",
+        di_ui_objective = "ТЕРЗАТЕЛЬ",
+        di_ui_tormentor_soon_s = "Терзатель скоро (%s)",
+        di_ui_spawns_at_20_00 = "Появление ровно в 20:00",
+        di_ui_tormentor_in_n_s = "Терзатель через %dс",
+        di_ui_spawns_at_20_00_2 = "Появление на 20:00",
+        di_ui_initial_bounty_spawns = "Стартовые руны",
+        di_ui_neutrals_unlocked = "НЕЙТРАЛКИ",
+        di_ui_tier_1_neutrals_ready = "Tier 1 Нейтралки доступны",
+        di_ui_n_7_00_match_time_reached = "Время матча 7:00",
+        di_ui_tier_2_neutrals_ready = "Tier 2 Нейтралки доступны",
+        di_ui_n_17_00_match_time_reached = "Время матча 17:00",
+        di_ui_tier_3_neutrals_ready = "Tier 3 Нейтралки доступны",
+        di_ui_n_27_00_match_time_reached = "Время матча 27:00",
+        di_ui_tier_4_neutrals_ready = "Tier 4 Нейтралки доступны",
+        di_ui_n_37_00_match_time_reached = "Время матча 37:00",
+        di_ui_tier_5_neutrals_ready = "Tier 5 Нейтралки доступны",
+        di_ui_n_60_00_match_time_reached = "Время матча 60:00",
+        di_ui_lotus_pool = "ЛОТОС",
+        di_ui_lotus_fruit_in_n_s = "Лотосы через %dс",
+        di_ui_side_lane_pools = "Боковые пруды лотосов",
+        di_ui_courier_warning = "КУРЬЕР",
+        di_ui_courier_under_attack = "Курьер атакован!",
+        di_ui_n_hp_remaining = "Осталось %d HP",
+        di_ui_tower_defense = "ВЫШКА",
+        di_ui_ally_tower_attacked = "Вышка атакована",
+        di_ui_health_dropped_to_n_pct = "Здоровье упало до %d%%",
+        di_ui_kill_opportunity = "LOW HP ВРАГ",
+        di_ui_rune_pickup = "ПОДБОР РУНЫ",
+        di_ui_picked_up = "подобрал ",
+        di_ui_invisibility_alert = "ИНВИЗ ВРАГА",
+        di_ui_enemy_entered_stealth = "Враг ушел в невидимость",
+        di_ui_teleport_warning = "ТЕЛЕПОРТ ВРАГА",
+        di_ui_teleporting = " телепортируется",
+        di_ui_teleporting_to = "Телепорт к ",
+        di_ui_aegis_claimed = "АЕГИС ПОДОБРАН",
+        di_ui_claimed_aegis = " поднял Аегис",
+        di_ui_enemy_secured_immortal = "Враг получил бессмертие",
+        di_ui_ally_secured_immortal = "Союзник получил бессмертие",
+        di_ui_roshan_pit_alert = "ЛОГОВО РОШАНА",
+        di_ui_roshan_under_attack = "Рошан атакован!",
+        di_ui_combat_audio_detected_in_pit = "Звуки битвы в логове",
+        di_ui_player = "Игрок",
+        di_ui_buyback_alert = "ВЫКУП",
+        di_ui_bought_back = " выкупился!",
+        di_ui_hero_returned_to_match = "Герой вернулся в игру",
+        di_ui_roshan_slain = "РОШАН УБИТ",
+        di_ui_roshan_killed = "Рошан убит!",
+        di_ui_aegis_dropped_in_pit = "Аегис выпал в логове",
+        di_ui_tormentor_spawn = "ТЕРЗАТЕЛЬ",
+        di_ui_tormentor_spawned = "Терзатель появился!",
+        di_ui_objective_available = "Объект доступен на карте",
+        di_ui_tormentor_defeated = "ТЕРЗАТЕЛЬ",
+        di_ui_tormentor_defeated_2 = "Терзатель повержен!",
+        di_ui_shard_granted_to_team = "Осколок выдан команде",
+        di_ui_hero = "Герой",
+        di_ui_main_menu = "Главное меню",
+        di_ui_finding_match = "Поиск матча",
+        di_ui_loading_match = "Загрузка матча",
+        di_ui_waiting_for_players = "Ждём игроков",
+        di_ui_liked_songs = "Любимые треки",
+        di_ui_removed_from_favorites = "Удалено из избранного",
+        di_ui_saved_to_library = "Сохранено в библиотеку",
+        di_ui_removed_from_spotify = "Удалено из Spotify",
+        di_ui_match_declined = "Матч отклонён",
+        di_ui_returning_to_queue = "Возвращаемся в поиск",
+        di_ui_accepted = "Принято",
+        di_ui_waiting_for_players_2 = "Ждём остальных",
+        di_ui_match_found = "Матч найден",
+        di_ui_click_to_accept = "Нажми, чтобы принять",
+        di_ui_accept = "Принять",
+        di_ui_strategy_time = "Стратегия",
+        di_ui_team_showcase = "Команды",
+        di_ui_hero_selection = "Выбор героев",
+        di_ui_bans = "Баны",
+        di_ui_weight = "Начертание",
+        di_ui_color = "Цвет",
+        di_ui_palette = "Палитра",
+        di_ui_format = "Формат",
+        di_ui_icon = "Иконка",
+        di_ui_color_picker = "Выбор цвета",
+        di_ui_reset = "Сброс",
+        di_ui_widgets = "Виджеты",
+        di_ui_drawer_hint = "ПКМ: настройки  \u{2022}  ЛКМ: вкл/выкл  \u{2022}  перетаскивание: порядок",
+        di_ui_controls_hint = "Ctrl + ЛКМ : Перемещение   •   ПКМ : Редактор виджетов",
+        di_ui_music = "Музыка",
+        di_ui_fight = "Бой",
+        di_ui_map = "Карта",
+        di_ui_success = "Успешно!",
+        di_ui_notification = "ОПОВЕЩЕНИЕ",
+        di_ui_track = "Трек",
+        di_ui_match = "Матч ",
+        di_tab_general = "Главная",
+        di_tab_settings = "Настройки",
+        di_tab_position = "Позиция и размер",
+        di_tab_geometry = "Геометрия",
+        di_tab_appearance = "Внешний вид",
+        di_tab_style = "Стиль",
+        di_tab_combat = "Бой и радар",
+        di_tab_radar = "Радар",
+        di_tab_alerts = "Оповещения",
+        di_tab_notifications = "Уведомления",
+        di_tab_runes = "Руны и объекты",
+        di_tab_events = "События",
+        di_tab_timings = "Тайминги",
+        di_tab_seconds = "Пре-таймеры",
+        di_tab_media = "Медиа",
+        di_tab_parameters = "Параметры",
+        di_tab_haptics = "Тактильный отклик",
+        di_tab_tactile = "Параметры тактилки",
+        di_tab_priority = "Приоритеты",
+        di_tab_priority_group = "Приоритет оповещений",
+        di_main_enabled = "Включить Island",
+        di_main_only_in_game = "Только в игре",
+        di_main_preset = "Пресет позиции",
+        di_main_offset_y = "Смещение (Y)",
+        di_main_offset_x = "Смещение (X)",
+        di_main_scale = "Масштаб",
+        di_main_custom_label = "Тег героя",
+        di_main_bg_color = "Цвет фона островка",
+        di_main_pure_glass = "Стиль стекла",
+        di_main_border_thickness = "Толщина обводки",
+        di_main_widget_editor = "Редактор виджетов (ПКМ)",
+        di_main_reset_pos = "Сбросить позицию",
+        di_preset_top_center = "Сверху по центру",
+        di_preset_custom = "Своя (Ctrl + ЛКМ)",
+        di_preset_top_left = "Сверху слева",
+        di_preset_top_right = "Сверху справа",
+        di_preset_screen_center = "По центру экрана",
+        di_preset_bottom_center = "Снизу по центру",
+        di_combat_fight_hud = "Радар боя (Fight HUD)",
+        di_combat_fight_scope = "Область боя",
+        di_combat_scope_local = "Только вокруг своего героя",
+        di_combat_scope_any = "Любой бой на карте",
+        di_combat_min_heroes = "Мин. героев для драки",
+        di_combat_fight_radius = "Радиус захвата драки",
+        di_combat_radar_zoom = "Масштаб радара",
+        di_combat_fight_timeout = "Задержка закрытия после драки",
+        di_combat_fight_large_w = "Ширина карточки боя",
+        di_combat_fight_large_h = "Высота карточки боя",
+        di_combat_kills = "Серии убийств",
+        di_combat_invis = "Невидимость и Smoke врага",
+        di_combat_teleports = "Телепорты врагов",
+        di_combat_key_enemy_items = "Важные предметы врага",
+        di_combat_couriers = "Атака курьера",
+        di_combat_towers = "Атака вышек",
+        di_combat_buybacks = "Выкупы игроков",
+        di_combat_low_hp = "Добивание Low HP",
+        di_combat_level_up = "Повышение уровня",
+        di_combat_courier_delivery = "Активность доставки курьера",
+        di_combat_pause_alert = "Оповещение паузы игры",
+        di_runes_active_runes = "Активные руны (Power)",
+        di_runes_water_runes = "Водные руны",
+        di_runes_bounty_runes = "Руны богатства (Bounty)",
+        di_runes_wisdom_runes = "Руны мудрости (Wisdom)",
+        di_runes_rune_pickups = "Подбор рун союзником",
+        di_runes_rune_world_spawn = "Появление рун на карте",
+        di_runes_lotus = "Пруды лотосов",
+        di_runes_tormentor = "Терзатель",
+        di_runes_roshan = "Рошан и Эгида",
+        di_runes_stacks = "Напоминание о стаке кемпов",
+        di_timings_toast_duration = "Длительность уведомлений",
+        di_timings_stack_time = "Пре-таймер стака (агр на :53)",
+        di_timings_power_rune_time = "Пре-таймер: Power руны",
+        di_timings_water_rune_time = "Пре-таймер: Водные руны",
+        di_timings_bounty_rune_time = "Пре-таймер: Bounty руны",
+        di_timings_wisdom_rune_time = "Пре-таймер: Wisdom руны",
+        di_timings_lotus_time = "Пре-таймер: Лотосы",
+        di_timings_tormentor1_time = "1-е опов. Терзателя",
+        di_timings_tormentor2_time = "2-е опов. Терзателя",
+        di_media_enabled = "Медиа плеер",
+        di_media_spotify_like = "Лайк трека Spotify",
+        di_media_volume_wheel = "Громкость колесиком мыши",
+        di_media_marquee_speed = "Скорость бегущей строки",
+        di_media_secondary_bubble = "Второй островок/баббл",
+        di_media_shadow = "Мягкие тени",
+        di_media_blur = "Размытие фона (Blur)",
+        di_media_hints = "Подсказки управления",
+        di_media_accent_color = "Основной цвет темы",
+        di_media_export_cfg = "Экспорт всех настроек в файл",
+        di_media_import_cfg = "Импорт всех настроек из файла",
+        di_courier_delivering = "Доставка вещей",
+        di_courier_delivered = "Доставлено!",
+        di_courier_eta = "ETA",
+        di_courier_speed = "Скор.",
+        di_courier_hp = "ХП",
+        di_island_clock = "Часы",
+        di_island_kda = "КДА",
+        di_island_gold = "Золото",
+        di_island_networth = "NW",
+        di_island_lasthits = "CS",
+        di_island_hero = "Герой",
+        di_island_fps = "ФПС",
+        di_island_ping = "Пинг",
+        di_island_paused = "Пауза",
+        di_haptics_enabled = "Включить тактильный движок",
+        di_haptics_visual = "Визуальная тактильность (Сквиш)",
+        di_haptics_audio = "Акустические микро-клики",
+        di_haptics_volume = "Громкость щелчков",
+        di_haptics_intensity = "Сила кинетического импульса",
+        di_haptics_combat_filter = "Умный фильтр в драках",
+        di_haptics_audio_ducking = "Затихание остальных звуков",
+        di_haptics_ducking_amount = "Сила затихания",
+        di_haptics_ducking_alerts = "Затихание: Важные алерты",
+        di_haptics_ducking_courier = "Затихание: Курьер",
+        di_haptics_ducking_notifs = "Затихание: Уведомления",
+        di_haptics_ducking_motion = "Затихание: Движение острова",
+        di_haptics_ducking_taptics = "Затихание: Клики и кнопки",
+        di_haptics_test_ducking = "Проверить звук",
+        di_priority_media = "Музыкальный плеер (оповещения не выше него его не перекрывают)",
+        di_priority_stack = "Напоминание о стаке",
+        di_priority_roshan_kill = "Убийство Рошана",
+        di_priority_aegis = "Подбор Эгиды",
+        di_priority_buyback = "Выкуп игрока",
+        di_priority_low_hp = "Добивание Low HP",
+        di_priority_roshan_attack = "Атака на Рошана",
+        di_priority_tower = "Атака на вышку",
+        di_priority_invis = "Невидимость и Smoke врага",
+        di_priority_teleport = "Телепорт врага",
+        di_priority_kill = "Серия убийств",
+        di_priority_courier = "Атака на курьера",
+        di_priority_enemy_item = "Покупка важного предмета врагом",
+        di_priority_tormentor = "Терзатель",
+        di_priority_fight_summary = "Итог боя",
+        di_priority_rune = "Напоминание о руне",
+        di_priority_rune_world = "Появление руны на карте",
+        di_priority_rune_pickup = "Подбор руны союзником",
+        di_priority_power_rune_cycle = "Цикл Power рун",
+        di_priority_lotus = "Пруд лотоса",
+        di_priority_neutral = "Тир нейтрального предмета",
+        di_priority_level = "Повышение уровня",
+        di_priority_spotify_like = "Подтверждение лайка Spotify",
+    },
+})
+local Menu = localization.WrapLibrary(Menu)
 
-local localization = qLocalization and qLocalization.new and qLocalization.new(Translations)
-local Menu = localization and localization.WrapLibrary(Menu) or Menu
-
-local function L(key, fallbackEn)
-    if localization then
-        local val = localization.Localize(key)
-        if val ~= key then
-            return val
-        end
-        if fallbackEn then
-            local lang = localization.GetLanguage and localization.GetLanguage() or "en"
-            return (lang == "ru") and key or fallbackEn
-        end
-        return val
+local LCache = { lang = nil, strings = {} }
+local function L(key)
+    local lang = localization.GetLanguage()
+    if lang ~= LCache.lang then
+        LCache.lang = lang
+        LCache.strings = {}
     end
-    return fallbackEn or key
+    local v = LCache.strings[key]
+    if v == nil then
+        v = localization.Localize(key)
+        if type(v) ~= "string" then v = key end
+        LCache.strings[key] = v
+    end
+    return v
 end
 
 local function ToggleOn(widget)
@@ -713,14 +1364,14 @@ local HUDCustomizer = {
     DragCurrentX = 0,
     ActiveChips = { "clock", "kda" },
     AvailableChips = {
-        { id = "clock", label = L("island.clock", "Clock") },
-        { id = "kda", label = L("island.kda", "KDA") },
-        { id = "gold", label = L("island.gold", "Gold") },
-        { id = "networth", label = L("island.networth", "NW") },
-        { id = "lasthits", label = L("island.lasthits", "LH") },
-        { id = "heroname", label = L("island.hero", "Hero") },
-        { id = "fps", label = L("island.fps", "FPS") },
-        { id = "ping", label = L("island.ping", "Ping") }
+        { id = "clock", label = "di_island_clock" },
+        { id = "kda", label = "di_island_kda" },
+        { id = "gold", label = "di_island_gold" },
+        { id = "networth", label = "di_island_networth" },
+        { id = "lasthits", label = "di_island_lasthits" },
+        { id = "heroname", label = "di_island_hero" },
+        { id = "fps", label = "di_island_fps" },
+        { id = "ping", label = "di_island_ping" }
     },
     WidgetConfigs = {
         clock = { bold = true, colorMode = 1, format = 1, showIcon = true },
@@ -922,16 +1573,16 @@ local StrictInvisModifiers = {
 }
 
 local RuneInfoList = {
-    [Enum.RuneType.DOTA_RUNE_DOUBLEDAMAGE] = { en = "Double Damage", ru = "Двойной урон", col = Color(65, 140, 255, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" },
-    [Enum.RuneType.DOTA_RUNE_HASTE] = { en = "Haste", ru = "Ускорение", col = Color(255, 65, 65, 255), path = "panorama/images/spellicons/rune_haste_png.vtex_c", svg = "rune_haste" },
-    [Enum.RuneType.DOTA_RUNE_ILLUSION] = { en = "Illusion", ru = "Иллюзии", col = Color(255, 205, 45, 255), path = "panorama/images/spellicons/rune_illusion_png.vtex_c", svg = "rune_dd" },
-    [Enum.RuneType.DOTA_RUNE_INVISIBILITY] = { en = "Invisibility", ru = "Невидимость", col = Color(170, 85, 255, 255), path = "panorama/images/spellicons/rune_invis_png.vtex_c", svg = "rune_invis" },
-    [Enum.RuneType.DOTA_RUNE_REGENERATION] = { en = "Regeneration", ru = "Регенерация", col = Color(85, 255, 125, 255), path = "panorama/images/spellicons/rune_regen_png.vtex_c", svg = "rune_regen" },
-    [Enum.RuneType.DOTA_RUNE_BOUNTY] = { en = "Bounty", ru = "Богатство", col = Color(255, 175, 10, 255), path = "panorama/images/items/courier_gold_png.vtex_c", svg = "bounty" },
-    [Enum.RuneType.DOTA_RUNE_ARCANE] = { en = "Arcane", ru = "Волшебство", col = Color(235, 85, 255, 255), path = "panorama/images/spellicons/rune_arcane_png.vtex_c", svg = "rune_arcane" },
-    [Enum.RuneType.DOTA_RUNE_WATER] = { en = "Water", ru = "Вода", col = Color(0, 215, 255, 255), path = "panorama/images/items/bottle_water_png.vtex_c", svg = "rune_water" },
-    [Enum.RuneType.DOTA_RUNE_XP] = { en = "Wisdom", ru = "Мудрость", col = Color(185, 105, 255, 255), path = "panorama/images/spellicons/rune_xp_png.vtex_c", svg = "rune_wisdom" },
-    [Enum.RuneType.DOTA_RUNE_SHIELD] = { en = "Shield", ru = "Щит", col = Color(255, 225, 105, 255), path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield" }
+    [Enum.RuneType.DOTA_RUNE_DOUBLEDAMAGE] = { name = "di_rune_names_double_damage", col = Color(65, 140, 255, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" },
+    [Enum.RuneType.DOTA_RUNE_HASTE] = { name = "di_rune_names_haste", col = Color(255, 65, 65, 255), path = "panorama/images/spellicons/rune_haste_png.vtex_c", svg = "rune_haste" },
+    [Enum.RuneType.DOTA_RUNE_ILLUSION] = { name = "di_rune_names_illusion", col = Color(255, 205, 45, 255), path = "panorama/images/spellicons/rune_illusion_png.vtex_c", svg = "rune_dd" },
+    [Enum.RuneType.DOTA_RUNE_INVISIBILITY] = { name = "di_rune_names_invisibility", col = Color(170, 85, 255, 255), path = "panorama/images/spellicons/rune_invis_png.vtex_c", svg = "rune_invis" },
+    [Enum.RuneType.DOTA_RUNE_REGENERATION] = { name = "di_rune_names_regeneration", col = Color(85, 255, 125, 255), path = "panorama/images/spellicons/rune_regen_png.vtex_c", svg = "rune_regen" },
+    [Enum.RuneType.DOTA_RUNE_BOUNTY] = { name = "di_rune_names_bounty", col = Color(255, 175, 10, 255), path = "panorama/images/items/courier_gold_png.vtex_c", svg = "bounty" },
+    [Enum.RuneType.DOTA_RUNE_ARCANE] = { name = "di_rune_names_arcane", col = Color(235, 85, 255, 255), path = "panorama/images/spellicons/rune_arcane_png.vtex_c", svg = "rune_arcane" },
+    [Enum.RuneType.DOTA_RUNE_WATER] = { name = "di_rune_names_water", col = Color(0, 215, 255, 255), path = "panorama/images/items/bottle_water_png.vtex_c", svg = "rune_water" },
+    [Enum.RuneType.DOTA_RUNE_XP] = { name = "di_rune_names_wisdom", col = Color(185, 105, 255, 255), path = "panorama/images/spellicons/rune_xp_png.vtex_c", svg = "rune_wisdom" },
+    [Enum.RuneType.DOTA_RUNE_SHIELD] = { name = "di_rune_names_shield", col = Color(255, 225, 105, 255), path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield" }
 }
 
 local RuneModifierMap = {
@@ -946,31 +1597,31 @@ local RuneModifierMap = {
 }
 
 local MapLandmarks = {
-    { name = L("Верхний Рошан (Река)", "Top Roshan (River)"), pos = { x = -2400, y = 1800 } },
-    { name = L("Нижний Рошан (Река)", "Bot Roshan (River)"), pos = { x = 2400, y = -1800 } },
-    { name = L("Верхняя руна реки", "Top River Rune"), pos = { x = -1600, y = 1200 } },
-    { name = L("Нижняя руна реки", "Bot River Rune"), pos = { x = 1200, y = -1600 } },
-    { name = L("Центр реки", "River Center"), pos = { x = -100, y = -100 } },
+    { name = "di_landmarks_top_roshan_river", pos = { x = -2400, y = 1800 } },
+    { name = "di_landmarks_bot_roshan_river", pos = { x = 2400, y = -1800 } },
+    { name = "di_landmarks_top_river_rune", pos = { x = -1600, y = 1200 } },
+    { name = "di_landmarks_bot_river_rune", pos = { x = 1200, y = -1600 } },
+    { name = "di_landmarks_river_center", pos = { x = -100, y = -100 } },
 
-    { name = L("Тройка Света", "Radiant Triangle"), pos = { x = -3400, y = -1800 } },
-    { name = L("Тройка Тьмы", "Dire Triangle"), pos = { x = 3400, y = 1800 } },
-    { name = L("Лес Света", "Radiant Jungle"), pos = { x = 2200, y = -4400 } },
-    { name = L("Лес Тьмы", "Dire Jungle"), pos = { x = -2200, y = 4400 } },
+    { name = "di_landmarks_radiant_triangle", pos = { x = -3400, y = -1800 } },
+    { name = "di_landmarks_dire_triangle", pos = { x = 3400, y = 1800 } },
+    { name = "di_landmarks_radiant_jungle", pos = { x = 2200, y = -4400 } },
+    { name = "di_landmarks_dire_jungle", pos = { x = -2200, y = 4400 } },
 
-    { name = L("Терзатель Света", "Radiant Tormentor"), pos = { x = 3800, y = -5800 } },
-    { name = L("Терзатель Тьмы", "Dire Tormentor"), pos = { x = -3800, y = 5800 } },
-    { name = L("Пруд Лотосов (Топ)", "Lotus Pool (Top)"), pos = { x = -6000, y = 5600 } },
-    { name = L("Пруд Лотосов (Бот)", "Lotus Pool (Bot)"), pos = { x = 6000, y = -5600 } },
-    { name = L("Святилище Мудрости (Свет)", "Wisdom Shrine (Radiant)"), pos = { x = -7600, y = -3600 } },
-    { name = L("Святилище Мудрости (Тьма)", "Wisdom Shrine (Dire)"), pos = { x = 7600, y = 3600 } },
-    { name = L("Парный Портал (Топ)", "Twin Gate (Top)"), pos = { x = -7800, y = 7400 } },
-    { name = L("Парный Портал (Бот)", "Twin Gate (Bot)"), pos = { x = 7800, y = -7400 } },
+    { name = "di_landmarks_radiant_tormentor", pos = { x = 3800, y = -5800 } },
+    { name = "di_landmarks_dire_tormentor", pos = { x = -3800, y = 5800 } },
+    { name = "di_landmarks_lotus_pool_top", pos = { x = -6000, y = 5600 } },
+    { name = "di_landmarks_lotus_pool_bot", pos = { x = 6000, y = -5600 } },
+    { name = "di_landmarks_wisdom_shrine_radiant", pos = { x = -7600, y = -3600 } },
+    { name = "di_landmarks_wisdom_shrine_dire", pos = { x = 7600, y = 3600 } },
+    { name = "di_landmarks_twin_gate_top", pos = { x = -7800, y = 7400 } },
+    { name = "di_landmarks_twin_gate_bot", pos = { x = 7800, y = -7400 } },
 
-    { name = L("Мид линия", "Mid lane"), pos = { x = 0, y = 0 } },
-    { name = L("Топ линия", "Top lane"), pos = { x = -5500, y = 4800 } },
-    { name = L("Бот линия", "Bot lane"), pos = { x = 5200, y = -5200 } },
-    { name = L("База Сил Света", "Radiant Base"), pos = { x = -6500, y = -6500 } },
-    { name = L("База Сил Тьмы", "Dire Base"), pos = { x = 6500, y = 6500 } }
+    { name = "di_landmarks_mid_lane", pos = { x = 0, y = 0 } },
+    { name = "di_landmarks_top_lane", pos = { x = -5500, y = 4800 } },
+    { name = "di_landmarks_bot_lane", pos = { x = 5200, y = -5200 } },
+    { name = "di_landmarks_radiant_base", pos = { x = -6500, y = -6500 } },
+    { name = "di_landmarks_dire_base", pos = { x = 6500, y = 6500 } }
 }
 
 local VectorIcons = {
@@ -1233,6 +1884,19 @@ local function SaveAllConfig()
                     if UI.Haptics.DuckingMotion then f:write("ui_h_duck_motion=" .. (UI.Haptics.DuckingMotion:Get() and "1" or "0") .. "\n") end
                     if UI.Haptics.DuckingTaptics then f:write("ui_h_duck_taptics=" .. (UI.Haptics.DuckingTaptics:Get() and "1" or "0") .. "\n") end
                 end
+
+                for secName, sec in pairs(UI) do
+                    if type(sec) == "table" then
+                        for name, w in pairs(sec) do
+                            local ok, v = pcall(function() return w:Get() end)
+                            if ok and type(v) == "boolean" then
+                                f:write(string.format("w_%s.%s=%s\n", secName, name, v and "b1" or "b0"))
+                            elseif ok and type(v) == "number" then
+                                f:write(string.format("w_%s.%s=%s\n", secName, name, tostring(v)))
+                            end
+                        end
+                    end
+                end
             end
             f:close()
         end
@@ -1276,8 +1940,16 @@ local function LoadAllConfig()
                     HUDCustomizer.WidgetConfigs[id].customColor = HexToColor(hexStr)
                 end
             elseif UI then
+                local wSec, wName, wVal = string.match(line, "^w_([%w_]+)%.([%w_]+)=(.*)$")
                 local k, v = string.match(line, "^([%w_]+)=(.*)$")
-                if k and v then
+                if wSec then
+                    local w = type(UI[wSec]) == "table" and UI[wSec][wName] or nil
+                    if w then
+                        local val = (wVal == "b1") or (wVal ~= "b0" and tonumber(wVal))
+                        if wVal == "b0" then val = false end
+                        if val ~= nil then pcall(function() w:Set(val) end) end
+                    end
+                elseif k and v then
                     if k == "ui_enabled" and UI.Main and UI.Main.Enabled then UI.Main.Enabled:Set(v == "1")
                     elseif k == "ui_only_game" and UI.Main and UI.Main.OnlyInGame then UI.Main.OnlyInGame:Set(v == "1")
                     elseif k == "ui_preset" and UI.Main and UI.Main.Preset then UI.Main.Preset:Set(tonumber(v) or 0)
@@ -1766,26 +2438,26 @@ local function InitMenu()
     local tab = Menu.Create("General", "Dynamic Island", "dynamic_island_apple")
     tab:Icon("\u{f0eb}")
 
-    local gGeneral = tab:Create(L("tab.general", "General")):Create("tab.settings")
-    local gPosition = tab:Create(L("tab.position", "Position & Size")):Create("tab.geometry")
-    local gAppearance = tab:Create(L("tab.appearance", "Appearance")):Create("tab.style")
-    local gCombat = tab:Create(L("tab.combat", "Combat & Radar")):Create("tab.radar")
-    local gAlerts = tab:Create(L("tab.alerts", "Alerts")):Create("tab.notifications")
-    local gRunes = tab:Create(L("tab.runes", "Runes & Objectives")):Create("tab.events")
-    local gTimings = tab:Create(L("tab.timings", "Timings")):Create("tab.seconds")
-    local gMedia = tab:Create(L("tab.media", "Media")):Create("tab.parameters")
-    local gHaptics = tab:Create(L("tab.haptics", "Haptic Engine")):Create("tab.tactile")
-    local gPriority = tab:Create(L("tab.priority", "Priorities")):Create("tab.priority_group")
+    local gGeneral = tab:Create(L("di_tab_general")):Create("di_tab_settings")
+    local gPosition = tab:Create(L("di_tab_position")):Create("di_tab_geometry")
+    local gAppearance = tab:Create(L("di_tab_appearance")):Create("di_tab_style")
+    local gCombat = tab:Create(L("di_tab_combat")):Create("di_tab_radar")
+    local gAlerts = tab:Create(L("di_tab_alerts")):Create("di_tab_notifications")
+    local gRunes = tab:Create(L("di_tab_runes")):Create("di_tab_events")
+    local gTimings = tab:Create(L("di_tab_timings")):Create("di_tab_seconds")
+    local gMedia = tab:Create(L("di_tab_media")):Create("di_tab_parameters")
+    local gHaptics = tab:Create(L("di_tab_haptics")):Create("di_tab_tactile")
+    local gPriority = tab:Create(L("di_tab_priority")):Create("di_tab_priority_group")
 
     UI = {
         Main = {
-            Enabled = gGeneral:Switch("main.enabled", true, "\u{f0eb}"),
-            OnlyInGame = gGeneral:Switch("main.only_in_game", false, "\u{f108}"),
-            ToggleHUDMode = gGeneral:Button("main.widget_editor", function()
+            Enabled = gGeneral:Switch("di_main_enabled", true, "\u{f0eb}"),
+            OnlyInGame = gGeneral:Switch("di_main_only_in_game", false, "\u{f108}"),
+            ToggleHUDMode = gGeneral:Button("di_main_widget_editor", function()
                 HUDCustomizer.IsOpen = not HUDCustomizer.IsOpen
                 HUDCustomizer.InspectedChip = nil
             end),
-            ResetPos = gGeneral:Button("main.reset_pos", function()
+            ResetPos = gGeneral:Button("di_main_reset_pos", function()
                 DragState.CustomX = -1
                 DragState.CustomY = -1
                 UI.Main.Preset:Set(0)
@@ -1793,91 +2465,91 @@ local function InitMenu()
                 UI.Main.OffsetX:Set(0)
                 SaveAllConfig()
             end),
-            ExportCfg = gGeneral:Button("media.export_cfg", function()
+            ExportCfg = gGeneral:Button("di_media_export_cfg", function()
                 SaveAllConfig()
             end),
-            ImportCfg = gGeneral:Button("media.import_cfg", function()
+            ImportCfg = gGeneral:Button("di_media_import_cfg", function()
                 LoadAllConfig()
             end),
-            Preset = gPosition:Combo("main.preset", { "preset.top_center", "preset.custom", "preset.top_left", "preset.top_right", "preset.screen_center", "preset.bottom_center" }, 0),
-            OffsetY = gPosition:Slider("main.offset_y", 0, 1000, 20, "%d px"),
-            OffsetX = gPosition:Slider("main.offset_x", -960, 960, 0, "%d px"),
-            Scale = gPosition:Slider("main.scale", 60, 180, 100, "%d%%"),
-            IslandBgColor = gAppearance:ColorPicker("main.bg_color", Color(0, 0, 0, 245)),
-            PureGlass = gAppearance:Switch("main.pure_glass", false, "\u{f06e}"),
-            CustomLabel = gAppearance:Input("main.custom_label", ""),
-            BorderThickness = gAppearance:Slider("main.border_thickness", 0.0, 3.0, 1.0, "%.1f px"),
+            Preset = gPosition:Combo("di_main_preset", { "di_preset_top_center", "di_preset_custom", "di_preset_top_left", "di_preset_top_right", "di_preset_screen_center", "di_preset_bottom_center" }, 0),
+            OffsetY = gPosition:Slider("di_main_offset_y", 0, 1000, 20, "%d px"),
+            OffsetX = gPosition:Slider("di_main_offset_x", -960, 960, 0, "%d px"),
+            Scale = gPosition:Slider("di_main_scale", 60, 180, 100, "%d%%"),
+            IslandBgColor = gAppearance:ColorPicker("di_main_bg_color", Color(0, 0, 0, 245)),
+            PureGlass = gAppearance:Switch("di_main_pure_glass", false, "\u{f06e}"),
+            CustomLabel = gAppearance:Input("di_main_custom_label", ""),
+            BorderThickness = gAppearance:Slider("di_main_border_thickness", 0.0, 3.0, 1.0, "%.1f px"),
         },
         Media = {
-            Shadow = gAppearance:Switch("media.shadow", true, "\u{f186}"),
-            Blur = gAppearance:Switch("media.blur", true, "\u{f06e}"),
-            AccentColor = gAppearance:ColorPicker("media.accent_color", Config.Colors.Accent),
-            Enabled = gMedia:Switch("media.enabled", true, "\u{f001}"),
-            SpotifyLike = gMedia:Switch("media.spotify_like", true, "\u{f004}"),
-            VolumeWheel = gMedia:Switch("media.volume_wheel", true, "\u{f028}"),
-            MarqueeSpeed = gMedia:Slider("media.marquee_speed", 20, 100, 45, "%d px/s"),
-            SecondaryBubble = gMedia:Switch("media.secondary_bubble", true, "\u{f111}"),
-            Hints = gMedia:Switch("media.hints", true, "\u{f05a}"),
+            Shadow = gAppearance:Switch("di_media_shadow", true, "\u{f186}"),
+            Blur = gAppearance:Switch("di_media_blur", true, "\u{f06e}"),
+            AccentColor = gAppearance:ColorPicker("di_media_accent_color", Config.Colors.Accent),
+            Enabled = gMedia:Switch("di_media_enabled", true, "\u{f001}"),
+            SpotifyLike = gMedia:Switch("di_media_spotify_like", true, "\u{f004}"),
+            VolumeWheel = gMedia:Switch("di_media_volume_wheel", true, "\u{f028}"),
+            MarqueeSpeed = gMedia:Slider("di_media_marquee_speed", 20, 100, 45, "%d px/s"),
+            SecondaryBubble = gMedia:Switch("di_media_secondary_bubble", true, "\u{f111}"),
+            Hints = gMedia:Switch("di_media_hints", true, "\u{f05a}"),
         },
         Combat = {
-            FightHUD = gCombat:Switch("combat.fight_hud", true, "\u{f06e}"),
-            FightScope = gCombat:Combo("combat.fight_scope", { "combat.scope_local", "combat.scope_any" }, 0),
-            MinHeroes = gCombat:Slider("combat.min_heroes", 1, 10, 2, "%d"),
-            FightRadius = gCombat:Slider("combat.fight_radius", 1000, 3000, 1600, "%d px"),
-            RadarZoom = gCombat:Slider("combat.radar_zoom", 1000, 3500, 2000, "%d px"),
-            FightTimeout = gCombat:Slider("combat.fight_timeout", 2, 10, 4, "%d s"),
-            FightLargeW = gCombat:Slider("combat.fight_large_w", 300, 520, 365, "%d px"),
-            FightLargeH = gCombat:Slider("combat.fight_large_h", 110, 220, 148, "%d px"),
-            Kills = gAlerts:Switch("combat.kills", true, "\u{f0e7}"),
-            Invis = gAlerts:Switch("combat.invis", true, "\u{f06e}"),
-            Teleports = gAlerts:Switch("combat.teleports", true, "\u{f3c5}"),
-            KeyEnemyItems = gAlerts:Switch("combat.key_enemy_items", true, "\u{f06e}"),
-            Couriers = gAlerts:Switch("combat.couriers", true, "\u{f48b}"),
-            CourierDelivery = gAlerts:Switch("combat.courier_delivery", true, "\u{f48b}"),
-            PauseAlert = gAlerts:Switch("combat.pause_alert", true, "\u{f04c}"),
-            Towers = gAlerts:Switch("combat.towers", true, "\u{f1ad}"),
-            Buybacks = gAlerts:Switch("combat.buybacks", true, "\u{f2f9}"),
-            LowHP = gAlerts:Switch("combat.low_hp", true, "\u{f21e}"),
-            LevelUp = gAlerts:Switch("combat.level_up", true, "\u{f201}")
+            FightHUD = gCombat:Switch("di_combat_fight_hud", true, "\u{f06e}"),
+            FightScope = gCombat:Combo("di_combat_fight_scope", { "di_combat_scope_local", "di_combat_scope_any" }, 0),
+            MinHeroes = gCombat:Slider("di_combat_min_heroes", 1, 10, 2, "%d"),
+            FightRadius = gCombat:Slider("di_combat_fight_radius", 1000, 3000, 1600, "%d px"),
+            RadarZoom = gCombat:Slider("di_combat_radar_zoom", 1000, 3500, 2000, "%d px"),
+            FightTimeout = gCombat:Slider("di_combat_fight_timeout", 2, 10, 4, "%d s"),
+            FightLargeW = gCombat:Slider("di_combat_fight_large_w", 300, 520, 365, "%d px"),
+            FightLargeH = gCombat:Slider("di_combat_fight_large_h", 110, 220, 148, "%d px"),
+            Kills = gAlerts:Switch("di_combat_kills", true, "\u{f0e7}"),
+            Invis = gAlerts:Switch("di_combat_invis", true, "\u{f06e}"),
+            Teleports = gAlerts:Switch("di_combat_teleports", true, "\u{f3c5}"),
+            KeyEnemyItems = gAlerts:Switch("di_combat_key_enemy_items", true, "\u{f06e}"),
+            Couriers = gAlerts:Switch("di_combat_couriers", true, "\u{f48b}"),
+            CourierDelivery = gAlerts:Switch("di_combat_courier_delivery", true, "\u{f48b}"),
+            PauseAlert = gAlerts:Switch("di_combat_pause_alert", true, "\u{f04c}"),
+            Towers = gAlerts:Switch("di_combat_towers", true, "\u{f1ad}"),
+            Buybacks = gAlerts:Switch("di_combat_buybacks", true, "\u{f2f9}"),
+            LowHP = gAlerts:Switch("di_combat_low_hp", true, "\u{f21e}"),
+            LevelUp = gAlerts:Switch("di_combat_level_up", true, "\u{f201}")
         },
         Runes = {
-            ActiveRunes = gRunes:Switch("runes.active_runes", true, "\u{f0e7}"),
-            WaterRunes = gRunes:Switch("runes.water_runes", true, "\u{f043}"),
-            BountyRunes = gRunes:Switch("runes.bounty_runes", true, "\u{f155}"),
-            WisdomRunes = gRunes:Switch("runes.wisdom_runes", true, "\u{f19d}"),
-            RunePickups = gRunes:Switch("runes.rune_pickups", true, "\u{f21b}"),
-            RuneWorldSpawn = gRunes:Switch("runes.rune_world_spawn", true, "\u{f279}"),
-            Lotus = gRunes:Switch("runes.lotus", true, "\u{f06c}"),
-            Tormentor = gRunes:Switch("runes.tormentor", true, "\u{f005}"),
-            Roshan = gRunes:Switch("runes.roshan", true, "\u{f6e3}"),
-            Stacks = gRunes:Switch("runes.stacks", false, "\u{f5fd}")
+            ActiveRunes = gRunes:Switch("di_runes_active_runes", true, "\u{f0e7}"),
+            WaterRunes = gRunes:Switch("di_runes_water_runes", true, "\u{f043}"),
+            BountyRunes = gRunes:Switch("di_runes_bounty_runes", true, "\u{f155}"),
+            WisdomRunes = gRunes:Switch("di_runes_wisdom_runes", true, "\u{f19d}"),
+            RunePickups = gRunes:Switch("di_runes_rune_pickups", true, "\u{f21b}"),
+            RuneWorldSpawn = gRunes:Switch("di_runes_rune_world_spawn", true, "\u{f279}"),
+            Lotus = gRunes:Switch("di_runes_lotus", true, "\u{f06c}"),
+            Tormentor = gRunes:Switch("di_runes_tormentor", true, "\u{f005}"),
+            Roshan = gRunes:Switch("di_runes_roshan", true, "\u{f6e3}"),
+            Stacks = gRunes:Switch("di_runes_stacks", false, "\u{f5fd}")
         },
         Timings = {
-            ToastDuration = gTimings:Slider("timings.toast_duration", 2, 8, 4, "%d s"),
-            PowerRuneTime = gTimings:Slider("timings.power_rune_time", 5, 60, 20, "%d s"),
-            WaterRuneTime = gTimings:Slider("timings.water_rune_time", 5, 60, 20, "%d s"),
-            BountyRuneTime = gTimings:Slider("timings.bounty_rune_time", 5, 45, 10, "%d s"),
-            WisdomRuneTime = gTimings:Slider("timings.wisdom_rune_time", 5, 60, 20, "%d s"),
-            LotusTime = gTimings:Slider("timings.lotus_time", 5, 60, 20, "%d s"),
-            Tormentor1Time = gTimings:Slider("timings.tormentor1_time", 30, 180, 120, "%d s"),
-            Tormentor2Time = gTimings:Slider("timings.tormentor2_time", 5, 60, 20, "%d s"),
-            StackTime = gTimings:Slider("timings.stack_time", 3, 20, 8, "%d s")
+            ToastDuration = gTimings:Slider("di_timings_toast_duration", 2, 8, 4, "%d s"),
+            PowerRuneTime = gTimings:Slider("di_timings_power_rune_time", 5, 60, 20, "%d s"),
+            WaterRuneTime = gTimings:Slider("di_timings_water_rune_time", 5, 60, 20, "%d s"),
+            BountyRuneTime = gTimings:Slider("di_timings_bounty_rune_time", 5, 45, 10, "%d s"),
+            WisdomRuneTime = gTimings:Slider("di_timings_wisdom_rune_time", 5, 60, 20, "%d s"),
+            LotusTime = gTimings:Slider("di_timings_lotus_time", 5, 60, 20, "%d s"),
+            Tormentor1Time = gTimings:Slider("di_timings_tormentor1_time", 30, 180, 120, "%d s"),
+            Tormentor2Time = gTimings:Slider("di_timings_tormentor2_time", 5, 60, 20, "%d s"),
+            StackTime = gTimings:Slider("di_timings_stack_time", 3, 20, 8, "%d s")
         },
         Haptics = {
-            Enabled = gHaptics:Switch("haptics.enabled", true, "\u{f11e}"),
-            VisualFeedback = gHaptics:Switch("haptics.visual", true, "\u{f06e}"),
-            AudioFeedback = gHaptics:Switch("haptics.audio", true, "\u{f028}"),
-            Volume = gHaptics:Slider("haptics.volume", 0, 100, 50, "%d%%"),
-            Intensity = gHaptics:Slider("haptics.intensity", 50, 150, 100, "%d%%"),
-            CombatFilter = gHaptics:Switch("haptics.combat_filter", true, "\u{f0e7}"),
-            AudioDucking = gHaptics:Switch("haptics.audio_ducking", true, "\u{f026}"),
-            DuckingAmount = gHaptics:Slider("haptics.ducking_amount", 0, 100, 50, "%d%%"),
-            DuckingAlerts = gHaptics:Switch("haptics.ducking_alerts", true, "\u{f0f3}"),
-            DuckingCourier = gHaptics:Switch("haptics.ducking_courier", true, "\u{f48b}"),
-            DuckingNotifs = gHaptics:Switch("haptics.ducking_notifs", true, "\u{f05a}"),
-            DuckingMotion = gHaptics:Switch("haptics.ducking_motion", false, "\u{f065}"),
-            DuckingTaptics = gHaptics:Switch("haptics.ducking_taptics", false, "\u{f0a7}"),
-            TestDucking = gHaptics:Button("haptics.test_ducking", function()
+            Enabled = gHaptics:Switch("di_haptics_enabled", true, "\u{f11e}"),
+            VisualFeedback = gHaptics:Switch("di_haptics_visual", true, "\u{f06e}"),
+            AudioFeedback = gHaptics:Switch("di_haptics_audio", true, "\u{f028}"),
+            Volume = gHaptics:Slider("di_haptics_volume", 0, 100, 50, "%d%%"),
+            Intensity = gHaptics:Slider("di_haptics_intensity", 50, 150, 100, "%d%%"),
+            CombatFilter = gHaptics:Switch("di_haptics_combat_filter", true, "\u{f0e7}"),
+            AudioDucking = gHaptics:Switch("di_haptics_audio_ducking", true, "\u{f026}"),
+            DuckingAmount = gHaptics:Slider("di_haptics_ducking_amount", 0, 100, 50, "%d%%"),
+            DuckingAlerts = gHaptics:Switch("di_haptics_ducking_alerts", true, "\u{f0f3}"),
+            DuckingCourier = gHaptics:Switch("di_haptics_ducking_courier", true, "\u{f48b}"),
+            DuckingNotifs = gHaptics:Switch("di_haptics_ducking_notifs", true, "\u{f05a}"),
+            DuckingMotion = gHaptics:Switch("di_haptics_ducking_motion", false, "\u{f065}"),
+            DuckingTaptics = gHaptics:Switch("di_haptics_ducking_taptics", false, "\u{f0a7}"),
+            TestDucking = gHaptics:Button("di_haptics_test_ducking", function()
                 if HTTP and HTTP.Request then
                     local userVol = (UI and UI.Haptics and UI.Haptics.Volume) and (UI.Haptics.Volume:Get() / 100.0) or 0.5
                     local baseDuckPct = (UI and UI.Haptics and UI.Haptics.DuckingAmount and UI.Haptics.DuckingAmount:Get() or 50) / 100.0
@@ -1887,29 +2559,29 @@ local function InitMenu()
             end)
         },
         Priority = {
-            Media = gPriority:Slider("priority.media", 1, 5, 5, "%d"),
-            RoshanKill = gPriority:Slider("priority.roshan_kill", 1, 5, 5, "%d"),
-            Aegis = gPriority:Slider("priority.aegis", 1, 5, 5, "%d"),
-            Buyback = gPriority:Slider("priority.buyback", 1, 5, 5, "%d"),
-            LowHp = gPriority:Slider("priority.low_hp", 1, 5, 5, "%d"),
-            RoshanAttack = gPriority:Slider("priority.roshan_attack", 1, 5, 4, "%d"),
-            Tower = gPriority:Slider("priority.tower", 1, 5, 4, "%d"),
-            Invis = gPriority:Slider("priority.invis", 1, 5, 4, "%d"),
-            Teleport = gPriority:Slider("priority.teleport", 1, 5, 4, "%d"),
-            Kill = gPriority:Slider("priority.kill", 1, 5, 3, "%d"),
-            Courier = gPriority:Slider("priority.courier", 1, 5, 3, "%d"),
-            EnemyItem = gPriority:Slider("priority.enemy_item", 1, 5, 3, "%d"),
-            Tormentor = gPriority:Slider("priority.tormentor", 1, 5, 3, "%d"),
-            FightSummary = gPriority:Slider("priority.fight_summary", 1, 5, 3, "%d"),
-            Rune = gPriority:Slider("priority.rune", 1, 5, 2, "%d"),
-            RuneWorld = gPriority:Slider("priority.rune_world", 1, 5, 2, "%d"),
-            RunePickup = gPriority:Slider("priority.rune_pickup", 1, 5, 2, "%d"),
-            PowerRuneCycle = gPriority:Slider("priority.power_rune_cycle", 1, 5, 2, "%d"),
-            Lotus = gPriority:Slider("priority.lotus", 1, 5, 2, "%d"),
-            Neutral = gPriority:Slider("priority.neutral", 1, 5, 2, "%d"),
-            Level = gPriority:Slider("priority.level", 1, 5, 1, "%d"),
-            SpotifyLike = gPriority:Slider("priority.spotify_like", 1, 5, 1, "%d"),
-            Stack = gPriority:Slider("priority.stack", 1, 5, 2, "%d")
+            Media = gPriority:Slider("di_priority_media", 1, 5, 5, "%d"),
+            RoshanKill = gPriority:Slider("di_priority_roshan_kill", 1, 5, 5, "%d"),
+            Aegis = gPriority:Slider("di_priority_aegis", 1, 5, 5, "%d"),
+            Buyback = gPriority:Slider("di_priority_buyback", 1, 5, 5, "%d"),
+            LowHp = gPriority:Slider("di_priority_low_hp", 1, 5, 5, "%d"),
+            RoshanAttack = gPriority:Slider("di_priority_roshan_attack", 1, 5, 4, "%d"),
+            Tower = gPriority:Slider("di_priority_tower", 1, 5, 4, "%d"),
+            Invis = gPriority:Slider("di_priority_invis", 1, 5, 4, "%d"),
+            Teleport = gPriority:Slider("di_priority_teleport", 1, 5, 4, "%d"),
+            Kill = gPriority:Slider("di_priority_kill", 1, 5, 3, "%d"),
+            Courier = gPriority:Slider("di_priority_courier", 1, 5, 3, "%d"),
+            EnemyItem = gPriority:Slider("di_priority_enemy_item", 1, 5, 3, "%d"),
+            Tormentor = gPriority:Slider("di_priority_tormentor", 1, 5, 3, "%d"),
+            FightSummary = gPriority:Slider("di_priority_fight_summary", 1, 5, 3, "%d"),
+            Rune = gPriority:Slider("di_priority_rune", 1, 5, 2, "%d"),
+            RuneWorld = gPriority:Slider("di_priority_rune_world", 1, 5, 2, "%d"),
+            RunePickup = gPriority:Slider("di_priority_rune_pickup", 1, 5, 2, "%d"),
+            PowerRuneCycle = gPriority:Slider("di_priority_power_rune_cycle", 1, 5, 2, "%d"),
+            Lotus = gPriority:Slider("di_priority_lotus", 1, 5, 2, "%d"),
+            Neutral = gPriority:Slider("di_priority_neutral", 1, 5, 2, "%d"),
+            Level = gPriority:Slider("di_priority_level", 1, 5, 1, "%d"),
+            SpotifyLike = gPriority:Slider("di_priority_spotify_like", 1, 5, 1, "%d"),
+            Stack = gPriority:Slider("di_priority_stack", 1, 5, 2, "%d")
         }
     }
 
@@ -2003,7 +2675,7 @@ end
 
 local CleanHeroNameCache = {}
 local function CleanHeroName(raw)
-    if not raw or raw == "" then return L("Вражеский герой", "Enemy Hero") end
+    if not raw or raw == "" then return L("di_ui_enemy_hero") end
     if CleanHeroNameCache[raw] then return CleanHeroNameCache[raw] end
     if Engine.GetDisplayNameByUnitName then
         local ok, dn = pcall(Engine.GetDisplayNameByUnitName, raw)
@@ -2044,7 +2716,7 @@ local function CleanHeroName(raw)
 end
 
 local function GetPlayerDisplayName(ent)
-    if not ent then return L("Вражеский герой", "Enemy Hero") end
+    if not ent then return L("di_ui_enemy_hero") end
     if Entity.IsHero and Entity.IsHero(ent) then
         local allPlayers = Players.GetAll()
         for _, pl in ipairs(allPlayers) do
@@ -2061,28 +2733,28 @@ local function GetPlayerDisplayName(ent)
 end
 
 local TowerNameMap = {
-    ["goodguys_tower1_mid"] = { ru = "Мид Т1 Света", en = "Radiant Mid T1" },
-    ["goodguys_tower2_mid"] = { ru = "Мид Т2 Света", en = "Radiant Mid T2" },
-    ["goodguys_tower3_mid"] = { ru = "Мид Т3 Света", en = "Radiant Mid T3" },
-    ["goodguys_tower1_top"] = { ru = "Топ Т1 Света", en = "Radiant Top T1" },
-    ["goodguys_tower2_top"] = { ru = "Топ Т2 Света", en = "Radiant Top T2" },
-    ["goodguys_tower3_top"] = { ru = "Топ Т3 Света", en = "Radiant Top T3" },
-    ["goodguys_tower1_bot"] = { ru = "Бот Т1 Света", en = "Radiant Bot T1" },
-    ["goodguys_tower2_bot"] = { ru = "Бот Т2 Света", en = "Radiant Bot T2" },
-    ["goodguys_tower3_bot"] = { ru = "Бот Т3 Света", en = "Radiant Bot T3" },
-    ["badguys_tower1_mid"] = { ru = "Мид Т1 Тьмы", en = "Dire Mid T1" },
-    ["badguys_tower2_mid"] = { ru = "Мид Т2 Тьмы", en = "Dire Mid T2" },
-    ["badguys_tower3_mid"] = { ru = "Мид Т3 Тьмы", en = "Dire Mid T3" },
-    ["badguys_tower1_top"] = { ru = "Топ Т1 Тьмы", en = "Dire Top T1" },
-    ["badguys_tower2_top"] = { ru = "Топ Т2 Тьмы", en = "Dire Top T2" },
-    ["badguys_tower3_top"] = { ru = "Топ Т3 Тьмы", en = "Dire Top T3" },
-    ["badguys_tower1_bot"] = { ru = "Бот Т1 Тьмы", en = "Dire Bot T1" },
-    ["badguys_tower2_bot"] = { ru = "Бот Т2 Тьмы", en = "Dire Bot T2" },
-    ["badguys_tower3_bot"] = { ru = "Бот Т3 Тьмы", en = "Dire Bot T3" }
+    ["goodguys_tower1_mid"] = "di_towers_goodguys_tower1_mid",
+    ["goodguys_tower2_mid"] = "di_towers_goodguys_tower2_mid",
+    ["goodguys_tower3_mid"] = "di_towers_goodguys_tower3_mid",
+    ["goodguys_tower1_top"] = "di_towers_goodguys_tower1_top",
+    ["goodguys_tower2_top"] = "di_towers_goodguys_tower2_top",
+    ["goodguys_tower3_top"] = "di_towers_goodguys_tower3_top",
+    ["goodguys_tower1_bot"] = "di_towers_goodguys_tower1_bot",
+    ["goodguys_tower2_bot"] = "di_towers_goodguys_tower2_bot",
+    ["goodguys_tower3_bot"] = "di_towers_goodguys_tower3_bot",
+    ["badguys_tower1_mid"] = "di_towers_badguys_tower1_mid",
+    ["badguys_tower2_mid"] = "di_towers_badguys_tower2_mid",
+    ["badguys_tower3_mid"] = "di_towers_badguys_tower3_mid",
+    ["badguys_tower1_top"] = "di_towers_badguys_tower1_top",
+    ["badguys_tower2_top"] = "di_towers_badguys_tower2_top",
+    ["badguys_tower3_top"] = "di_towers_badguys_tower3_top",
+    ["badguys_tower1_bot"] = "di_towers_badguys_tower1_bot",
+    ["badguys_tower2_bot"] = "di_towers_badguys_tower2_bot",
+    ["badguys_tower3_bot"] = "di_towers_badguys_tower3_bot"
 }
 
 local function GetClosestLandmark(pos)
-    if not pos then return L("Линия", "Lane") end
+    if not pos then return L("di_ui_lane") end
 
     if Towers and Towers.GetAll then
         local allTowers = Towers.GetAll()
@@ -2099,7 +2771,7 @@ local function GetClosestLandmark(pos)
                     for key, entry in pairs(TowerNameMap) do
                         if string.find(rawName, key) then
                             bestTowerDist = d
-                            bestTowerName = L(entry.ru, entry.en)
+                            bestTowerName = L(entry)
                             break
                         end
                     end
@@ -2109,7 +2781,7 @@ local function GetClosestLandmark(pos)
         if bestTowerName then return bestTowerName end
     end
 
-    local closestName = L("Линия", "Lane")
+    local closestName = L("di_ui_lane")
     local closestDist = 999999999
     for _, lm in ipairs(MapLandmarks) do
         local dx = pos.x - lm.pos.x
@@ -2117,7 +2789,7 @@ local function GetClosestLandmark(pos)
         local d = dx * dx + dy * dy
         if d < closestDist then
             closestDist = d
-            closestName = lm.name
+            closestName = L(lm.name)
         end
     end
     return closestName
@@ -2561,9 +3233,9 @@ local function CollectStatusHints()
     local settled = BridgeStatus.FirstPoll > 0 and (clk - BridgeStatus.FirstPoll) > 6.0
 
     if UI and UI.Media and UI.Media.Enabled:Get() and settled and not online then
-        table.insert(out, { text = L("MediaBridge не запущен, музыка и звуки выключены", "MediaBridge isn't running, music and sounds are off"), dot = Color(255, 159, 10, 255) })
+        table.insert(out, { text = L("di_ui_bridge_offline"), dot = Color(255, 159, 10, 255) })
     elseif online and BridgeStatus.MediaSessions == "timeout" then
-        table.insert(out, { text = L("Служба медиа Windows не отвечает, перезагрузи ПК", "Windows media service isn't responding, restart your PC"), dot = Color(255, 159, 10, 255) })
+        table.insert(out, { text = L("di_ui_media_service_down"), dot = Color(255, 159, 10, 255) })
     end
 
     local latest = ParseVersion(BridgeStatus.Latest)
@@ -2571,7 +3243,7 @@ local function CollectStatusHints()
         local mine = ParseVersion(SCRIPT_VERSION)
         local bridge = ParseVersion(BridgeStatus.Version)
         if (mine and VersionLess(mine, latest)) or (bridge and VersionLess(bridge, latest)) then
-            table.insert(out, { text = L("Доступно обновление ", "Update available: ") .. BridgeStatus.Latest, dot = Color(10, 132, 255, 255) })
+            table.insert(out, { text = L("di_ui_update_available") .. BridgeStatus.Latest, dot = Color(10, 132, 255, 255) })
         end
     end
     return out
@@ -2785,27 +3457,27 @@ local function ProcessFightDetector()
 
                 local ek = FightTracker.EnemiesKilled
                 local ak = FightTracker.AlliesKilled
-                local summaryTitle = L("Стычка окончена", "Skirmish Concluded")
-                local summarySub = L("Все участники разошлись", "All combatants retreated")
+                local summaryTitle = L("di_ui_skirmish_concluded")
+                local summarySub = L("di_ui_all_combatants_retreated")
                 local summaryCol = Config.Colors.Yellow
 
                 if ek > ak then
-                    summaryTitle = L("Победа в файте!", "Fight Won!")
-                    summarySub = string.format(L("Врагов убито: %d  •  Потерь: %d", "Enemies slain: %d  •  Losses: %d"), ek, ak)
+                    summaryTitle = L("di_ui_fight_won")
+                    summarySub = string.format(L("di_ui_enemies_slain_n_losses_n"), ek, ak)
                     summaryCol = Config.Colors.Accent
                 elseif ak > ek then
-                    summaryTitle = L("Файт проигран", "Fight Lost")
-                    summarySub = string.format(L("Потери команды: %d  •  Убито: %d", "Team losses: %d  •  Kills: %d"), ak, ek)
+                    summaryTitle = L("di_ui_fight_lost")
+                    summarySub = string.format(L("di_ui_team_losses_n_kills_n"), ak, ek)
                     summaryCol = Config.Colors.Red
                 elseif ek > 0 and ek == ak then
-                    summaryTitle = L("Размен в файте", "Even Trade")
-                    summarySub = string.format(L("Размен %d в %d", "Traded %d for %d"), ek, ak)
+                    summaryTitle = L("di_ui_even_trade")
+                    summarySub = string.format(L("di_ui_traded_n_for_n"), ek, ak)
                     summaryCol = Config.Colors.Orange
                 end
 
                 DynamicIsland.PushNotification({
                     Type = "fight_summary",
-                    Tag = L("ИТОГИ СРАЖЕНИЯ", "FIGHT OUTCOME"),
+                    Tag = L("di_ui_fight_outcome"),
                     Title = summaryTitle,
                     Subtitle = summarySub,
                     AccentColor = summaryCol,
@@ -2862,8 +3534,8 @@ local function ProcessGameEvents()
             local heroRaw = NPC.GetUnitName(localHero)
             DynamicIsland.PushNotification({
                 Type = "level",
-                Tag = L("НОВЫЙ УРОВЕНЬ", "LEVEL UP"),
-                Title = string.format(L("Уровень %d получен", "Level %d Reached"), curLevel),
+                Tag = L("di_ui_level_up"),
+                Title = string.format(L("di_ui_level_n_reached"), curLevel),
                 Subtitle = CleanHeroName(HeroData.HeroName),
                 AccentColor = Config.Colors.Yellow,
                 IconType = "hero",
@@ -2880,20 +3552,20 @@ local function ProcessGameEvents()
             local curKills = teamData.kills or 0
             if curKills > HeroData.Kills then
                 local diff = curKills - HeroData.Kills
-                local streakTitle = L("Враг повержен!", "Enemy Slain!")
-                if diff >= 5 then streakTitle = "RAMPAGE!"
-                elseif diff == 4 then streakTitle = "Ultra Kill!"
-                elseif diff == 3 then streakTitle = "Triple Kill!"
-                elseif diff == 2 then streakTitle = "Double Kill!"
-                elseif curKills == 1 then streakTitle = "First Blood!"
-                elseif curKills >= 10 then streakTitle = "HOLY SHIT! (" .. curKills .. " Kills)"
-                elseif curKills >= 8 then streakTitle = "BEYOND GODLIKE!"
-                elseif curKills >= 6 then streakTitle = "Monster Kill!"
-                elseif curKills >= 4 then streakTitle = "Dominating!"
-                elseif curKills >= 3 then streakTitle = "Killing Spree!"
+                local streakTitle = L("di_ui_enemy_slain")
+                if diff >= 5 then streakTitle = L("di_streak_rampage")
+                elseif diff == 4 then streakTitle = L("di_streak_ultra_kill")
+                elseif diff == 3 then streakTitle = L("di_streak_triple_kill")
+                elseif diff == 2 then streakTitle = L("di_streak_double_kill")
+                elseif curKills == 1 then streakTitle = L("di_streak_first_blood")
+                elseif curKills >= 10 then streakTitle = string.format(L("di_streak_holy_shit"), curKills)
+                elseif curKills >= 8 then streakTitle = L("di_streak_beyond_godlike")
+                elseif curKills >= 6 then streakTitle = L("di_streak_monster_kill")
+                elseif curKills >= 4 then streakTitle = L("di_streak_dominating")
+                elseif curKills >= 3 then streakTitle = L("di_streak_killing_spree")
                 end
 
-                local killedHeroName = L("Враг", "Enemy")
+                local killedHeroName = L("di_ui_enemy")
                 local killedRaw = ""
                 local allHeroes = Heroes.GetAll()
                 for _, h in pairs(allHeroes) do
@@ -2924,9 +3596,9 @@ local function ProcessGameEvents()
 
                 DynamicIsland.PushNotification({
                     Type = "kill",
-                    Tag = L("СЕРИЯ УБИЙСТВ", "KILL STREAK"),
+                    Tag = L("di_ui_kill_streak"),
                     Title = streakTitle,
-                    Subtitle = L("Уничтожен ", "Eliminated ") .. killedHeroName,
+                    Subtitle = L("di_ui_eliminated") .. killedHeroName,
                     AccentColor = Config.Colors.Red,
                     IconType = "hero",
                     Icon = killedRaw ~= "" and ("panorama/images/heroes/icons/" .. killedRaw .. "_png.vtex_c") or nil,
@@ -2956,9 +3628,9 @@ local function ProcessGameEvents()
                             local itemCol = GetItemSignatureColor(rawName)
                             DynamicIsland.PushNotification({
                                 Type = "enemy_item",
-                                Tag = L("ПРЕДМЕТ ВРАГА", "ITEM ALERT"),
+                                Tag = L("di_ui_item_alert"),
                                 Title = KeyItemColors[rawName].name,
-                                Subtitle = hName .. L(" купил предмет", " purchased item"),
+                                Subtitle = hName .. L("di_ui_purchased_item"),
                                 AccentColor = itemCol,
                                 IconType = "item",
                                 Icon = GetItemTexturePath(rawName),
@@ -2983,19 +3655,19 @@ local function ProcessGameEvents()
                         GameTracker.Runes.KnownWorldRunes[idx] = true
                         local rType = Rune.GetRuneType(r)
                         local rPos = Entity.GetAbsOrigin(r)
-                        local rInfo = RuneInfoList[rType] or { en = "Rune", ru = "Руна", col = Color(255, 220, 0, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
-                        local locText = L("появилась на реке", "spawned in river")
+                        local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 220, 0, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
+                        local locText = L("di_ui_spawned_in_river")
                         if rPos then
                             if rType == Enum.RuneType.DOTA_RUNE_XP then
-                                locText = L("появилась у Алтаря", "spawned at Shrine")
+                                locText = L("di_ui_spawned_at_shrine")
                             elseif rType ~= Enum.RuneType.DOTA_RUNE_BOUNTY then
-                                locText = rPos.y > 0 and L("появилась Сверху (Топ)", "spawned Top River") or L("появилась Снизу (Бот)", "spawned Bottom River")
+                                locText = rPos.y > 0 and L("di_ui_spawned_top_river") or L("di_ui_spawned_bottom_river")
                             end
                         end
                         DynamicIsland.PushNotification({
                             Type = "rune_world",
-                            Tag = L("ПОЯВЛЕНИЕ РУНЫ", "RUNE SPAWNED"),
-                            Title = L(rInfo.ru, rInfo.en),
+                            Tag = L("di_ui_rune_spawned"),
+                            Title = L(rInfo.name),
                             Subtitle = locText,
                             AccentColor = rInfo.col,
                             IconType = "rune",
@@ -3033,9 +3705,9 @@ local function ProcessGameEvents()
                     GameTracker.Runes.WarnedMilestones[sKey] = true
                     DynamicIsland.PushNotification({
                         Type = "stack",
-                        Tag = L("СТАК", "STACK"),
-                        Title = string.format(L("Стак через %dс", "Stack in %ds"), stackLead),
-                        Subtitle = string.format(L("Агрить кемп на %d:53", "Pull the camp at %d:53"), nm - 1),
+                        Tag = L("di_ui_stack"),
+                        Title = string.format(L("di_ui_stack_in_n_s"), stackLead),
+                        Subtitle = string.format(L("di_ui_pull_the_camp_at_n_53"), nm - 1),
                         AccentColor = Color(48, 179, 80, 255),
                         IconType = "svg",
                         FallbackSvg = "stack",
@@ -3050,9 +3722,9 @@ local function ProcessGameEvents()
                     GameTracker.Runes.WarnedMilestones[key] = true
                     DynamicIsland.PushNotification({
                         Type = "rune",
-                        Tag = L("МУДРОСТЬ", "WISDOM RUNE"),
-                        Title = string.format(L("Руны мудрости через %dс", "Wisdom Runes in %ds"), wisdomLead),
-                        Subtitle = L("Боковые алтари мудрости", "Side lane shrines"),
+                        Tag = L("di_ui_wisdom_rune"),
+                        Title = string.format(L("di_ui_wisdom_runes_in_n_s"), wisdomLead),
+                        Subtitle = L("di_ui_side_lane_shrines"),
                         AccentColor = Color(165, 75, 255, 255),
                         IconType = "rune",
                         Icon = "panorama/images/spellicons/rune_xp_png.vtex_c",
@@ -3068,9 +3740,9 @@ local function ProcessGameEvents()
                     GameTracker.Runes.WarnedMilestones[key] = true
                     DynamicIsland.PushNotification({
                         Type = "rune",
-                        Tag = L("РУНА ВОДЫ", "WATER RUNE"),
-                        Title = string.format(L("Руны воды через %dс", "Water Runes in %ds"), waterLead),
-                        Subtitle = L("Точки спавна на реке", "River spawn points"),
+                        Tag = L("di_ui_water_rune"),
+                        Title = string.format(L("di_ui_water_runes_in_n_s"), waterLead),
+                        Subtitle = L("di_ui_river_spawn_points"),
                         AccentColor = Color(0, 215, 255, 255),
                         IconType = "rune",
                         FallbackSvg = "rune_water",
@@ -3085,9 +3757,9 @@ local function ProcessGameEvents()
                     GameTracker.Runes.WarnedMilestones[key] = true
                     DynamicIsland.PushNotification({
                         Type = "power_rune_cycle",
-                        Tag = L("АКТИВНАЯ РУНА", "POWER RUNE"),
-                        Title = string.format(L("Руны усиления через %dс", "Power Runes in %ds"), powerLead),
-                        Subtitle = L("Точки спавна на реке", "River spawn points"),
+                        Tag = L("di_ui_power_rune"),
+                        Title = string.format(L("di_ui_power_runes_in_n_s"), powerLead),
+                        Subtitle = L("di_ui_river_spawn_points"),
                         AccentColor = Color(60, 140, 255, 255),
                         Duration = 4.0
                     })
@@ -3100,9 +3772,9 @@ local function ProcessGameEvents()
                     GameTracker.Runes.WarnedMilestones[bKey] = true
                     DynamicIsland.PushNotification({
                         Type = "rune",
-                        Tag = L("БОГАТСТВО", "BOUNTY RUNE"),
-                        Title = string.format(L("Руны богатства через %dс", "Bounty Runes in %ds"), bountyLead),
-                        Subtitle = L("Точки спавна богатства", "Bounty spawn spots"),
+                        Tag = L("di_ui_bounty_rune"),
+                        Title = string.format(L("di_ui_bounty_runes_in_n_s"), bountyLead),
+                        Subtitle = L("di_ui_bounty_spawn_spots"),
                         AccentColor = Color(255, 200, 20, 255),
                         IconType = "rune",
                         Icon = "panorama/images/items/courier_gold_png.vtex_c",
@@ -3117,9 +3789,9 @@ local function ProcessGameEvents()
                 local minStr = FormatTime(tLead1)
                 DynamicIsland.PushNotification({
                     Type = "tormentor",
-                    Tag = L("ТЕРЗАТЕЛЬ", "OBJECTIVE"),
-                    Title = string.format(L("Терзатель скоро (%s)", "Tormentor Soon (%s)"), minStr),
-                    Subtitle = L("Появление ровно в 20:00", "Spawns at 20:00"),
+                    Tag = L("di_ui_objective"),
+                    Title = string.format(L("di_ui_tormentor_soon_s"), minStr),
+                    Subtitle = L("di_ui_spawns_at_20_00"),
                     AccentColor = Color(0, 210, 255, 255),
                     IconType = "item",
                     Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
@@ -3129,9 +3801,9 @@ local function ProcessGameEvents()
                 GameTracker.Tormentor.Warned2 = true
                 DynamicIsland.PushNotification({
                     Type = "tormentor",
-                    Tag = L("ТЕРЗАТЕЛЬ", "OBJECTIVE"),
-                    Title = string.format(L("Терзатель через %dс", "Tormentor in %ds"), tLead2),
-                    Subtitle = L("Появление на 20:00", "Spawns at 20:00"),
+                    Tag = L("di_ui_objective"),
+                    Title = string.format(L("di_ui_tormentor_in_n_s"), tLead2),
+                    Subtitle = L("di_ui_spawns_at_20_00_2"),
                     AccentColor = Color(0, 210, 255, 255),
                     IconType = "item",
                     Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
@@ -3142,9 +3814,9 @@ local function ProcessGameEvents()
             GameTracker.Runes.WarnedMilestones["start_bounty"] = true
             DynamicIsland.PushNotification({
                 Type = "rune",
-                Tag = L("БОГАТСТВО", "BOUNTY RUNE"),
-                Title = string.format(L("Руны богатства через %dс", "Bounty Runes in %ds"), bountyLead),
-                Subtitle = L("Стартовые руны", "Initial bounty spawns"),
+                Tag = L("di_ui_bounty_rune"),
+                Title = string.format(L("di_ui_bounty_runes_in_n_s"), bountyLead),
+                Subtitle = L("di_ui_initial_bounty_spawns"),
                 AccentColor = Color(255, 200, 20, 255),
                 IconType = "rune",
                 Icon = "panorama/images/items/courier_gold_png.vtex_c",
@@ -3159,9 +3831,9 @@ local function ProcessGameEvents()
         GameTracker.Neutrals.Tier1 = true
         DynamicIsland.PushNotification({
             Type = "neutral",
-            Tag = L("НЕЙТРАЛКИ", "NEUTRALS UNLOCKED"),
-            Title = L("Tier 1 Нейтралки доступны", "Tier 1 Neutrals Ready"),
-            Subtitle = L("Время матча 7:00", "7:00 match time reached"),
+            Tag = L("di_ui_neutrals_unlocked"),
+            Title = L("di_ui_tier_1_neutrals_ready"),
+            Subtitle = L("di_ui_n_7_00_match_time_reached"),
             AccentColor = Color(160, 210, 80, 255),
             Duration = 4.0
         })
@@ -3169,9 +3841,9 @@ local function ProcessGameEvents()
         GameTracker.Neutrals.Tier2 = true
         DynamicIsland.PushNotification({
             Type = "neutral",
-            Tag = L("НЕЙТРАЛКИ", "NEUTRALS UNLOCKED"),
-            Title = L("Tier 2 Нейтралки доступны", "Tier 2 Neutrals Ready"),
-            Subtitle = L("Время матча 17:00", "17:00 match time reached"),
+            Tag = L("di_ui_neutrals_unlocked"),
+            Title = L("di_ui_tier_2_neutrals_ready"),
+            Subtitle = L("di_ui_n_17_00_match_time_reached"),
             AccentColor = Color(75, 185, 255, 255),
             Duration = 4.0
         })
@@ -3179,9 +3851,9 @@ local function ProcessGameEvents()
         GameTracker.Neutrals.Tier3 = true
         DynamicIsland.PushNotification({
             Type = "neutral",
-            Tag = L("НЕЙТРАЛКИ", "NEUTRALS UNLOCKED"),
-            Title = L("Tier 3 Нейтралки доступны", "Tier 3 Neutrals Ready"),
-            Subtitle = L("Время матча 27:00", "27:00 match time reached"),
+            Tag = L("di_ui_neutrals_unlocked"),
+            Title = L("di_ui_tier_3_neutrals_ready"),
+            Subtitle = L("di_ui_n_27_00_match_time_reached"),
             AccentColor = Color(175, 90, 255, 255),
             Duration = 4.0
         })
@@ -3189,9 +3861,9 @@ local function ProcessGameEvents()
         GameTracker.Neutrals.Tier4 = true
         DynamicIsland.PushNotification({
             Type = "neutral",
-            Tag = L("НЕЙТРАЛКИ", "NEUTRALS UNLOCKED"),
-            Title = L("Tier 4 Нейтралки доступны", "Tier 4 Neutrals Ready"),
-            Subtitle = L("Время матча 37:00", "37:00 match time reached"),
+            Tag = L("di_ui_neutrals_unlocked"),
+            Title = L("di_ui_tier_4_neutrals_ready"),
+            Subtitle = L("di_ui_n_37_00_match_time_reached"),
             AccentColor = Color(255, 170, 30, 255),
             Duration = 4.0
         })
@@ -3199,9 +3871,9 @@ local function ProcessGameEvents()
         GameTracker.Neutrals.Tier5 = true
         DynamicIsland.PushNotification({
             Type = "neutral",
-            Tag = L("НЕЙТРАЛКИ", "NEUTRALS UNLOCKED"),
-            Title = L("Tier 5 Нейтралки доступны", "Tier 5 Neutrals Ready"),
-            Subtitle = L("Время матча 60:00", "60:00 match time reached"),
+            Tag = L("di_ui_neutrals_unlocked"),
+            Title = L("di_ui_tier_5_neutrals_ready"),
+            Subtitle = L("di_ui_n_60_00_match_time_reached"),
             AccentColor = Color(255, 45, 65, 255),
             Duration = 5.0
         })
@@ -3213,9 +3885,9 @@ local function ProcessGameEvents()
             GameTracker.Lotus.LastAlertTime = sec
             DynamicIsland.PushNotification({
                 Type = "lotus",
-                Tag = L("ЛОТОС", "LOTUS POOL"),
-                Title = string.format(L("Лотосы через %dс", "Lotus Fruit in %ds"), lotusLead),
-                Subtitle = L("Боковые пруды лотосов", "Side lane pools"),
+                Tag = L("di_ui_lotus_pool"),
+                Title = string.format(L("di_ui_lotus_fruit_in_n_s"), lotusLead),
+                Subtitle = L("di_ui_side_lane_pools"),
                 AccentColor = Color(255, 120, 180, 255),
                 IconType = "rune",
                 Icon = "panorama/images/items/great_famango_png.vtex_c",
@@ -3237,9 +3909,9 @@ local function ProcessGameEvents()
                     GameTracker.Couriers.LastAlert = now
                     DynamicIsland.PushNotification({
                         Type = "courier",
-                        Tag = L("КУРЬЕР", "COURIER WARNING"),
-                        Title = L("Курьер атакован!", "Courier Under Attack!"),
-                        Subtitle = string.format(L("Осталось %d HP", "%d HP remaining"), hp),
+                        Tag = L("di_ui_courier_warning"),
+                        Title = L("di_ui_courier_under_attack"),
+                        Subtitle = string.format(L("di_ui_n_hp_remaining"), hp),
                         AccentColor = Config.Colors.Red,
                         Duration = 4.0
                     })
@@ -3277,9 +3949,9 @@ local function ProcessGameEvents()
                         local pct = math.floor((hp / maxHp) * 100)
                         DynamicIsland.PushNotification({
                             Type = "tower",
-                            Tag = L("ВЫШКА", "TOWER DEFENSE"),
-                            Title = L("Вышка атакована", "Ally Tower Attacked"),
-                            Subtitle = string.format(L("Здоровье упало до %d%%", "Health dropped to %d%%"), pct),
+                            Tag = L("di_ui_tower_defense"),
+                            Title = L("di_ui_ally_tower_attacked"),
+                            Subtitle = string.format(L("di_ui_health_dropped_to_n_pct"), pct),
                             AccentColor = Config.Colors.Orange,
                             IconType = "item",
                             Icon = "panorama/images/items/tpscroll_png.vtex_c",
@@ -3306,9 +3978,9 @@ local function ProcessGameEvents()
                         local name = CleanHeroName(rawName)
                         DynamicIsland.PushNotification({
                             Type = "low_hp",
-                            Tag = L("LOW HP ВРАГ", "KILL OPPORTUNITY"),
+                            Tag = L("di_ui_kill_opportunity"),
                             Title = name .. " Low HP!",
-                            Subtitle = string.format(L("Осталось %d HP", "%d HP remaining"), hp),
+                            Subtitle = string.format(L("di_ui_n_hp_remaining"), hp),
                             AccentColor = Config.Colors.Red,
                             IconType = "hero",
                             Icon = "panorama/images/heroes/icons/" .. rawName .. "_png.vtex_c",
@@ -3361,13 +4033,13 @@ function DynamicIsland.OnModifierCreate(ent, mod)
     if isHero and UI.Runes.RunePickups:Get() then
         local rType = RuneModifierMap[mn]
         if rType then
-            local rInfo = RuneInfoList[rType] or { en = "Rune", ru = "Руна", col = Color(255, 220, 0, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
+            local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 220, 0, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
             local hName = GetPlayerDisplayName(ent)
             DynamicIsland.PushNotification({
                 Type = "rune_pickup",
-                Tag = L("ПОДБОР РУНЫ", "RUNE PICKUP"),
+                Tag = L("di_ui_rune_pickup"),
                 Title = hName,
-                Subtitle = L("подобрал ", "picked up ") .. L(rInfo.ru, rInfo.en),
+                Subtitle = L("di_ui_picked_up") .. L(rInfo.name),
                 AccentColor = rInfo.col,
                 IconType = "rune",
                 Icon = rInfo.path,
@@ -3384,9 +4056,9 @@ function DynamicIsland.OnModifierCreate(ent, mod)
             local heroName = GetPlayerDisplayName(ent)
             DynamicIsland.PushNotification({
                 Type = "invis",
-                Tag = L("ИНВИЗ ВРАГА", "INVISIBILITY ALERT"),
+                Tag = L("di_ui_invisibility_alert"),
                 Title = heroName .. ", " .. d.name,
-                Subtitle = L("Враг ушел в невидимость", "Enemy entered stealth"),
+                Subtitle = L("di_ui_enemy_entered_stealth"),
                 AccentColor = d.col,
                 IconType = "item",
                 Icon = d.icon,
@@ -3403,9 +4075,9 @@ function DynamicIsland.OnModifierCreate(ent, mod)
         local landmark = GetClosestLandmark(targetPos)
         DynamicIsland.PushNotification({
             Type = "teleport",
-            Tag = L("ТЕЛЕПОРТ ВРАГА", "TELEPORT WARNING"),
-            Title = heroName .. L(" телепортируется", " Teleporting"),
-            Subtitle = L("Телепорт к ", "Teleporting to ") .. landmark,
+            Tag = L("di_ui_teleport_warning"),
+            Title = heroName .. L("di_ui_teleporting"),
+            Subtitle = L("di_ui_teleporting_to") .. landmark,
             AccentColor = Color(100, 200, 255, 255),
             IconType = "item",
             Icon = "panorama/images/items/tpscroll_png.vtex_c",
@@ -3419,9 +4091,9 @@ function DynamicIsland.OnModifierCreate(ent, mod)
         local accent = isEnemy and Config.Colors.Red or Config.Colors.Accent
         DynamicIsland.PushNotification({
             Type = "aegis",
-            Tag = L("АЕГИС ПОДОБРАН", "AEGIS CLAIMED"),
-            Title = heroName .. L(" поднял Аегис", " Claimed Aegis"),
-            Subtitle = isEnemy and L("Враг получил бессмертие", "Enemy secured immortal") or L("Союзник получил бессмертие", "Ally secured immortal"),
+            Tag = L("di_ui_aegis_claimed"),
+            Title = heroName .. L("di_ui_claimed_aegis"),
+            Subtitle = isEnemy and L("di_ui_enemy_secured_immortal") or L("di_ui_ally_secured_immortal"),
             AccentColor = accent,
             IconType = "item",
             Icon = "panorama/images/items/aegis_png.vtex_c",
@@ -3440,9 +4112,9 @@ function DynamicIsland.OnStartSound(data)
             GameTracker.Roshan.LastAttackAlert = now
             DynamicIsland.PushNotification({
                 Type = "roshan_attack",
-                Tag = L("ЛОГОВО РОШАНА", "ROSHAN PIT ALERT"),
-                Title = L("Рошан атакован!", "Roshan Under Attack!"),
-                Subtitle = L("Звуки битвы в логове", "Combat audio detected in pit"),
+                Tag = L("di_ui_roshan_pit_alert"),
+                Title = L("di_ui_roshan_under_attack"),
+                Subtitle = L("di_ui_combat_audio_detected_in_pit"),
                 AccentColor = Config.Colors.Red,
                 IconType = "item",
                 Icon = "panorama/images/items/aegis_png.vtex_c",
@@ -3457,20 +4129,20 @@ function DynamicIsland.OnFireEventClient(data)
 
     if data.name == "dota_buyback" and UI.Combat.Buybacks:Get() then
         local pid = Event.GetInt(data.event, "player_id")
-        local pName = L("Игрок", "Player")
+        local pName = L("di_ui_player")
         local allPlayers = Players.GetAll()
         for _, pl in ipairs(allPlayers) do
             local pd = Player.GetPlayerData(pl)
             if pd and pd.PlayerID == pid then
-                pName = Player.GetName(pl) or pd.PlayerName or L("Враг", "Enemy")
+                pName = Player.GetName(pl) or pd.PlayerName or L("di_ui_enemy")
                 break
             end
         end
         DynamicIsland.PushNotification({
             Type = "buyback",
-            Tag = L("ВЫКУП", "BUYBACK ALERT"),
-            Title = pName .. L(" выкупился!", " Bought Back!"),
-            Subtitle = L("Герой вернулся в игру", "Hero returned to match"),
+            Tag = L("di_ui_buyback_alert"),
+            Title = pName .. L("di_ui_bought_back"),
+            Subtitle = L("di_ui_hero_returned_to_match"),
             AccentColor = Color(255, 215, 0, 255),
             IconType = "svg",
             FallbackSvg = "buyback",
@@ -3487,9 +4159,9 @@ function DynamicIsland.OnFireEventClient(data)
         GameTracker.Roshan.Dismissed = false
         DynamicIsland.PushNotification({
             Type = "roshan_kill",
-            Tag = L("РОШАН УБИТ", "ROSHAN SLAIN"),
-            Title = L("Рошан убит!", "Roshan Killed!"),
-            Subtitle = L("Аегис выпал в логове", "Aegis dropped in pit"),
+            Tag = L("di_ui_roshan_slain"),
+            Title = L("di_ui_roshan_killed"),
+            Subtitle = L("di_ui_aegis_dropped_in_pit"),
             AccentColor = Color(255, 60, 60, 255),
             IconType = "item",
             Icon = "panorama/images/items/aegis_png.vtex_c",
@@ -3504,9 +4176,9 @@ function DynamicIsland.OnEntityCreate(ent)
     if name == "npc_dota_miniboss" then
         DynamicIsland.PushNotification({
             Type = "tormentor",
-            Tag = L("ТЕРЗАТЕЛЬ", "TORMENTOR SPAWN"),
-            Title = L("Терзатель появился!", "Tormentor Spawned!"),
-            Subtitle = L("Объект доступен на карте", "Objective available"),
+            Tag = L("di_ui_tormentor_spawn"),
+            Title = L("di_ui_tormentor_spawned"),
+            Subtitle = L("di_ui_objective_available"),
             AccentColor = Color(0, 210, 255, 255),
             IconType = "item",
             Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
@@ -3521,9 +4193,9 @@ function DynamicIsland.OnEntityDestroy(ent)
     if name == "npc_dota_miniboss" then
         DynamicIsland.PushNotification({
             Type = "tormentor",
-            Tag = L("ТЕРЗАТЕЛЬ", "TORMENTOR DEFEATED"),
-            Title = L("Терзатель повержен!", "Tormentor Defeated!"),
-            Subtitle = L("Осколок выдан команде", "Shard granted to team"),
+            Tag = L("di_ui_tormentor_defeated"),
+            Title = L("di_ui_tormentor_defeated_2"),
+            Subtitle = L("di_ui_shard_granted_to_team"),
             AccentColor = Color(75, 245, 135, 255),
             IconType = "item",
             Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
@@ -3631,7 +4303,7 @@ local function GetChipContent(chipId)
     elseif chipId == "heroname" then
         local custom = (UI and UI.Main and UI.Main.CustomLabel) and UI.Main.CustomLabel:Get() or ""
         local nameStr = (custom and custom ~= "") and custom or CleanHeroName(HeroData.HeroName)
-        if nameStr == "" then nameStr = L("Герой", "Hero") end
+        if nameStr == "" then nameStr = L("di_ui_hero") end
         if cfg.format == 2 then
             nameStr = string.sub(nameStr, 1, 3):upper()
         end
@@ -3667,7 +4339,7 @@ local function GetMatchSearchInfo()
     end
 
     local isSearching = false
-    local p = Panorama.GetPanelByName("SearchingTime")
+    local p = Panorama.GetPanelByName("SearchingTime", false)
     if p and p:IsValid() and HasFindingMatchClass(p) then
         isSearching = true
     end
@@ -3680,7 +4352,7 @@ local function GetMatchSearchInfo()
     end
 
     if not isSearching then
-        local btn = Panorama.GetPanelByName("PlayButton")
+        local btn = Panorama.GetPanelByName("PlayButton", false)
         if btn and btn:IsValid() and btn:HasClass("FindingMatch") then
             isSearching = true
         end
@@ -3881,19 +4553,19 @@ function Journey.LineWidth(scale, label, right, hasIcon)
 end
 
 function Journey.IdleTexts()
-    return L("Главное меню", "Main Menu"), os.date("%H:%M")
+    return L("di_ui_main_menu"), os.date("%H:%M")
 end
 
 function Journey.SearchTexts()
     local _, timeStr = GetMatchSearchInfo()
-    return L("Поиск матча", "Finding Match"), (timeStr and timeStr ~= "") and timeStr or "0:00"
+    return L("di_ui_finding_match"), (timeStr and timeStr ~= "") and timeStr or "0:00"
 end
 
 function Journey.LoadingTexts(nowClk)
-    local label = L("Загрузка матча", "Loading Match")
+    local label = L("di_ui_loading_match")
     if GameRules and GameRules.GetGameState and Engine.IsInGame and Engine.IsInGame() then
         local ok, gs = pcall(GameRules.GetGameState)
-        if ok and (gs == 1 or gs == 10) then label = L("Ждём игроков", "Waiting for Players") end
+        if ok and (gs == 1 or gs == 10) then label = L("di_ui_waiting_for_players") end
     end
     local since = Journey.LoadingSince > 0 and (nowClk - Journey.LoadingSince) or 0
     return label, Journey.FormatClock(since)
@@ -4369,7 +5041,7 @@ end
 
 function DynamicIsland.OnKeyEvent(data)
     if HUDCustomizer.IsOpen and Menu.Opened and Menu.Opened() then
-        if data.key == Enum.ButtonCode.KEY_MOUSE1 or data.key == Enum.ButtonCode.KEY_MOUSE2 or data.key == Enum.ButtonCode.MOUSE_LEFT or data.key == Enum.ButtonCode.MOUSE_RIGHT then
+        if data.key == Enum.ButtonCode.KEY_MOUSE1 or data.key == Enum.ButtonCode.KEY_MOUSE2 then
             return false
         end
     end
@@ -4451,8 +5123,8 @@ local function HandleInteractions()
     local mediaActive = IsMediaActive()
     local inCombat = FightTracker.Active
 
-    local isLMouseDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MOUSE1) or Input.IsKeyDown(Enum.ButtonCode.MOUSE_LEFT)
-    local isRMouseDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MOUSE2) or Input.IsKeyDown(Enum.ButtonCode.MOUSE_RIGHT)
+    local isLMouseDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MOUSE1)
+    local isRMouseDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MOUSE2)
     local isLeftClicked = isLMouseDown and not MouseInput.LeftPressed
     local isRightClicked = isRMouseDown and not MouseInput.RightPressed
 
@@ -5089,7 +5761,7 @@ local function HandleInteractions()
         local fontBold = Config.Fonts.Bold
         local fontMain = Config.Fonts.Main
         local elapsed = PauseTracker.PauseStartTime > 0 and math.floor(os.clock() - PauseTracker.PauseStartTime) or 0
-        local pText = L("island.paused", "Paused")
+        local pText = L("di_island_paused")
         local timeText = string.format("%d:%02d", math.floor(elapsed / 60), elapsed % 60)
         local tSize1 = Render.TextSize(fontMain, 11 * layout.scale, pText)
         local tSizeDot = Render.TextSize(fontMain, 11 * layout.scale, " \u{2022} ")
@@ -5104,7 +5776,7 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierDeliveryRadius
     elseif StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED then
         local fontBold = Config.Fonts.Bold
-        local txt = L("courier.delivered", "Delivered!")
+        local txt = L("di_courier_delivered")
         local tSize = Render.TextSize(fontBold, 11.5 * layout.scale, txt)
         Config.Dimensions.CompactTargetW = math.max(160, (tSize.x / layout.scale) + 60)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CourierDeliveredH
@@ -5237,8 +5909,8 @@ local function HandleInteractions()
                 DynamicIsland.PushNotification({
                     Type = "spotify_like",
                     Tag = "SPOTIFY",
-                    Title = isNowLiked and L("Любимые треки", "Liked Songs") or L("Удалено из избранного", "Removed from Favorites"),
-                    Subtitle = isNowLiked and L("Сохранено в библиотеку", "Saved to Library") or L("Удалено из Spotify", "Removed from Spotify"),
+                    Title = isNowLiked and L("di_ui_liked_songs") or L("di_ui_removed_from_favorites"),
+                    Subtitle = isNowLiked and L("di_ui_saved_to_library") or L("di_ui_removed_from_spotify"),
                     AccentColor = Color(255, 255, 255, 255),
                     IconType = "svg",
                     FallbackSvg = isNowLiked and "heart_fill" or "heart_outline",
@@ -5476,11 +6148,11 @@ function Journey.RenderMatchFound(layout, alphaMul, yOffset)
 
     local title, sub
     if declined then
-        title, sub = L("Матч отклонён", "Match Declined"), L("Возвращаемся в поиск", "Returning to queue")
+        title, sub = L("di_ui_match_declined"), L("di_ui_returning_to_queue")
     elseif accepted then
-        title, sub = L("Принято", "Accepted"), L("Ждём остальных", "Waiting for players")
+        title, sub = L("di_ui_accepted"), L("di_ui_waiting_for_players_2")
     else
-        title, sub = L("Матч найден", "Match Found"), L("Нажми, чтобы принять", "Click to accept")
+        title, sub = L("di_ui_match_found"), L("di_ui_click_to_accept")
     end
     local tx = math.floor(ringC.x + ringR + 11 * scale)
     local sT = Render.TextSize(fontBold, 12 * scale, title)
@@ -5491,7 +6163,7 @@ function Journey.RenderMatchFound(layout, alphaMul, yOffset)
     Render.Text(fontMain, 10 * scale, sub, Vec2(tx, math.floor(ty + sT.y + 1 * scale)), FadeColor(Config.Colors.TextSecondary, aMul))
 
     if not accepted and not declined then
-        local capTxt = L("Принять", "Accept")
+        local capTxt = L("di_ui_accept")
         local sCap = Render.TextSize(fontBold, 11 * scale, capTxt)
         local capH = math.floor(26 * scale)
         local capW = math.floor(sCap.x + 24 * scale)
@@ -5532,11 +6204,11 @@ function Journey.RenderDraft(layout, alphaMul, yOffset)
 
     local phaseTxt
     if d.phase == 3 then
-        phaseTxt = L("Стратегия", "Strategy Time")
+        phaseTxt = L("di_ui_strategy_time")
     elseif d.phase == 8 then
-        phaseTxt = L("Команды", "Team Showcase")
+        phaseTxt = L("di_ui_team_showcase")
     else
-        phaseTxt = L("Выбор героев", "Hero Selection")
+        phaseTxt = L("di_ui_hero_selection")
     end
     local locked = 0
     for _, p in ipairs(d.picks) do
@@ -5589,7 +6261,7 @@ function Journey.RenderDraft(layout, alphaMul, yOffset)
     if #d.bans > 0 then
         local by = math.floor(slotY + slotH + 10 * scale)
         local isz = math.floor(16 * scale)
-        local bTxt = L("Баны", "Bans")
+        local bTxt = L("di_ui_bans")
         local sB = Render.TextSize(fontMain, 10 * scale, bTxt)
         Render.Text(fontMain, 10 * scale, bTxt, Vec2(x1, math.floor(by + (isz - sB.y) / 2)), FadeColor(Config.Colors.TextMuted, aMul))
         local bx = math.floor(x1 + sB.x + 8 * scale)
@@ -5724,8 +6396,8 @@ local function RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, 
     for i, it in ipairs(items) do
         local act = (i == sel)
         local f = act and Config.Fonts.Bold or Config.Fonts.Main
-        local ts = Render.TextSize(f, 9 * scale, it.label)
-        Render.Text(f, 9 * scale, it.label, Vec2(x + (i - 1) * segW + (segW - ts.x) / 2, y + (h - ts.y) / 2 - 1), FadeColor(act and Config.Colors.TextPrimary or Config.Colors.TextMuted, aMul))
+        local ts = Render.TextSize(f, 9 * scale, L(it.label))
+        Render.Text(f, 9 * scale, L(it.label), Vec2(x + (i - 1) * segW + (segW - ts.x) / 2, y + (h - ts.y) / 2 - 1), FadeColor(act and Config.Colors.TextPrimary or Config.Colors.TextMuted, aMul))
         if aMul > 0.6 then
             table.insert(HUDCustomizer.InspectorBounds, { x1 = x + (i - 1) * segW, y1 = y, x2 = x + i * segW, y2 = y + h, action = action, val = it.val })
         end
@@ -5740,9 +6412,9 @@ local function RenderSwitch(x, y, w, h, on, spring, dt, aMul)
     Render.FilledCircle(Vec2(x + 2 + kr + (w - 4 - kr * 2) * t, y + h / 2), kr, FadeColor(Color(255, 255, 255, 255), aMul), 0, 1.0, 24)
 end
 
-local SEG_WEIGHT = { { label = "Bold", val = 1 }, { label = "Regular", val = 2 } }
-local SEG_COLOR = { { label = L("Белый", "White"), val = 1 }, { label = L("Серый", "Dim"), val = 2 }, { label = L("Свой", "Custom"), val = 3 } }
-local SEG_FORMAT = { { label = L("Стандарт", "Standard"), val = 1 }, { label = L("Кратко", "Minimal"), val = 2 }, { label = L("Детали", "Detailed"), val = 3 } }
+local SEG_WEIGHT = { { label = "di_drawer_bold", val = 1 }, { label = "di_drawer_regular", val = 2 } }
+local SEG_COLOR = { { label = "di_drawer_white", val = 1 }, { label = "di_drawer_dim", val = 2 }, { label = "di_drawer_custom", val = 3 } }
+local SEG_FORMAT = { { label = "di_drawer_standard", val = 1 }, { label = "di_drawer_minimal", val = 2 }, { label = "di_drawer_detailed", val = 3 } }
 
 local function RenderSettingsLabel(x, y, rowH, label, scale, aMul)
     local ts = Render.TextSize(Config.Fonts.Main, 10 * scale, label)
@@ -5759,7 +6431,7 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
 
     local label = id
     for _, c in ipairs(HUDCustomizer.AvailableChips) do
-        if c.id == id then label = c.label end
+        if c.id == id then label = L(c.label) end
     end
 
     local hdrY = cy + 11 * scale
@@ -5781,11 +6453,11 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
     local segX = cx + cw - padX - segW
     local rowY = cy + 30 * scale
 
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("Начертание", "Weight"), scale, aMul)
+    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_weight"), scale, aMul)
     RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, SEG_WEIGHT, cfg.bold and 1 or 2, anim.SegWeight, dt, scale, aMul, "set_bold")
 
     rowY = rowY + rowH
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("Цвет", "Color"), scale, aMul)
+    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_color"), scale, aMul)
     RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, SEG_COLOR, cfg.colorMode or 1, anim.SegColor, dt, scale, aMul, "set_color")
 
     if cfg.colorMode == 3 then
@@ -5793,8 +6465,8 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
         local curCol = cfg.customColor or GetDefaultWidgetColor(id)
         local curHex = cfg.customHex or select(2, GetDefaultWidgetColor(id))
 
-        RenderSettingsLabel(cx + padX, rowY, rowH, L("Палитра", "Palette"), scale, aMul)
-        local lblSize = Render.TextSize(Config.Fonts.Main, 10 * scale, L("Палитра", "Palette"))
+        RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_palette"), scale, aMul)
+        local lblSize = Render.TextSize(Config.Fonts.Main, 10 * scale, L("di_ui_palette"))
 
         local prevR = 8 * scale
         local prevX = cx + padX + lblSize.x + 14 * scale
@@ -5853,11 +6525,11 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
     end
 
     rowY = rowY + rowH
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("Формат", "Format"), scale, aMul)
+    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_format"), scale, aMul)
     RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, SEG_FORMAT, cfg.format or 1, anim.SegFormat, dt, scale, aMul, "set_format")
 
     rowY = rowY + rowH
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("Иконка", "Icon"), scale, aMul)
+    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_icon"), scale, aMul)
     local swW, swH = 42 * scale, 25 * scale
     local swX = cx + cw - padX - swW
     local swY = rowY + (rowH - swH) / 2
@@ -5910,7 +6582,7 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
 
     local pad = 12 * scale
     local hdrY = popY + 11 * scale
-    Render.Text(Config.Fonts.Bold, 10 * scale, L("Выбор цвета", "Color Picker"), Vec2(popX + pad, hdrY), FadeColor(Config.Colors.TextPrimary, popA))
+    Render.Text(Config.Fonts.Bold, 10 * scale, L("di_ui_color_picker"), Vec2(popX + pad, hdrY), FadeColor(Config.Colors.TextPrimary, popA))
 
     local hexLabel = "#" .. string.upper(curHex)
     local hexSz = Render.TextSize(Config.Fonts.Bold, 8.5 * scale, hexLabel)
@@ -6079,7 +6751,7 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
         end
     end
 
-    local rstText = L("Сброс", "Reset")
+    local rstText = L("di_ui_reset")
     local rstS = Render.TextSize(Config.Fonts.Main, 8.5 * scale, rstText)
     local rstW = rstS.x + 12 * scale
     local rstH = 18 * scale
@@ -6173,7 +6845,7 @@ local function RenderHUDDrawer(layout, dt)
     local cx = math.floor(layout.x + (layout.w - cardW) / 2)
     local grabW = 34 * scale
     Render.FilledRect(Vec2(cx + (cardW - grabW) / 2, py + 8 * scale), Vec2(cx + (cardW + grabW) / 2, py + 12 * scale), FadeColor(Config.Colors.Grabber, contentA), 2 * scale)
-    Render.Text(Config.Fonts.Bold, 10 * scale, L("Виджеты", "Widgets"), Vec2(cx + padX, py + 19 * scale), FadeColor(Config.Colors.TextSecondary, contentA))
+    Render.Text(Config.Fonts.Bold, 10 * scale, L("di_ui_widgets"), Vec2(cx + padX, py + 19 * scale), FadeColor(Config.Colors.TextSecondary, contentA))
 
     local chipY = py + chipsTop
     for i, chip in ipairs(HUDCustomizer.AvailableChips) do
@@ -6197,8 +6869,8 @@ local function RenderHUDDrawer(layout, dt)
         end
 
         local f = ca.fill > 0.5 and Config.Fonts.Bold or Config.Fonts.Main
-        local ls = Render.TextSize(f, 9.5 * scale, chip.label)
-        Render.Text(f, 9.5 * scale, chip.label, Vec2(math.floor(bx + (chipW - ls.x) / 2), math.floor(by + (chipH - ls.y) / 2 - 1)), FadeColor(LerpColor(Config.Colors.TextSecondary, Config.Colors.TextInverse, ca.fill), contentA))
+        local ls = Render.TextSize(f, 9.5 * scale, L(chip.label))
+        Render.Text(f, 9.5 * scale, L(chip.label), Vec2(math.floor(bx + (chipW - ls.x) / 2), math.floor(by + (chipH - ls.y) / 2 - 1)), FadeColor(LerpColor(Config.Colors.TextSecondary, Config.Colors.TextInverse, ca.fill), contentA))
 
         if contentA > 0.6 then
             table.insert(HUDCustomizer.DrawerBounds, { x1 = bx, y1 = by, x2 = bx + chipW, y2 = by + chipH, id = chip.id, action = "toggle" })
@@ -6210,7 +6882,7 @@ local function RenderHUDDrawer(layout, dt)
     end
 
     if hintsOn then
-        local hint = L("ПКМ: настройки  \u{2022}  ЛКМ: вкл/выкл  \u{2022}  перетаскивание: порядок", "RMB: settings  \u{2022}  LMB: toggle  \u{2022}  drag: reorder")
+        local hint = L("di_ui_drawer_hint")
         local hs = Render.TextSize(Config.Fonts.Main, 8.5 * scale, hint)
         Render.Text(Config.Fonts.Main, 8.5 * scale, hint, Vec2(math.floor(cx + (cardW - hs.x) / 2), math.floor(py + anim.h - 17 * scale)), FadeColor(Config.Colors.TextMuted, contentA))
     end
@@ -6475,7 +7147,7 @@ local function RenderMenuClosedHint(layout)
 
     local lines = CollectStatusHints()
     if UI.Media.Hints:Get() then
-        table.insert(lines, { text = L("Ctrl + ЛКМ : Перемещение   •   ПКМ : Редактор виджетов", "Ctrl + LMB : Drag   •   RMB : Quick HUD") })
+        table.insert(lines, { text = L("di_ui_controls_hint") })
     end
     if #lines == 0 then return end
 
@@ -6520,7 +7192,7 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
     local textStartX = math.floor(thumbX + thumbSize + 8 * scale)
     local textAvailW = math.max(10, math.floor((waveX - 4 * scale) - textStartX))
 
-    local displayStr = MediaData.Title ~= "" and MediaData.Title or L("Музыка", "Music")
+    local displayStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_music")
     if MediaData.Artist ~= "" and MediaData.Title ~= "" then
         displayStr = MediaData.Title .. " • " .. MediaData.Artist
     end
@@ -6638,8 +7310,8 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     local radarX = math.floor(layout.x + layout.w - 14 * scale - radarSz)
     local radarY = math.floor(layout.y + (layout.h - radarSz) / 2 + yOff)
 
-    local headerScore = string.format("%d x %d %s", FightTracker.AllyCount, FightTracker.EnemyCount, L("Бой", "Fight"))
-    local lmark = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("Карта", "Map")
+    local headerScore = string.format("%d x %d %s", FightTracker.AllyCount, FightTracker.EnemyCount, L("di_ui_fight"))
+    local lmark = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_map")
 
     Render.Text(fontBold, 14 * scale, headerScore, Vec2(layout.x + padX, layout.y + padY + yOff - 2 * scale), textCol)
     Render.Text(fontMain, 10.5 * scale, lmark, Vec2(layout.x + padX, layout.y + padY + 17 * scale + yOff), subCol)
@@ -6849,7 +7521,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         local textX = math.floor(iconX + iconSz + 10 * scale)
         local tagStr = notif.Tag or "APPLE PAY"
         local tagSize = Render.TextSize(fontBold, 8.5 * scale, tagStr)
-        local titleStr = notif.Title or L("Успешно!", "Success!")
+        local titleStr = notif.Title or L("di_ui_success")
         local titleSize = Render.TextSize(fontBold, 12 * scale, titleStr)
 
         local totalH = tagSize.y + titleSize.y + 1 * scale
@@ -6980,7 +7652,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
     local textX = math.floor(layout.x + 10 * scale + iconW + 10 * scale)
     local maxTextW = math.floor(layout.x + layout.w - textX - 12 * scale)
 
-    local tagStr = notif.Tag or L("ОПОВЕЩЕНИЕ", "NOTIFICATION")
+    local tagStr = notif.Tag or L("di_ui_notification")
     local tagSize = Render.TextSize(fontMain, 8.5 * scale, tagStr)
     local titleSize = Render.TextSize(fontBold, 12 * scale, notif.Title)
 
@@ -7021,7 +7693,7 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local infoY = math.floor(artY + 3 * scale)
     local maxInfoW = math.max(10, math.floor(waveX - infoX - 8 * scale))
 
-    local titleStr = MediaData.Title ~= "" and MediaData.Title or L("Трек", "Track")
+    local titleStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_track")
     local artistStr = MediaData.Artist ~= "" and MediaData.Artist or "Apple Music"
 
     local nowClk = os.clock()
@@ -7256,9 +7928,9 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     local matchTime = GetActualMatchTime()
     local subInfo = ""
     if matchTime and matchTime > 0 then
-        subInfo = L("Матч ", "Match ") .. FormatTime(matchTime)
+        subInfo = L("di_ui_match") .. FormatTime(matchTime)
     else
-        subInfo = L("Главное меню", "Main Menu")
+        subInfo = L("di_ui_main_menu")
     end
     Render.Text(fontMain, 10.5 * scale, subInfo, Vec2(leftX, leftY + hmSize.y + 7 * scale), FadeColor(Config.Colors.TextMuted, aMul))
 
@@ -7298,7 +7970,7 @@ local function RenderGamePausedPill(layout, alphaMul, yOffset)
     local fontBold = Config.Fonts.Bold
     local fontMain = Config.Fonts.Main
     local elapsed = PauseTracker.PauseStartTime > 0 and math.floor(os.clock() - PauseTracker.PauseStartTime) or 0
-    local pText = L("island.paused", "Paused")
+    local pText = L("di_island_paused")
     local timeText = string.format("%d:%02d", math.floor(elapsed / 60), elapsed % 60)
     local dotStr = " \u{2022} "
 
@@ -7337,7 +8009,7 @@ local function RenderCourierDeliveryPill(layout, alphaMul, yOffset)
         Render.Image(courierSvg, Vec2(leftX, centerY - math.floor(iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Color(255, 204, 0, 255), alphaMul), 0)
     end
 
-    local etaStr = (CourierTracker.ETA > 0) and (L("courier.eta", "ETA") .. " " .. FormatTime(CourierTracker.ETA)) or L("courier.delivering", "Delivering")
+    local etaStr = (CourierTracker.ETA > 0) and (L("di_courier_eta") .. " " .. FormatTime(CourierTracker.ETA)) or L("di_ui_courier_delivering_short")
     local etaSize = Render.TextSize(fontBold, 10.5 * scale, etaStr)
     local rightX = math.floor(layout.x + layout.w - 12 * scale - etaSize.x)
     Render.Text(fontBold, 10.5 * scale, etaStr, Vec2(rightX, centerY - math.floor(etaSize.y / 2) - 1 * scale), FadeColor(Color(255, 255, 255, 235), alphaMul))
@@ -7388,7 +8060,7 @@ local function RenderCourierDeliveredPill(layout, alphaMul, yOffset)
 
     local checkSvg = GetVectorIcon("apple_check") or GetVectorIcon("check")
     local iconSize = math.floor(18 * scale * bounce)
-    local delivText = L("courier.delivered", "Delivered!")
+    local delivText = L("di_courier_delivered")
     local tSize = Render.TextSize(fontBold, 11.5 * scale, delivText)
     local gap = 8 * scale
     local totalW = iconSize + gap + tSize.x
@@ -7413,10 +8085,10 @@ local function RenderCourierLarge(layout, alphaMul, yOffset)
     if courierSvg then
         Render.Image(courierSvg, Vec2(leftX, row1Y), Vec2(16 * scale, 16 * scale), FadeColor(Color(255, 204, 0, 255), alphaMul), 0)
     end
-    local titleTxt = L("courier.delivering", "Delivering Items")
+    local titleTxt = L("di_courier_delivering")
     Render.Text(fontBold, 11.5 * scale, titleTxt, Vec2(leftX + 22 * scale, row1Y + 1 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul))
 
-    local infoTxt = string.format("%s: %d  |  %s: %d%%", L("courier.speed", "Speed"), math.floor(CourierTracker.Speed), L("courier.hp", "HP"), math.floor(CourierTracker.HpPercent * 100))
+    local infoTxt = string.format("%s: %d  |  %s: %d%%", L("di_courier_speed"), math.floor(CourierTracker.Speed), L("di_courier_hp"), math.floor(CourierTracker.HpPercent * 100))
     local infoSize = Render.TextSize(fontMain, 10.5 * scale, infoTxt)
     local rightX = math.floor(layout.x + layout.w - 18 * scale - infoSize.x)
     Render.Text(fontMain, 10.5 * scale, infoTxt, Vec2(rightX, row1Y + 2 * scale), FadeColor(Config.Colors.TextMuted, alphaMul))
@@ -7557,7 +8229,7 @@ local function RenderMediaSharedTransition(fromState, toState, layout, progress)
 
     DrawAppleWaveform(curWaveX, curWaveY, 18, waveCount, MediaData.IsPlaying, scale, waveCol, 1.0)
 
-    local titleStr = MediaData.Title ~= "" and MediaData.Title or L("Музыка", "Music")
+    local titleStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_music")
     local artistStr = MediaData.Artist ~= "" and MediaData.Artist or ""
 
     local curInfoX = math.floor(curThumbX + curThumbSize + math.floor((8 + 5 * artT) * scale))
@@ -7800,7 +8472,7 @@ local function RenderIdleSharedTransition(fromState, toState, layout, progress)
         if secAlpha > 0.01 then
             Render.Text(fontMain, 13 * scale, timeSec, Vec2(secX, secY), FadeColor(Config.Colors.TextSecondary, secAlpha))
             local matchTime = GetActualMatchTime()
-            local subInfo = (matchTime and matchTime > 0) and (L("Матч ", "Match ") .. FormatTime(matchTime)) or L("Главное меню", "Main Menu")
+            local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
             Render.Text(fontMain, 10.5 * scale, subInfo, Vec2(lClockX, curClockY + hmSize.y + 5 * scale), FadeColor(Config.Colors.TextMuted, secAlpha))
         end
 

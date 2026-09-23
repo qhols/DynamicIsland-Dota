@@ -47,18 +47,33 @@ public static class SoundEngine
 
     public static void Init(string exeDir)
     {
-        _soundDir = Path.Combine(exeDir, "sounds");
-        if (!Directory.Exists(_soundDir)) _soundDir = @"C:\Umbrella\scripts\media_bridge\sounds";
-        if (!Directory.Exists(_soundDir)) return;
-
         _mixFormat = WaveFormat.CreateIeeeFloatWaveFormat(DeviceSampleRate(), 2);
 
-        var files = Directory.GetFiles(_soundDir, "*.wav").Concat(Directory.GetFiles(_soundDir, "*.mp3"));
-        foreach (var file in files)
+        _soundDir = Path.Combine(exeDir, "sounds");
+        if (!Directory.Exists(_soundDir)) _soundDir = @"C:\Umbrella\scripts\media_bridge\sounds";
+        if (Directory.Exists(_soundDir))
         {
-            string name = Path.GetFileNameWithoutExtension(file);
+            var files = Directory.GetFiles(_soundDir, "*.wav").Concat(Directory.GetFiles(_soundDir, "*.mp3"));
+            foreach (var file in files)
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                if (Cache.ContainsKey(name)) continue;
+                var data = Decode(() => new MediaFoundationReader(file), Path.GetFileName(file));
+                if (data != null) Cache[name] = data;
+            }
+        }
+
+        var asm = typeof(SoundEngine).Assembly;
+        var embedded = asm.GetManifestResourceNames()
+            .Where(n => n.StartsWith("sounds/", StringComparison.Ordinal))
+            .OrderBy(n => n.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ? 0 : 1);
+        foreach (var res in embedded)
+        {
+            string name = Path.GetFileNameWithoutExtension(res["sounds/".Length..]);
             if (Cache.ContainsKey(name)) continue;
-            var data = Decode(file);
+            using var stream = asm.GetManifestResourceStream(res);
+            if (stream == null) continue;
+            var data = Decode(() => new StreamMediaFoundationReader(stream), res);
             if (data != null) Cache[name] = data;
         }
 
@@ -79,11 +94,11 @@ public static class SoundEngine
         }
     }
 
-    private static float[]? Decode(string file)
+    private static float[]? Decode(Func<WaveStream> open, string label)
     {
         try
         {
-            using var reader = new MediaFoundationReader(file);
+            using var reader = open();
             ISampleProvider sp = reader.ToSampleProvider();
             if (sp.WaveFormat.Channels == 1) sp = new MonoToStereoSampleProvider(sp);
             else if (sp.WaveFormat.Channels != 2) return null;
@@ -106,7 +121,7 @@ public static class SoundEngine
         }
         catch (Exception ex)
         {
-            LastError = $"decode {Path.GetFileName(file)}: {ex.GetType().Name}: {ex.Message}";
+            LastError = $"decode {label}: {ex.GetType().Name}: {ex.Message}";
             return null;
         }
     }

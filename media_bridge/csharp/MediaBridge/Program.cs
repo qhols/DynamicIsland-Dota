@@ -33,10 +33,13 @@ internal static class Program
 {
     private static string _logPath = "";
 
-    private static async Task Main()
+    private static async Task Main(string[] args)
     {
         string exeDir = AppContext.BaseDirectory;
         _logPath = ResolveLogPath(exeDir);
+
+        string[] gameArgs = DotaLifetime.ParseFlags(args);
+        DotaLifetime.LaunchGame(gameArgs, Log);
 
         CleanupOtherInstances();
 
@@ -49,6 +52,7 @@ internal static class Program
         SoundEngine.Init(exeDir);
         AppAudioControl.StartFocusWatcher();
         UpdateChecker.Start();
+        DotaLifetime.StartExitWatcher();
 
         var listener = new HttpListener();
         listener.Prefixes.Add("http://127.0.0.1:45455/");
