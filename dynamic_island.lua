@@ -323,7 +323,13 @@ local DynamicIsland = {}
 
 local localization = qLocalization.new({
     en = {
-        di_group_alerts_all = "All Alerts",
+        di_streak_mega_kill = "Mega Kill!",
+        di_streak_unstoppable = "Unstoppable!",
+        di_streak_wicked_sick = "Wicked Sick!",
+        di_streak_godlike = "Godlike!",
+        di_tab_live = "Activities",
+        di_group_live = "Live Activities",
+        di_group_alerts_all = "All Notifications",
         di_toast_duration_tip = "Used by every alert that has no duration of its own",
         di_alert_duration = "Duration",
         di_alert_duration_tip = "0 uses the shared duration from the top of the page",
@@ -465,7 +471,6 @@ local localization = qLocalization.new({
         di_streak_monster_kill = "Monster Kill!",
         di_streak_dominating = "Dominating!",
         di_streak_killing_spree = "Killing Spree!",
-        di_streak_holy_shit = "HOLY SHIT! (%d Kills)",
         di_ui_courier_delivering_short = "Delivering",
         di_ui_enemy_hero = "Enemy Hero",
         di_ui_lane = "Lane",
@@ -600,7 +605,7 @@ local localization = qLocalization.new({
         di_ui_track = "Track",
         di_ui_match = "Match ",
         di_tab_general = "General",
-        di_tab_alerts = "Alerts",
+        di_tab_alerts = "Notifications",
         di_tab_media = "Media",
         di_tab_haptics = "Haptic Engine",
         di_main_enabled = "Enable Island",
@@ -708,7 +713,13 @@ local localization = qLocalization.new({
         di_priority_power_rune_cycle = "Power Rune Cycle"
     },
     ru = {
-        di_group_alerts_all = "Все оповещения",
+        di_streak_mega_kill = "Мега-убийство!",
+        di_streak_unstoppable = "Неудержимый!",
+        di_streak_wicked_sick = "Нечто!",
+        di_streak_godlike = "Божественно!",
+        di_tab_live = "Активности",
+        di_group_live = "Живые активности",
+        di_group_alerts_all = "Все уведомления",
         di_toast_duration_tip = "Для всех оповещений, у которых не задана своя длительность",
         di_alert_duration = "Длительность",
         di_alert_duration_tip = "0 значит общая длительность сверху страницы",
@@ -847,10 +858,9 @@ local localization = qLocalization.new({
         di_streak_double_kill = "Двойное убийство!",
         di_streak_first_blood = "Первая кровь!",
         di_streak_beyond_godlike = "ЗА ГРАНЬЮ БОЖЕСТВЕННОГО!",
-        di_streak_monster_kill = "Чудовищно!",
+        di_streak_monster_kill = "Чудовищное убийство!",
         di_streak_dominating = "Доминирование!",
         di_streak_killing_spree = "Серия убийств!",
-        di_streak_holy_shit = "ОХРЕНЕТЬ! (%d убийств)",
         di_ui_courier_delivering_short = "Доставка",
         di_ui_enemy_hero = "Вражеский герой",
         di_ui_lane = "Линия",
@@ -985,7 +995,7 @@ local localization = qLocalization.new({
         di_ui_track = "Трек",
         di_ui_match = "Матч ",
         di_tab_general = "Главная",
-        di_tab_alerts = "Оповещения",
+        di_tab_alerts = "Уведомления",
         di_tab_media = "Медиа",
         di_tab_haptics = "Тактильный отклик",
         di_main_enabled = "Включить Island",
@@ -1595,6 +1605,7 @@ local MenuStateCandidate = { state = nil, since = 0 }
 
 local Focus = { ClickAt = -10, BumpAt = -10, BannerStart = 0, TileVis = 0, Active = false, Mode = 0, Until = 0, StartedAt = 0, Suppressed = 0, BannerUntil = 0, BannerOn = true, Vis = 0, LastDraw = 0, PressAt = -10, ButtonAt = -10, Accent = Color(94, 92, 230, 255) }
 local Reminders = { Fired = {} }
+local Satellite = { S = {}, Right = { kind = nil, notif = nil } }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
@@ -2530,6 +2541,8 @@ local function InitMenu()
     local gAll = pAlerts:Create("di_group_alerts_all", Enum.GroupSide.FullWidth)
     local gCombat = pAlerts:Create("di_group_combat_alerts", Enum.GroupSide.Left)
     local gMap = pAlerts:Create("di_group_map_alerts", Enum.GroupSide.Right)
+    local pLive = tab:Create(L("di_tab_live"))
+    local gLive = pLive:Create("di_group_live", Enum.GroupSide.Left)
     local pMedia = tab:Create(L("di_tab_media"))
     local gMedia = pMedia:Create("di_group_media", Enum.GroupSide.Left)
 
@@ -2610,7 +2623,7 @@ local function InitMenu()
     M.BorderThickness = gLookGear:Slider("di_main_border_thickness", 0.0, 3.0, 1.0, "%.1f px")
     M.BorderThickness:Icon("\u{f065}")
 
-    C.FightHUD = gCombat:Switch("di_combat_fight_hud", true, "\u{f140}")
+    C.FightHUD = gLive:Switch("di_combat_fight_hud", true, "\u{f140}")
     local gRadar = C.FightHUD:Gear("di_gear_radar")
     C.FightScope = gRadar:Combo("di_combat_fight_scope", { "di_combat_scope_local", "di_combat_scope_any" }, 0)
     C.FightScope:Icon("\u{f05b}")
@@ -2665,8 +2678,8 @@ local function InitMenu()
     local gLevel = C.LevelUp:Gear("di_gear_alert")
     P.Level = prio(gLevel, "di_alert_priority", 1)
     D.Level = dur(gLevel)
-    C.CourierDelivery = gCombat:Switch("di_combat_courier_delivery", true, "\u{f48b}")
-    C.PauseAlert = gCombat:Switch("di_combat_pause_alert", true, "\u{f04c}")
+    C.CourierDelivery = gLive:Switch("di_combat_courier_delivery", true, "\u{f48b}")
+    C.PauseAlert = gLive:Switch("di_combat_pause_alert", true, "\u{f04c}")
 
     R.ActiveRunes = gMap:Switch("di_runes_active_runes", true, "\u{f0e7}")
     local gPower = R.ActiveRunes:Gear("di_gear_alert")
@@ -3891,19 +3904,39 @@ local function ProcessGameEvents()
         local teamData = Player.GetTeamData(localPlayer)
         if teamData then
             local curKills = teamData.kills or 0
-            if curKills > HeroData.Kills then
-                local diff = curKills - HeroData.Kills
+            local seen = HeroData.KillsSeen or -1
+            HeroData.KillsSeen = curKills
+            if seen >= 0 and curKills > seen then
+                local delta = curKills - seen
+                local nowGT = GameRules.GetGameTime()
+                if nowGT - (HeroData.LastKillTime or -100) <= 18 then
+                    HeroData.MultiKill = (HeroData.MultiKill or 0) + delta
+                else
+                    HeroData.MultiKill = delta
+                end
+                HeroData.LastKillTime = nowGT
+                local multi = HeroData.MultiKill
+                local streak = teamData.streak or 0
+                local total = 0
+                for _, pl in ipairs(Players.GetAll()) do
+                    local okT, td = pcall(Player.GetTeamData, pl)
+                    if okT and td then total = total + (td.kills or 0) end
+                end
+                local firstBlood = total > 0 and total - delta <= 0
                 local streakTitle = L("di_ui_enemy_slain")
-                if diff >= 5 then streakTitle = L("di_streak_rampage")
-                elseif diff == 4 then streakTitle = L("di_streak_ultra_kill")
-                elseif diff == 3 then streakTitle = L("di_streak_triple_kill")
-                elseif diff == 2 then streakTitle = L("di_streak_double_kill")
-                elseif curKills == 1 then streakTitle = L("di_streak_first_blood")
-                elseif curKills >= 10 then streakTitle = string.format(L("di_streak_holy_shit"), curKills)
-                elseif curKills >= 8 then streakTitle = L("di_streak_beyond_godlike")
-                elseif curKills >= 6 then streakTitle = L("di_streak_monster_kill")
-                elseif curKills >= 4 then streakTitle = L("di_streak_dominating")
-                elseif curKills >= 3 then streakTitle = L("di_streak_killing_spree")
+                if multi >= 5 then streakTitle = L("di_streak_rampage")
+                elseif multi == 4 then streakTitle = L("di_streak_ultra_kill")
+                elseif multi == 3 then streakTitle = L("di_streak_triple_kill")
+                elseif multi == 2 then streakTitle = L("di_streak_double_kill")
+                elseif firstBlood then streakTitle = L("di_streak_first_blood")
+                elseif streak >= 10 then streakTitle = L("di_streak_beyond_godlike")
+                elseif streak == 9 then streakTitle = L("di_streak_godlike")
+                elseif streak == 8 then streakTitle = L("di_streak_monster_kill")
+                elseif streak == 7 then streakTitle = L("di_streak_wicked_sick")
+                elseif streak == 6 then streakTitle = L("di_streak_unstoppable")
+                elseif streak == 5 then streakTitle = L("di_streak_mega_kill")
+                elseif streak == 4 then streakTitle = L("di_streak_dominating")
+                elseif streak == 3 then streakTitle = L("di_streak_killing_spree")
                 end
 
                 local killedHeroName = L("di_ui_enemy")
@@ -6850,6 +6883,63 @@ function Odometer.Text(id, font, size, text, pos, col)
     Render.PopClip()
 end
 
+function Satellite.Step(id, want, wide)
+    local now = os.clock()
+    local st = Satellite.S[id]
+    if not st then
+        st = { p = 0, pv = 0, w = 0, wv = 0, clk = now }
+        Satellite.S[id] = st
+    end
+    local dt = math.min(0.05, math.max(0.001, now - st.clk)) / AnimScale()
+    st.clk = now
+    local keep = want or st.w > 0.2
+    st.p, st.pv = SolveDampedSpring(st.p, st.pv, keep and 1 or 0, dt, 7.0, 0.62)
+    local wideT = (want and wide and st.p > 0.55) and 1 or 0
+    st.w, st.wv = SolveDampedSpring(st.w, st.wv, wideT, dt, 8.0, 0.74)
+    return st
+end
+
+function Satellite.Draw(layout, st, side, fullW, content)
+    local p = st.p
+    if p < 0.01 then return nil end
+    local scale = layout.scale
+    local rowY, bh = Focus.SatRow(layout)
+    local cy = rowY + bh / 2
+    local d = bh * (0.34 + 0.66 * math.min(p, 1.12))
+    local w = d + math.max(0, fullW - bh) * math.max(0, math.min(1.08, st.w))
+    local gap = 8 * scale
+    local edge = (side > 0) and (layout.x + layout.w) or layout.x
+    local travel = (gap + d / 2) * p - d / 2
+    local x1 = (side > 0) and (edge + travel) or (edge - travel - w)
+    x1 = math.floor(x1 + 0.5)
+    local y1 = math.floor(cy - d / 2 + 0.5)
+    local x2 = x1 + math.floor(w + 0.5)
+    local y2 = y1 + math.floor(d + 0.5)
+    local a = math.min(1, p * 3)
+    if p < 0.6 and not IsPureGlass() then
+        local k = 1 - p / 0.6
+        local nh = bh * 0.46 * k * k
+        if nh > 1 then
+            local nx1 = (side > 0) and (edge - 2 * scale) or (x2 - d / 2)
+            local nx2 = (side > 0) and (x1 + d / 2) or (edge + 2 * scale)
+            local bg = UI.Main.IslandBgColor:Get()
+            Render.FilledRect(Vec2(math.floor(nx1), math.floor(cy - nh / 2)), Vec2(math.floor(nx2), math.floor(cy + nh / 2)), FadeColor(Color(bg.r, bg.g, bg.b, bg.a or 255), a), math.floor(nh / 2))
+        end
+    end
+    local p1, p2 = Vec2(x1, y1), Vec2(x2, y2)
+    local r = math.floor((y2 - y1) / 2)
+    if UI.Media.Shadow:Get() then
+        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, a), 12, r, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+    end
+    IslandSurface(p1, p2, r, Config.Colors.Border, nil, a)
+    local ca = math.max(0, math.min(1, (p - 0.45) / 0.35)) * a
+    local ta = math.max(0, math.min(1, (st.w - 0.55) / 0.35)) * a
+    Render.PushClip(p1, p2, true)
+    content(x1, y1, x2, y2, y2 - y1, ca, ta)
+    Render.PopClip()
+    return { x1 = x1, y1 = y1, x2 = x2, y2 = y2 }
+end
+
 function Focus.SatRow(layout)
     local scale = layout.scale
     local compactH = math.floor(Config.Dimensions.CompactH * scale + 0.5)
@@ -6864,48 +6954,33 @@ function Focus.SatRow(layout)
 end
 
 function Focus.RenderBubble(layout)
-    local now = os.clock()
-    local dtl = math.min(0.05, math.max(0, now - Focus.LastDraw))
-    Focus.LastDraw = now
-    local st = StateMachine.TargetState
-    local want = Focus.Active and not HUDCustomizer.IsOpen and st ~= StateMachine.States.FOCUS_BANNER and st ~= StateMachine.States.MENU_MATCH_FOUND
-    Focus.Vis = Focus.Vis + ((want and 1 or 0) - Focus.Vis) * math.min(1, dtl * 9)
-    if Focus.Vis < 0.02 then
-        Focus.Bounds = nil
-        return
-    end
-    local v = math.min(1, Focus.Vis)
+    local ts = StateMachine.TargetState
+    local want = Focus.Active and not HUDCustomizer.IsOpen and ts ~= StateMachine.States.FOCUS_BANNER and ts ~= StateMachine.States.MENU_MATCH_FOUND
+    local sat = Satellite.Step("moon", want, false)
+    local _, bh = Focus.SatRow(layout)
     local scale = layout.scale
-    local rowY, full = Focus.SatRow(layout)
-    local bt = now - Focus.BumpAt
-    local bump = 1 - 0.09 * math.exp(-bt * 10) * math.cos(bt * 24)
-    local d = math.floor(full * (0.5 + 0.5 * EaseOutBack(v)) * bump)
-    local slide = (1 - v) * 10 * scale
-    local cxm = math.floor(layout.x - 8 * scale - full / 2 + slide + 0.5)
-    local cym = rowY + full / 2
-    local p1 = Vec2(math.floor(cxm - d / 2), math.floor(cym - d / 2))
-    local p2 = Vec2(p1.x + d, p1.y + d)
-    Focus.Bounds = { x1 = math.floor(cxm - full / 2), y1 = math.floor(cym - full / 2), x2 = math.floor(cxm + full / 2), y2 = math.floor(cym + full / 2) }
-    if UI.Media.Shadow:Get() then
-        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, v), 12, math.floor(d / 2), Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
-    end
-    IslandSurface(p1, p2, math.floor(d / 2), Config.Colors.Border, nil, v)
-    local c = Vec2(cxm, cym)
-    Render.FilledCircle(c, d * 0.30, FadeColor(Color(Focus.Accent.r, Focus.Accent.g, Focus.Accent.b, 38), v), 0, 1.0, 32)
-    local isz = math.floor(d * 0.52)
-    local h = GetVectorIcon("moon")
-    if h then
-        Render.Image(h, Vec2(math.floor(cxm - isz / 2), math.floor(cym - isz / 2)), Vec2(isz, isz), FadeColor(Focus.Accent, v), 0)
-    end
-    if Focus.Until > Focus.StartedAt then
-        local frac = math.max(0, math.min(1, (Focus.Until - now) / (Focus.Until - Focus.StartedAt)))
-        local rr = d / 2 - 2.5 * scale
-        local rt = math.max(1.2, 1.5 * scale)
-        Render.Circle(c, rr, FadeColor(Color(255, 255, 255, 22), v), rt, 0, 1.0, false, 48)
-        if frac > 0.002 then
-            Render.Circle(c, rr, FadeColor(Focus.Accent, v), rt, 270, frac, true, 48)
+    Focus.Bounds = Satellite.Draw(layout, sat, -1, bh, function(x1, y1, x2, y2, d, ca)
+        if ca <= 0.01 then return end
+        local now = os.clock()
+        local c = Vec2((x1 + x2) / 2, (y1 + y2) / 2)
+        local bt = now - Focus.BumpAt
+        local bump = 1 - 0.14 * math.exp(-bt * 9) * math.cos(bt * 22)
+        Render.FilledCircle(c, d * 0.30, FadeColor(Color(Focus.Accent.r, Focus.Accent.g, Focus.Accent.b, 38), ca), 0, 1.0, 32)
+        local isz = math.floor(d * 0.52 * bump)
+        local h = GetVectorIcon("moon")
+        if h then
+            Render.Image(h, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Focus.Accent, ca), 0)
         end
-    end
+        if Focus.Until > Focus.StartedAt then
+            local frac = math.max(0, math.min(1, (Focus.Until - now) / (Focus.Until - Focus.StartedAt)))
+            local rr = d / 2 - 2.5 * scale
+            local rt = math.max(1.2, 1.5 * scale)
+            Render.Circle(c, rr, FadeColor(Color(255, 255, 255, 22), ca), rt, 0, 1.0, false, 48)
+            if frac > 0.002 then
+                Render.Circle(c, rr, FadeColor(Focus.Accent, ca), rt, 270, frac, true, 48)
+            end
+        end
+    end)
 end
 
 function Focus.RenderBanner(layout, alphaMul, yOffset)
@@ -7497,230 +7572,140 @@ local function TruncateToWidth(font, size, text, maxW)
     return result
 end
 
-local function RenderDeferredNotifBubble(layout, notif)
-    local scale = layout.scale
-    local now = os.clock()
-    local elapsed = now - (NotificationQueue.StartTime or now)
-    local dur = math.max(0.5, notif.Duration or 3.0)
-    local grow = EaseOutCubic(math.min(1.0, elapsed / 0.28))
-    local aMul = math.min(1.0, elapsed / 0.18) * math.max(0.0, math.min(1.0, (dur - elapsed) / 0.25))
-    if aMul <= 0.01 then
-        SatelliteBounds = nil
-        return
-    end
-
-    local fontBold = Config.Fonts.Bold
-    local bubbleH = math.floor(Config.Dimensions.CompactH * scale)
-    local bubbleR = math.floor(Config.Dimensions.CompactRadius * scale)
-
-    local padX = math.floor(10 * scale)
-    local iconSize = math.floor(15 * scale)
-    local gap = math.floor(9 * scale)
-    local title = notif.Title or notif.Tag or ""
-    local titleSize = 10.5 * scale
-    title = TruncateToWidth(fontBold, titleSize, title, math.floor(170 * scale))
-    local textW = Render.TextSize(fontBold, titleSize, title).x
-    local fullW = padX + iconSize + gap + textW + padX
-    local bubbleW = math.floor(bubbleH + (fullW - bubbleH) * grow)
-    local bx = math.floor(layout.x + layout.w + 8 * scale)
-    local by = math.floor(layout.y)
-
-    SatelliteBounds = { x1 = bx, y1 = by, x2 = bx + bubbleW, y2 = by + bubbleH }
-    local p1 = Vec2(bx, by)
-    local p2 = Vec2(bx + bubbleW, by + bubbleH)
-
-    if UI.Media.Shadow:Get() then
-        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, aMul), 14, bubbleR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
-    end
-    IslandSurface(p1, p2, bubbleR, Config.Colors.Border, nil, aMul)
-
-    local iconX = math.floor(bx + padX)
-    local iconY = math.floor(by + (bubbleH - iconSize) / 2)
-    local iconC = Vec2(iconX + iconSize / 2, iconY + iconSize / 2)
-    local hIcon = GetCachedImage(notif.Icon, notif.FallbackSvg)
-    if hIcon then
-        Render.Image(hIcon, Vec2(iconX, iconY), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 255), aMul), iconSize / 2)
-    else
-        Render.FilledCircle(iconC, iconSize * 0.4, FadeColor(notif.AccentColor or Config.Colors.Accent, aMul), 0, 1.0, 16)
-    end
-
-    local remain = math.max(0.0, 1.0 - elapsed / dur)
-    local ringR = iconSize / 2 + 2.5 * scale
-    local ringT = math.max(1.0, 1.4 * scale)
-    Render.Circle(iconC, ringR, FadeColor(Color(255, 255, 255, 34), aMul), ringT, 0, 1.0, false, 40)
-    if remain > 0.01 then
-        Render.Circle(iconC, ringR, FadeColor(notif.AccentColor or Config.Colors.Accent, aMul), ringT, 270, remain, true, 40)
-    end
-
-    local tx = iconX + iconSize + gap
-    local availW = (bx + bubbleW - padX) - tx
-    if availW > 4 then
-        local ts = Render.TextSize(fontBold, titleSize, title)
-        Render.PushClip(Vec2(tx, by), Vec2(tx + availW, by + bubbleH), true)
-        Render.Text(fontBold, titleSize, title, Vec2(tx, by + (bubbleH - ts.y) / 2 - 1), FadeColor(Config.Colors.TextPrimary, aMul))
-        Render.PopClip()
-    end
-end
-
 local function RenderSecondarySatelliteBubble(layout)
-    if not UI.Media.SecondaryBubble:Get() then return end
-    if HUDCustomizer.IsOpen then return end
-
-    local deferred = NotificationQueue.Active
-    if deferred and IsNotifDeferred(deferred)
-        and (StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA) then
-        RenderDeferredNotifBubble(layout, deferred)
-        return
-    end
-
-    local inCombat = FightTracker.Active
+    local R = Satellite.Right
     local scale = layout.scale
     local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
-    local now = GameRules.GetGameTime()
-
-    if inCombat then
-        local hasSatelliteContent = NotificationQueue.Active or IsMediaActive()
-        if not hasSatelliteContent then
-            SatelliteBounds = nil
-            ButtonHits.SatellitePrev = nil
-            ButtonHits.SatellitePlay = nil
-            ButtonHits.SatelliteNext = nil
-            return
-        end
-
-        local bubbleH = math.floor(Config.Dimensions.CompactH * scale)
-        local bubbleR = math.floor(Config.Dimensions.CompactRadius * scale)
-        local isHovered = FightTracker.SatelliteHover
-        local bubbleW = math.floor(34 * scale)
-        if isHovered and IsMediaActive() then
-            bubbleW = math.floor(136 * scale)
-        end
-        local bx = math.floor(layout.x + layout.w + 8 * scale)
-        local by = math.floor(layout.y)
-
-        SatelliteBounds = { x1 = bx, y1 = by, x2 = bx + bubbleW, y2 = by + bubbleH }
-
-        local p1 = Vec2(bx, by)
-        local p2 = Vec2(bx + bubbleW, by + bubbleH)
-
-        if UI.Media.Shadow:Get() then
-            Render.Shadow(p1, p2, Config.Colors.Shadow, 14, bubbleR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
-        end
-
-        IslandSurface(p1, p2, bubbleR, Config.Colors.Border)
-
-        if NotificationQueue.Active then
-            ButtonHits.SatellitePrev = nil
-            ButtonHits.SatellitePlay = nil
-            ButtonHits.SatelliteNext = nil
-            local notif = NotificationQueue.Active
-            local iconSize = math.floor(16 * scale)
-            local iconX = math.floor(bx + 8 * scale)
-            local iconY = math.floor(by + (bubbleH - iconSize) / 2)
-            local hIcon = GetCachedImage(notif.Icon, notif.FallbackSvg)
-            if hIcon then
-                Render.Image(hIcon, Vec2(iconX, iconY), Vec2(iconSize, iconSize), Color(255, 255, 255, 255), 3 * scale)
+    local now = os.clock()
+    local ts = StateMachine.TargetState
+    local active = NotificationQueue.Active
+    local desired, notif = nil, nil
+    if UI.Media.SecondaryBubble:Get() and not HUDCustomizer.IsOpen then
+        if active and IsNotifDeferred(active) and (ts == StateMachine.States.COMPACT_MEDIA or ts == StateMachine.States.LARGE_MEDIA) then
+            local left = (active.Duration or 3) - (now - (NotificationQueue.StartTime or now))
+            if left > 0.45 then
+                desired, notif = "notif", active
             end
-        elseif IsMediaActive() then
-            local thumbSize = math.floor(20 * scale)
-            local thumbX = math.floor(bx + (isHovered and (7 * scale) or ((bubbleW - thumbSize) / 2)))
-            local thumbY = math.floor(by + (bubbleH - thumbSize) / 2)
-            DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 4 * scale, 1.0)
-
-            if isHovered then
-                ButtonHits.SatellitePrev = { x1 = bx + 30 * scale, y1 = by, x2 = bx + 58 * scale, y2 = by + bubbleH }
-                ButtonHits.SatellitePlay = { x1 = bx + 60 * scale, y1 = by, x2 = bx + 94 * scale, y2 = by + bubbleH }
-                ButtonHits.SatelliteNext = { x1 = bx + 96 * scale, y1 = by, x2 = bx + 130 * scale, y2 = by + bubbleH }
-
-                local pScale = ButtonSprings.SatellitePrev.scale
-                local plScale = ButtonSprings.SatellitePlay.scale
-                local nScale = ButtonSprings.SatelliteNext.scale
-
-                local prevSz = math.floor(14 * scale * pScale)
-                local hPrev = GetVectorIcon("media_prev")
-                if hPrev then
-                    local pX = math.floor(bx + 44 * scale - prevSz / 2)
-                    local pY = math.floor(by + (bubbleH - prevSz) / 2)
-                    Render.Image(hPrev, Vec2(pX, pY), Vec2(prevSz, prevSz), Config.Colors.TextPrimary, 0)
-                end
-
-                local playSz = math.floor(16 * scale * plScale)
-                local playIconName = MediaData.IsPlaying and "media_pause" or "media_play"
-                local hPlay = GetVectorIcon(playIconName)
-                if hPlay then
-                    local plX = math.floor(bx + 77 * scale - playSz / 2)
-                    local plY = math.floor(by + (bubbleH - playSz) / 2)
-                    Render.Image(hPlay, Vec2(plX, plY), Vec2(playSz, playSz), Config.Colors.TextPrimary, 0)
-                end
-
-                local nextSz = math.floor(14 * scale * nScale)
-                local hNext = GetVectorIcon("media_next")
-                if hNext then
-                    local nX = math.floor(bx + 112 * scale - nextSz / 2)
-                    local nY = math.floor(by + (bubbleH - nextSz) / 2)
-                    Render.Image(hNext, Vec2(nX, nY), Vec2(nextSz, nextSz), Config.Colors.TextPrimary, 0)
-                end
-            else
-                ButtonHits.SatellitePrev = nil
-                ButtonHits.SatellitePlay = nil
-                ButtonHits.SatelliteNext = nil
+        elseif FightTracker.Active and (active or IsMediaActive()) then
+            desired = "combat"
+        else
+            local ros = GameTracker.Roshan
+            if ros.AegisExpiryTime - GameRules.GetGameTime() > 0 and not ros.Dismissed and ts ~= StateMachine.States.NOTIFICATION then
+                desired = "aegis"
             end
         end
-        return
     end
-
-    local ros = GameTracker.Roshan
-    local clk = os.clock()
-    local dtl = math.min(0.05, math.max(0, clk - ros.VisClk))
-    ros.VisClk = clk
-    local rem = ros.AegisExpiryTime - GameRules.GetGameTime()
-    local want = rem > 0 and not ros.Dismissed and StateMachine.TargetState ~= StateMachine.States.NOTIFICATION
-    ros.Vis = ros.Vis + ((want and 1 or 0) - ros.Vis) * math.min(1, dtl * 9)
-    if ros.Vis < 0.02 then
+    if notif then R.notif = notif end
+    local cur = Satellite.S.right
+    if R.kind ~= desired and (not cur or cur.p < 0.04) then
+        R.kind = desired
+        if cur then cur.w, cur.wv = 0, 0 end
+    end
+    local kind = R.kind
+    local combatMedia = kind == "combat" and not active and IsMediaActive()
+    local wide = kind == "notif" or kind == "aegis" or (combatMedia and FightTracker.SatelliteHover)
+    local sat = Satellite.Step("right", kind ~= nil and kind == desired, wide)
+    ButtonHits.SatellitePrev = nil
+    ButtonHits.SatellitePlay = nil
+    ButtonHits.SatelliteNext = nil
+    if not kind then
         SatelliteBounds = nil
         return
     end
-    local v = math.min(1, ros.Vis)
-    rem = math.max(0, rem)
 
-    local by, bh = Focus.SatRow(layout)
-    local br = math.floor(bh / 2)
-    local ringR = math.floor(br - 4 * scale)
-    local iconSize = math.floor(ringR * 1.25)
-    local timeStr = FormatTime(rem)
-    local fontSize = 10.5 * scale
-    local tSize = Render.TextSize(fontBold, fontSize, timeStr)
-    local gap = math.floor(5 * scale)
-    local fullW = bh + gap + tSize.x + math.floor(br * 0.75)
-    local grow = EaseOutBack(v)
-    local bw = math.floor(bh + (fullW - bh) * math.min(1, grow))
-    local slide = (1 - v) * 10 * scale
-    local bx = math.floor(layout.x + layout.w + 8 * scale - slide)
-    SatelliteBounds = { x1 = bx, y1 = by, x2 = bx + bw, y2 = by + bh }
-    local p1 = Vec2(bx, by)
-    local p2 = Vec2(bx + bw, by + bh)
-    if UI.Media.Shadow:Get() then
-        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, v), 12, br, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+    local _, bh = Focus.SatRow(layout)
+    local fullW = bh
+    local content
+
+    if kind == "notif" and R.notif then
+        local n = R.notif
+        local titleSize = 10.5 * scale
+        local title = TruncateToWidth(fontBold, titleSize, n.Title or n.Tag or "", math.floor(170 * scale))
+        local tsz = Render.TextSize(fontBold, titleSize, title)
+        fullW = bh + math.floor(5 * scale) + tsz.x + math.floor(bh * 0.38)
+        local remain = 0
+        if n == NotificationQueue.Active then
+            remain = math.max(0, 1 - (now - (NotificationQueue.StartTime or now)) / math.max(0.5, n.Duration or 3))
+        end
+        content = function(x1, y1, x2, y2, d, ca, ta)
+            local c = Vec2(x1 + d / 2, (y1 + y2) / 2)
+            local ringR = d / 2 - 4 * scale
+            local isz = math.floor(ringR * 1.25)
+            local accent = n.AccentColor or Config.Colors.Accent
+            local rt = math.max(1.2, 1.5 * scale)
+            Render.Circle(c, ringR, FadeColor(Color(255, 255, 255, 30), ca), rt, 0, 1.0, false, 48)
+            if remain > 0.01 then
+                Render.Circle(c, ringR, FadeColor(accent, ca), rt, 270, remain, true, 48)
+            end
+            local hIcon = GetCachedImage(n.Icon, n.FallbackSvg)
+            if hIcon then
+                Render.Image(hIcon, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), ca), math.floor(isz / 2))
+            else
+                Render.FilledCircle(c, isz * 0.4, FadeColor(accent, ca), 0, 1.0, 16)
+            end
+            if ta > 0.01 then
+                Render.Text(fontBold, titleSize, title, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(Config.Colors.TextPrimary, ta))
+            end
+        end
+    elseif kind == "aegis" then
+        local rem = math.max(0, GameTracker.Roshan.AegisExpiryTime - GameRules.GetGameTime())
+        local timeStr = FormatTime(rem)
+        local fontSize = 10.5 * scale
+        local tsz = Render.TextSize(fontBold, fontSize, timeStr)
+        fullW = bh + math.floor(5 * scale) + tsz.x + math.floor(bh * 0.38)
+        content = function(x1, y1, x2, y2, d, ca, ta)
+            local c = Vec2(x1 + d / 2, (y1 + y2) / 2)
+            local ringR = d / 2 - 4 * scale
+            local isz = math.floor(ringR * 1.25)
+            local rt = math.max(1.2, 1.5 * scale)
+            Render.Circle(c, ringR, FadeColor(Color(255, 255, 255, 30), ca), rt, 0, 1.0, false, 48)
+            local frac = math.max(0, math.min(1, rem / 300))
+            if frac > 0.002 then
+                Render.Circle(c, ringR, FadeColor(Color(255, 196, 64, 255), ca), rt, 270, frac, true, 48)
+            end
+            local aegisH = GetCachedImage("panorama/images/items/aegis_png.vtex_c")
+            if aegisH then
+                Render.Image(aegisH, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), ca), math.floor(isz / 2))
+            end
+            if ta > 0.01 then
+                Odometer.Text("aegis_time", fontBold, fontSize, timeStr, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(Config.Colors.TextPrimary, ta))
+            end
+        end
+    else
+        local step = math.floor(26 * scale)
+        fullW = bh + step * 3 + math.floor(6 * scale)
+        content = function(x1, y1, x2, y2, d, ca, ta)
+            local c = Vec2(x1 + d / 2, (y1 + y2) / 2)
+            if active then
+                local isz = math.floor(d * 0.52)
+                local hIcon = GetCachedImage(active.Icon, active.FallbackSvg)
+                if hIcon then
+                    Render.Image(hIcon, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), ca), math.floor(isz / 2))
+                end
+                return
+            end
+            local thumb = math.floor(d * 0.62)
+            DrawAlbumThumbnail(math.floor(c.x - thumb / 2), math.floor(c.y - thumb / 2), thumb, thumb / 2, ca)
+            if ta <= 0.01 then return end
+            local bx0 = x1 + d + math.floor(step / 2)
+            local items = {
+                { key = "SatellitePrev", icon = "media_prev", size = 12 },
+                { key = "SatellitePlay", icon = MediaData.IsPlaying and "media_pause" or "media_play", size = 14 },
+                { key = "SatelliteNext", icon = "media_next", size = 12 }
+            }
+            for i, it in ipairs(items) do
+                local bxc = math.floor(bx0 + (i - 1) * step)
+                ButtonHits[it.key] = { x1 = bxc - step / 2, y1 = y1, x2 = bxc + step / 2, y2 = y2 }
+                local sz = math.floor(it.size * scale * ButtonSprings[it.key].scale)
+                local h = GetVectorIcon(it.icon)
+                if h then
+                    Render.Image(h, Vec2(math.floor(bxc - sz / 2), math.floor(c.y - sz / 2)), Vec2(sz, sz), FadeColor(Config.Colors.TextPrimary, ta), 0)
+                end
+            end
+        end
     end
-    IslandSurface(p1, p2, br, Config.Colors.Border, nil, v)
-    Render.PushClip(p1, p2, true)
-    local ringC = Vec2(bx + br, by + br)
-    local gold = Color(255, 196, 64, 255)
-    local rt = math.max(1.2, 1.5 * scale)
-    Render.Circle(ringC, ringR, FadeColor(Color(255, 255, 255, 30), v), rt, 0, 1.0, false, 48)
-    local frac = math.max(0, math.min(1, rem / 300))
-    if frac > 0.002 then
-        Render.Circle(ringC, ringR, FadeColor(gold, v), rt, 270, frac, true, 48)
-    end
-    local aegisH = GetCachedImage("panorama/images/items/aegis_png.vtex_c")
-    if aegisH then
-        Render.Image(aegisH, Vec2(math.floor(ringC.x - iconSize / 2), math.floor(ringC.y - iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 255), v), math.floor(iconSize / 2))
-    end
-    local tx = math.floor(bx + bh + gap)
-    local ty = math.floor(by + (bh - tSize.y) / 2 - 1)
-    Odometer.Text("aegis_time", fontBold, fontSize, timeStr, Vec2(tx, ty), FadeColor(Config.Colors.TextPrimary, v))
-    Render.PopClip()
+
+    SatelliteBounds = Satellite.Draw(layout, sat, 1, fullW, content)
 end
 
 local function RenderMenuClosedHint(layout)
@@ -9474,6 +9459,9 @@ function DynamicIsland.OnUpdateEx()
     else
         if WasInGame then
             WasInGame = false
+            HeroData.KillsSeen = -1
+            HeroData.LastKillTime = -100
+            HeroData.MultiKill = 0
             Reminders.Fired = {}
             if Focus.Active and Focus.Mode == 3 then
                 Focus.Set(false)
