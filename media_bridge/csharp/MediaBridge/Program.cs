@@ -209,7 +209,7 @@ internal static class Program
             }
             else if (path == "/update/start")
             {
-                Updater.Start(request.QueryString["dir"]);
+                Updater.Start(request.QueryString["dir"], request.QueryString["path"]);
                 await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
             }
             else if (path == "/update/test")

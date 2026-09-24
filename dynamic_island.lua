@@ -9442,11 +9442,14 @@ function Sheet.StartUpdate(now)
         local ok, cd = pcall(Engine.GetCheatDirectory)
         if ok and cd and cd ~= "" then dir = cd:gsub("/", "\\"):gsub("\\$", "") .. "\\scripts" end
     end
+    local _, probe = pcall(function() error("di_self") end)
+    local self = string.match(tostring(probe), "^(.-%.lua):%d+: di_self")
     Sheet.Upd.State = "downloading"
     Sheet.Upd.Progress = 0
     Sheet.Upd.Error = ""
     Sheet.Upd.LastOk = now
-    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/start?dir=" .. Sheet.UrlEncode(dir), {}, function() end, "di_update_start")
+    local q = "dir=" .. Sheet.UrlEncode(dir) .. (self and ("&path=" .. Sheet.UrlEncode(self)) or "")
+    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/start?" .. q, {}, function() end, "di_update_start")
 end
 
 function Sheet.PollUpdate()

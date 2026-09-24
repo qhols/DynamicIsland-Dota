@@ -59,7 +59,7 @@ public static class Updater
         try { Process.Start(new ProcessStartInfo(ReleasePage) { UseShellExecute = true }); } catch { }
     }
 
-    public static void Start(string? scriptDir)
+    public static void Start(string? scriptDir, string? scriptPath)
     {
         lock (Sync)
         {
@@ -68,14 +68,14 @@ public static class Updater
             _progress = 0;
             _error = "";
         }
-        _ = Task.Run(() => RunAsync(scriptDir));
+        _ = Task.Run(() => RunAsync(scriptDir, scriptPath));
     }
 
-    private static async Task RunAsync(string? scriptDir)
+    private static async Task RunAsync(string? scriptDir, string? exactPath)
     {
         try
         {
-            string scriptPath = ResolveScriptPath(scriptDir);
+            string scriptPath = ResolveScriptPath(scriptDir, exactPath);
             if (scriptPath == "") { Set("error", 0, "script"); return; }
             if (TestMode)
             {
@@ -162,8 +162,21 @@ public static class Updater
         Set("ready", 1);
     }
 
-    private static string ResolveScriptPath(string? scriptDir)
+    private static string ResolveScriptPath(string? scriptDir, string? exactPath)
     {
+        if (!string.IsNullOrWhiteSpace(exactPath))
+        {
+            try
+            {
+                string full = Path.GetFullPath(exactPath);
+                if (full.EndsWith(".lua", StringComparison.OrdinalIgnoreCase) && File.Exists(full))
+                {
+                    string text = File.ReadAllText(full);
+                    if (text.Contains("SCRIPT_VERSION") && text.Contains("return DynamicIsland")) return full;
+                }
+            }
+            catch { }
+        }
         foreach (var dir in new[] { scriptDir, @"C:\Umbrella\scripts" })
         {
             if (string.IsNullOrWhiteSpace(dir)) continue;
