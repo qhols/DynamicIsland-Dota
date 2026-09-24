@@ -199,33 +199,84 @@ public static class MediaSessionService
         return mgr.GetCurrentSession() ?? sessions[0];
     }
 
+    private static int[] Legible(double r, double g, double b)
+    {
+        double max = Math.Max(r, Math.Max(g, b));
+        double min = Math.Min(r, Math.Min(g, b));
+        if (max <= 0) return new[] { 235, 235, 245 };
+        double s = (max - min) / max;
+        double v = max / 255.0;
+        double ns = Math.Clamp(s, 0.35, 0.85);
+        double nv = Math.Max(v, 0.85);
+        double scale = nv * 255.0 / max;
+        double[] c = { r * scale, g * scale, b * scale };
+        double top = nv * 255.0;
+        double bottom = top * (1 - ns);
+        double curBottom = min * scale;
+        double span = top - curBottom;
+        for (int i = 0; i < 3; i++)
+        {
+            double t = span <= 0 ? 1 : (c[i] - curBottom) / span;
+            c[i] = bottom + (top - bottom) * t;
+        }
+        return new[] { (int)Math.Round(c[0]), (int)Math.Round(c[1]), (int)Math.Round(c[2]) };
+    }
+
     private static int[] ExtractDominantColor(string imagePath)
     {
         try
         {
             if (!File.Exists(imagePath)) return new[] { 255, 45, 85 };
             using var bmp = new Bitmap(imagePath);
-            long totalR = 0, totalG = 0, totalB = 0;
-            int count = 0;
-            int step = Math.Max(1, bmp.Width / 16);
+            const int bins = 36;
+            var weight = new double[bins];
+            var sumR = new double[bins];
+            var sumG = new double[bins];
+            var sumB = new double[bins];
+            int total = 0;
+            int step = Math.Max(1, Math.Min(bmp.Width, bmp.Height) / 48);
             for (int x = 0; x < bmp.Width; x += step)
             {
                 for (int y = 0; y < bmp.Height; y += step)
                 {
                     var p = bmp.GetPixel(x, y);
-                    int brightness = (p.R + p.G + p.B) / 3;
-                    int diff = Math.Max(Math.Abs(p.R - p.G), Math.Max(Math.Abs(p.R - p.B), Math.Abs(p.G - p.B)));
-                    if (brightness > 25 && brightness < 240 && diff > 15)
-                    {
-                        totalR += p.R;
-                        totalG += p.G;
-                        totalB += p.B;
-                        count++;
-                    }
+                    total++;
+                    double r = p.R / 255.0, g = p.G / 255.0, b = p.B / 255.0;
+                    double max = Math.Max(r, Math.Max(g, b));
+                    double min = Math.Min(r, Math.Min(g, b));
+                    double s = max <= 0 ? 0 : (max - min) / max;
+                    if (s < 0.25 || max < 0.2) continue;
+                    double h;
+                    double d = max - min;
+                    if (max == r) h = 60 * (((g - b) / d) % 6);
+                    else if (max == g) h = 60 * (((b - r) / d) + 2);
+                    else h = 60 * (((r - g) / d) + 4);
+                    if (h < 0) h += 360;
+                    int bin = (int)(h / (360.0 / bins)) % bins;
+                    double w = s * s * max;
+                    weight[bin] += w;
+                    sumR[bin] += p.R * w;
+                    sumG[bin] += p.G * w;
+                    sumB[bin] += p.B * w;
                 }
             }
-            if (count > 0) return new[] { (int)(totalR / count), (int)(totalG / count), (int)(totalB / count) };
-            return new[] { 255, 45, 85 };
+            double all = 0;
+            for (int i = 0; i < bins; i++) all += weight[i];
+            if (total == 0 || all / total < 0.02) return new[] { 235, 235, 245 };
+            int best = 0;
+            double bestW = -1;
+            for (int i = 0; i < bins; i++)
+            {
+                double w = weight[(i + bins - 1) % bins] + weight[i] + weight[(i + 1) % bins];
+                if (w > bestW) { bestW = w; best = i; }
+            }
+            double cw = 0, cr = 0, cg = 0, cb = 0;
+            for (int k = -1; k <= 1; k++)
+            {
+                int i = (best + k + bins) % bins;
+                cw += weight[i]; cr += sumR[i]; cg += sumG[i]; cb += sumB[i];
+            }
+            return Legible(cr / cw, cg / cw, cb / cw);
         }
         catch
         {
