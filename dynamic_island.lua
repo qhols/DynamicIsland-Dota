@@ -1633,7 +1633,7 @@ local Success = { Fired = {} }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts = {}, LayoutCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
-local SCRIPT_VERSION = "2.0.0"
+local SCRIPT_VERSION = "2.1.0"
 
 local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
 local SatelliteSubBounds = {}
