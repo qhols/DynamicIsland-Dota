@@ -8,6 +8,7 @@ iPhone style dynamic island for dota, made for umbrella. one small pill at the t
 - [media bridge](https://github.com/qhols/DynamicIsland-Dota/releases/latest/download/media_bridge.exe)
 - [media bridge source](media_bridge)
 - [start the bridge together with dota](docs/autostart.md)
+- [fonts](https://github.com/qhols/DynamicIsland-Dota/releases/download/v2.0.0/fonts.zip)
 
 ## What's in it
 
