@@ -20,6 +20,7 @@ local qLocalization = (function()
 	local setters = {
 		ToolTip = "tooltip",
 	}
+	local fast_methods = { Get = true, Set = true, Opened = true, IsOpened = true }
 
 	local helpers
 	do
@@ -184,6 +185,7 @@ local qLocalization = (function()
 					end
 
 					local proxy
+					local cache = {}
 
 					proxy = setmetatable({}, {
 						__index = function(_, key)
@@ -193,7 +195,28 @@ local qLocalization = (function()
 								return member
 							end
 
-							return function(...)
+							local hit = cache[key]
+							if hit then
+								return hit
+							end
+
+							local fn
+							if fast_methods[key] then
+								if bind_self then
+									fn = function(self, ...)
+										if self == proxy then
+											return member(target, ...)
+										end
+										return member(self, ...)
+									end
+								else
+									fn = member
+								end
+								cache[key] = fn
+								return fn
+							end
+
+							fn = function(...)
 								local args = table.pack(...)
 
 								if bind_self and args[1] == proxy then
@@ -270,6 +293,8 @@ local qLocalization = (function()
 
 								return table.unpack(results, 1, results.n)
 							end
+							cache[key] = fn
+							return fn
 						end,
 
 						__newindex = function(_, key, value)
@@ -378,7 +403,7 @@ local localization = qLocalization.new({
         di_focus_name = "Do Not Disturb",
         di_focus_on = "On",
         di_focus_off = "Off",
-        di_focus_summary_tag = "DO NOT DISTURB",
+        di_focus_summary_tag = "Do Not Disturb",
         di_focus_summary = "Alerts hidden: %d",
         di_focus_summary_sub = "Notifications are back on",
         di_rem_tag = "REMINDER",
@@ -469,12 +494,12 @@ local localization = qLocalization.new({
         di_drawer_standard = "Standard",
         di_drawer_minimal = "Minimal",
         di_drawer_detailed = "Detailed",
-        di_streak_rampage = "RAMPAGE!",
+        di_streak_rampage = "Rampage!",
         di_streak_ultra_kill = "Ultra Kill!",
         di_streak_triple_kill = "Triple Kill!",
         di_streak_double_kill = "Double Kill!",
         di_streak_first_blood = "First Blood!",
-        di_streak_beyond_godlike = "BEYOND GODLIKE!",
+        di_streak_beyond_godlike = "Beyond Godlike!",
         di_streak_monster_kill = "Monster Kill!",
         di_streak_dominating = "Dominating!",
         di_streak_killing_spree = "Killing Spree!",
@@ -486,47 +511,47 @@ local localization = qLocalization.new({
         di_ui_update_available = "Update available: ",
         di_ui_skirmish_concluded = "Skirmish Concluded",
         di_ui_all_combatants_retreated = "All combatants retreated",
-        di_ui_fight_won = "Fight Won!",
+        di_ui_fight_won = "Fight Won",
         di_ui_enemies_slain_n_losses_n = "Enemies slain: %d  •  Losses: %d",
         di_ui_fight_lost = "Fight Lost",
         di_ui_team_losses_n_kills_n = "Team losses: %d  •  Kills: %d",
         di_ui_even_trade = "Even Trade",
         di_ui_traded_n_for_n = "Traded %d for %d",
-        di_ui_fight_outcome = "FIGHT OUTCOME",
-        di_ui_level_up = "LEVEL UP",
+        di_ui_fight_outcome = "Fight Outcome",
+        di_ui_level_up = "Level Up",
         di_ui_level_n_reached = "Level %d Reached",
-        di_ui_enemy_slain = "Enemy Slain!",
+        di_ui_enemy_slain = "Enemy Slain",
         di_ui_enemy = "Enemy",
-        di_ui_kill_streak = "KILL STREAK",
+        di_ui_kill_streak = "Kill Streak",
         di_ui_eliminated = "Eliminated ",
-        di_ui_item_alert = "ITEM ALERT",
+        di_ui_item_alert = "Enemy Item",
         di_ui_purchased_item = " purchased item",
         di_ui_spawned_in_river = "spawned in river",
         di_ui_spawned_at_shrine = "spawned at Shrine",
         di_ui_spawned_top_river = "spawned Top River",
         di_ui_spawned_bottom_river = "spawned Bottom River",
-        di_ui_rune_spawned = "RUNE SPAWNED",
-        di_ui_stack = "STACK",
+        di_ui_rune_spawned = "Rune",
+        di_ui_stack = "Stack",
         di_ui_stack_in_n_s = "Stack in %ds",
         di_ui_pull_the_camp_at_n_53 = "Pull the camp at %d:53",
-        di_ui_wisdom_rune = "WISDOM RUNE",
+        di_ui_wisdom_rune = "Wisdom Rune",
         di_ui_wisdom_runes_in_n_s = "Wisdom Runes in %ds",
         di_ui_side_lane_shrines = "Side lane shrines",
-        di_ui_water_rune = "WATER RUNE",
+        di_ui_water_rune = "Water Rune",
         di_ui_water_runes_in_n_s = "Water Runes in %ds",
         di_ui_river_spawn_points = "River spawn points",
-        di_ui_power_rune = "POWER RUNE",
+        di_ui_power_rune = "Power Rune",
         di_ui_power_runes_in_n_s = "Power Runes in %ds",
-        di_ui_bounty_rune = "BOUNTY RUNE",
+        di_ui_bounty_rune = "Bounty Rune",
         di_ui_bounty_runes_in_n_s = "Bounty Runes in %ds",
         di_ui_bounty_spawn_spots = "Bounty spawn spots",
-        di_ui_objective = "OBJECTIVE",
+        di_ui_objective = "Tormentor",
         di_ui_tormentor_soon_s = "Tormentor Soon (%s)",
         di_ui_spawns_at_20_00 = "Spawns at 20:00",
         di_ui_tormentor_in_n_s = "Tormentor in %ds",
         di_ui_spawns_at_20_00_2 = "Spawns at 20:00",
         di_ui_initial_bounty_spawns = "Initial bounty spawns",
-        di_ui_neutrals_unlocked = "NEUTRALS UNLOCKED",
+        di_ui_neutrals_unlocked = "Neutral Items",
         di_ui_tier_1_neutrals_ready = "Tier 1 Neutrals Ready",
         di_ui_n_7_00_match_time_reached = "7:00 match time reached",
         di_ui_tier_2_neutrals_ready = "Tier 2 Neutrals Ready",
@@ -537,42 +562,42 @@ local localization = qLocalization.new({
         di_ui_n_37_00_match_time_reached = "37:00 match time reached",
         di_ui_tier_5_neutrals_ready = "Tier 5 Neutrals Ready",
         di_ui_n_60_00_match_time_reached = "60:00 match time reached",
-        di_ui_lotus_pool = "LOTUS POOL",
+        di_ui_lotus_pool = "Lotus Pool",
         di_ui_lotus_fruit_in_n_s = "Lotus Fruit in %ds",
         di_ui_side_lane_pools = "Side lane pools",
-        di_ui_courier_warning = "COURIER WARNING",
-        di_ui_courier_under_attack = "Courier Under Attack!",
+        di_ui_courier_warning = "Courier",
+        di_ui_courier_under_attack = "Courier Under Attack",
         di_ui_n_hp_remaining = "%d HP remaining",
-        di_ui_tower_defense = "TOWER DEFENSE",
+        di_ui_tower_defense = "Tower",
         di_ui_ally_tower_attacked = "Ally Tower Attacked",
         di_ui_health_dropped_to_n_pct = "Health dropped to %d%%",
-        di_ui_kill_opportunity = "KILL OPPORTUNITY",
-        di_ui_rune_pickup = "RUNE PICKUP",
+        di_ui_kill_opportunity = "Kill Opportunity",
+        di_ui_rune_pickup = "Rune Pickup",
         di_ui_picked_up = "picked up ",
-        di_ui_invisibility_alert = "INVISIBILITY ALERT",
+        di_ui_invisibility_alert = "Invisibility",
         di_ui_enemy_entered_stealth = "Enemy entered stealth",
-        di_ui_teleport_warning = "TELEPORT WARNING",
+        di_ui_teleport_warning = "Enemy Teleport",
         di_ui_teleporting = " Teleporting",
         di_ui_teleporting_to = "Teleporting to ",
-        di_ui_aegis_claimed = "AEGIS CLAIMED",
+        di_ui_aegis_claimed = "Aegis Claimed",
         di_ui_claimed_aegis = " Claimed Aegis",
         di_ui_enemy_secured_immortal = "Enemy secured immortal",
         di_ui_ally_secured_immortal = "Ally secured immortal",
-        di_ui_roshan_pit_alert = "ROSHAN PIT ALERT",
-        di_ui_roshan_under_attack = "Roshan Under Attack!",
+        di_ui_roshan_pit_alert = "Roshan Pit",
+        di_ui_roshan_under_attack = "Roshan Under Attack",
         di_ui_combat_audio_detected_in_pit = "Combat audio detected in pit",
         di_ui_player = "Player",
-        di_ui_buyback_alert = "BUYBACK ALERT",
-        di_ui_bought_back = " Bought Back!",
+        di_ui_buyback_alert = "Buyback",
+        di_ui_bought_back = " Bought Back",
         di_ui_hero_returned_to_match = "Hero returned to match",
-        di_ui_roshan_slain = "ROSHAN SLAIN",
-        di_ui_roshan_killed = "Roshan Killed!",
+        di_ui_roshan_slain = "Roshan",
+        di_ui_roshan_killed = "Roshan Killed",
         di_ui_aegis_dropped_in_pit = "Aegis dropped in pit",
-        di_ui_tormentor_spawn = "TORMENTOR SPAWN",
-        di_ui_tormentor_spawned = "Tormentor Spawned!",
+        di_ui_tormentor_spawn = "Tormentor",
+        di_ui_tormentor_spawned = "Tormentor Spawned",
         di_ui_objective_available = "Objective available",
-        di_ui_tormentor_defeated = "TORMENTOR DEFEATED",
-        di_ui_tormentor_defeated_2 = "Tormentor Defeated!",
+        di_ui_tormentor_defeated = "Tormentor",
+        di_ui_tormentor_defeated_2 = "Tormentor Defeated",
         di_ui_shard_granted_to_team = "Shard granted to team",
         di_ui_hero = "Hero",
         di_ui_main_menu = "Main Menu",
@@ -592,9 +617,29 @@ local localization = qLocalization.new({
         di_ui_reset = "Reset",
         di_ui_widgets = "Widgets",
         di_ui_drawer_hint = "RMB: settings  \u{2022}  LMB: toggle  \u{2022}  drag: reorder",
-        di_ui_controls_hint = "Ctrl + LMB : Drag   •   RMB : Quick HUD",
+        di_ui_controls_hint = "Ctrl + LMB: move  \u{2022}  RMB: widgets",
         di_ui_music = "Music",
         di_ui_fight = "Fight",
+        di_main_expand = "Expand island",
+        di_main_expand_hover = "On hover",
+        di_main_expand_hold = "Press and hold",
+        di_main_expand_tip = "Press and hold works like on iPhone: hold the island for a moment to open it",
+        di_group_system = "System",
+        di_sys_output = "Audio output",
+        di_sys_output_tip = "Shows the device when Windows switches sound output, like when headphones connect. Needs MediaBridge",
+        di_sys_mute = "Sound on and off",
+        di_sys_mute_tip = "Shows when Windows sound gets muted or unmuted. Needs MediaBridge",
+        di_sys_battery = "Battery",
+        di_sys_battery_tip = "Laptops only: charging and low battery. Needs MediaBridge",
+        di_sys_headphones = "Headphones",
+        di_sys_speakers = "Speakers",
+        di_sys_display = "Display",
+        di_sys_sound = "Sound",
+        di_sys_muted = "Muted",
+        di_sys_unmuted = "On",
+        di_sys_battery_tag = "Battery",
+        di_sys_charging = "Charging, %d%%",
+        di_sys_low = "Low Battery, %d%%",
         di_ui_tap = "Tap",
         di_num_sep = ",",
         di_ui_map = "Map",
@@ -767,7 +812,7 @@ local localization = qLocalization.new({
         di_focus_name = "Не беспокоить",
         di_focus_on = "Вкл",
         di_focus_off = "Выкл",
-        di_focus_summary_tag = "НЕ БЕСПОКОИТЬ",
+        di_focus_summary_tag = "Не беспокоить",
         di_focus_summary = "Скрыто уведомлений: %d",
         di_focus_summary_sub = "Уведомления снова включены",
         di_rem_tag = "НАПОМИНАНИЕ",
@@ -858,12 +903,12 @@ local localization = qLocalization.new({
         di_drawer_standard = "Стандарт",
         di_drawer_minimal = "Кратко",
         di_drawer_detailed = "Детали",
-        di_streak_rampage = "БЕСЧИНСТВО!",
+        di_streak_rampage = "Бесчинство!",
         di_streak_ultra_kill = "Ультра-убийство!",
         di_streak_triple_kill = "Тройное убийство!",
         di_streak_double_kill = "Двойное убийство!",
         di_streak_first_blood = "Первая кровь!",
-        di_streak_beyond_godlike = "ЗА ГРАНЬЮ БОЖЕСТВЕННОГО!",
+        di_streak_beyond_godlike = "За гранью божественного!",
         di_streak_monster_kill = "Чудовищное убийство!",
         di_streak_dominating = "Доминирование!",
         di_streak_killing_spree = "Серия убийств!",
@@ -872,96 +917,96 @@ local localization = qLocalization.new({
         di_ui_lane = "Линия",
         di_ui_bridge_offline = "MediaBridge не запущен, музыка и звуки выключены",
         di_ui_media_service_down = "Служба медиа Windows не отвечает, перезагрузи ПК",
-        di_ui_update_available = "Доступно обновление ",
+        di_ui_update_available = "Доступно обновление: ",
         di_ui_skirmish_concluded = "Стычка окончена",
         di_ui_all_combatants_retreated = "Все участники разошлись",
-        di_ui_fight_won = "Победа в файте!",
+        di_ui_fight_won = "Победа в файте",
         di_ui_enemies_slain_n_losses_n = "Врагов убито: %d  •  Потерь: %d",
         di_ui_fight_lost = "Файт проигран",
         di_ui_team_losses_n_kills_n = "Потери команды: %d  •  Убито: %d",
         di_ui_even_trade = "Размен в файте",
         di_ui_traded_n_for_n = "Размен %d в %d",
-        di_ui_fight_outcome = "ИТОГИ СРАЖЕНИЯ",
-        di_ui_level_up = "НОВЫЙ УРОВЕНЬ",
+        di_ui_fight_outcome = "Итоги боя",
+        di_ui_level_up = "Новый уровень",
         di_ui_level_n_reached = "Уровень %d получен",
-        di_ui_enemy_slain = "Враг повержен!",
+        di_ui_enemy_slain = "Враг повержен",
         di_ui_enemy = "Враг",
-        di_ui_kill_streak = "СЕРИЯ УБИЙСТВ",
+        di_ui_kill_streak = "Серия убийств",
         di_ui_eliminated = "Уничтожен ",
-        di_ui_item_alert = "ПРЕДМЕТ ВРАГА",
+        di_ui_item_alert = "Предмет врага",
         di_ui_purchased_item = " купил предмет",
         di_ui_spawned_in_river = "появилась на реке",
         di_ui_spawned_at_shrine = "появилась у Алтаря",
         di_ui_spawned_top_river = "появилась Сверху (Топ)",
         di_ui_spawned_bottom_river = "появилась Снизу (Бот)",
-        di_ui_rune_spawned = "ПОЯВЛЕНИЕ РУНЫ",
-        di_ui_stack = "СТАК",
+        di_ui_rune_spawned = "Руна",
+        di_ui_stack = "Стак",
         di_ui_stack_in_n_s = "Стак через %dс",
         di_ui_pull_the_camp_at_n_53 = "Агрить кемп на %d:53",
-        di_ui_wisdom_rune = "МУДРОСТЬ",
+        di_ui_wisdom_rune = "Руна мудрости",
         di_ui_wisdom_runes_in_n_s = "Руны мудрости через %dс",
         di_ui_side_lane_shrines = "Боковые алтари мудрости",
-        di_ui_water_rune = "РУНА ВОДЫ",
+        di_ui_water_rune = "Руна воды",
         di_ui_water_runes_in_n_s = "Руны воды через %dс",
         di_ui_river_spawn_points = "Точки спавна на реке",
-        di_ui_power_rune = "АКТИВНАЯ РУНА",
+        di_ui_power_rune = "Руна усиления",
         di_ui_power_runes_in_n_s = "Руны усиления через %dс",
-        di_ui_bounty_rune = "БОГАТСТВО",
+        di_ui_bounty_rune = "Руна богатства",
         di_ui_bounty_runes_in_n_s = "Руны богатства через %dс",
         di_ui_bounty_spawn_spots = "Точки спавна богатства",
-        di_ui_objective = "ТЕРЗАТЕЛЬ",
+        di_ui_objective = "Терзатель",
         di_ui_tormentor_soon_s = "Терзатель скоро (%s)",
-        di_ui_spawns_at_20_00 = "Появление ровно в 20:00",
+        di_ui_spawns_at_20_00 = "Появится в 20:00",
         di_ui_tormentor_in_n_s = "Терзатель через %dс",
-        di_ui_spawns_at_20_00_2 = "Появление на 20:00",
+        di_ui_spawns_at_20_00_2 = "Появится в 20:00",
         di_ui_initial_bounty_spawns = "Стартовые руны",
-        di_ui_neutrals_unlocked = "НЕЙТРАЛКИ",
-        di_ui_tier_1_neutrals_ready = "Tier 1 Нейтралки доступны",
+        di_ui_neutrals_unlocked = "Нейтралки",
+        di_ui_tier_1_neutrals_ready = "Нейтралки 1 тира доступны",
         di_ui_n_7_00_match_time_reached = "Время матча 7:00",
-        di_ui_tier_2_neutrals_ready = "Tier 2 Нейтралки доступны",
+        di_ui_tier_2_neutrals_ready = "Нейтралки 2 тира доступны",
         di_ui_n_17_00_match_time_reached = "Время матча 17:00",
-        di_ui_tier_3_neutrals_ready = "Tier 3 Нейтралки доступны",
+        di_ui_tier_3_neutrals_ready = "Нейтралки 3 тира доступны",
         di_ui_n_27_00_match_time_reached = "Время матча 27:00",
-        di_ui_tier_4_neutrals_ready = "Tier 4 Нейтралки доступны",
+        di_ui_tier_4_neutrals_ready = "Нейтралки 4 тира доступны",
         di_ui_n_37_00_match_time_reached = "Время матча 37:00",
-        di_ui_tier_5_neutrals_ready = "Tier 5 Нейтралки доступны",
+        di_ui_tier_5_neutrals_ready = "Нейтралки 5 тира доступны",
         di_ui_n_60_00_match_time_reached = "Время матча 60:00",
-        di_ui_lotus_pool = "ЛОТОС",
+        di_ui_lotus_pool = "Лотосы",
         di_ui_lotus_fruit_in_n_s = "Лотосы через %dс",
         di_ui_side_lane_pools = "Боковые пруды лотосов",
-        di_ui_courier_warning = "КУРЬЕР",
-        di_ui_courier_under_attack = "Курьер атакован!",
+        di_ui_courier_warning = "Курьер",
+        di_ui_courier_under_attack = "Курьер атакован",
         di_ui_n_hp_remaining = "Осталось %d HP",
-        di_ui_tower_defense = "ВЫШКА",
+        di_ui_tower_defense = "Вышка",
         di_ui_ally_tower_attacked = "Вышка атакована",
         di_ui_health_dropped_to_n_pct = "Здоровье упало до %d%%",
-        di_ui_kill_opportunity = "LOW HP ВРАГ",
-        di_ui_rune_pickup = "ПОДБОР РУНЫ",
+        di_ui_kill_opportunity = "Можно добить",
+        di_ui_rune_pickup = "Подбор руны",
         di_ui_picked_up = "подобрал ",
-        di_ui_invisibility_alert = "ИНВИЗ ВРАГА",
+        di_ui_invisibility_alert = "Инвиз врага",
         di_ui_enemy_entered_stealth = "Враг ушел в невидимость",
-        di_ui_teleport_warning = "ТЕЛЕПОРТ ВРАГА",
+        di_ui_teleport_warning = "Телепорт врага",
         di_ui_teleporting = " телепортируется",
         di_ui_teleporting_to = "Телепорт к ",
-        di_ui_aegis_claimed = "АЕГИС ПОДОБРАН",
+        di_ui_aegis_claimed = "Аегис подобран",
         di_ui_claimed_aegis = " поднял Аегис",
         di_ui_enemy_secured_immortal = "Враг получил бессмертие",
         di_ui_ally_secured_immortal = "Союзник получил бессмертие",
-        di_ui_roshan_pit_alert = "ЛОГОВО РОШАНА",
-        di_ui_roshan_under_attack = "Рошан атакован!",
+        di_ui_roshan_pit_alert = "Логово Рошана",
+        di_ui_roshan_under_attack = "Рошан атакован",
         di_ui_combat_audio_detected_in_pit = "Звуки битвы в логове",
         di_ui_player = "Игрок",
-        di_ui_buyback_alert = "ВЫКУП",
-        di_ui_bought_back = " выкупился!",
+        di_ui_buyback_alert = "Выкуп",
+        di_ui_bought_back = " выкупился",
         di_ui_hero_returned_to_match = "Герой вернулся в игру",
-        di_ui_roshan_slain = "РОШАН УБИТ",
-        di_ui_roshan_killed = "Рошан убит!",
+        di_ui_roshan_slain = "Рошан",
+        di_ui_roshan_killed = "Рошан убит",
         di_ui_aegis_dropped_in_pit = "Аегис выпал в логове",
-        di_ui_tormentor_spawn = "ТЕРЗАТЕЛЬ",
-        di_ui_tormentor_spawned = "Терзатель появился!",
+        di_ui_tormentor_spawn = "Терзатель",
+        di_ui_tormentor_spawned = "Терзатель появился",
         di_ui_objective_available = "Объект доступен на карте",
-        di_ui_tormentor_defeated = "ТЕРЗАТЕЛЬ",
-        di_ui_tormentor_defeated_2 = "Терзатель повержен!",
+        di_ui_tormentor_defeated = "Терзатель",
+        di_ui_tormentor_defeated_2 = "Терзатель повержен",
         di_ui_shard_granted_to_team = "Осколок выдан команде",
         di_ui_hero = "Герой",
         di_ui_main_menu = "Главное меню",
@@ -980,10 +1025,30 @@ local localization = qLocalization.new({
         di_ui_color_picker = "Выбор цвета",
         di_ui_reset = "Сброс",
         di_ui_widgets = "Виджеты",
-        di_ui_drawer_hint = "ПКМ: настройки  \u{2022}  ЛКМ: вкл/выкл  \u{2022}  перетаскивание: порядок",
-        di_ui_controls_hint = "Ctrl + ЛКМ : Перемещение   •   ПКМ : Редактор виджетов",
+        di_ui_drawer_hint = "ПКМ: опции  \u{2022}  ЛКМ: вкл/выкл  \u{2022}  тяни: порядок",
+        di_ui_controls_hint = "Ctrl + ЛКМ: двигать  \u{2022}  ПКМ: виджеты",
         di_ui_music = "Музыка",
         di_ui_fight = "Бой",
+        di_main_expand = "Раскрытие",
+        di_main_expand_hover = "При наведении",
+        di_main_expand_hold = "Удержанием",
+        di_main_expand_tip = "Удержанием как на айфоне: зажми островок на секунду, и он раскроется",
+        di_group_system = "Система",
+        di_sys_output = "Вывод звука",
+        di_sys_output_tip = "Показывает устройство, когда Windows переключает вывод звука, например при подключении наушников. Нужен MediaBridge",
+        di_sys_mute = "Звук вкл/выкл",
+        di_sys_mute_tip = "Показывает, когда звук Windows выключают или включают. Нужен MediaBridge",
+        di_sys_battery = "Батарея",
+        di_sys_battery_tip = "Только для ноутбуков: зарядка и низкий заряд. Нужен MediaBridge",
+        di_sys_headphones = "Наушники",
+        di_sys_speakers = "Динамики",
+        di_sys_display = "Монитор",
+        di_sys_sound = "Звук",
+        di_sys_muted = "Выключен",
+        di_sys_unmuted = "Включён",
+        di_sys_battery_tag = "Батарея",
+        di_sys_charging = "Заряжается, %d%%",
+        di_sys_low = "Низкий заряд, %d%%",
         di_ui_tap = "Тап",
         di_num_sep = "\u{00A0}",
         di_ui_map = "Карта",
@@ -1261,7 +1326,8 @@ local Config = {
         HintBorder = Color(255, 255, 255, 20),
         SegTrack = Color(118, 118, 128, 61),
         SegThumb = Color(99, 99, 102, 255),
-        Grabber = Color(235, 235, 245, 77)
+        Grabber = Color(235, 235, 245, 77),
+        Placeholder = Color(58, 58, 60, 255)
     },
 
     Dimensions = {
@@ -1389,6 +1455,13 @@ local ThemeSpring = {
     vel = 0.0,
     target = 0.0
 }
+
+function Impl.OnLight(col)
+    local f = ThemeSpring.LastF or 0
+    if f <= 0 or not col then return col end
+    local k = 1 - 0.3 * f
+    return Color(math.floor(col.r * k), math.floor(col.g * k), math.floor(col.b * k), col.a or 255)
+end
 
 local TrackTransition = {
     Active = false,
@@ -1625,7 +1698,7 @@ local GameTracker = {
 
 local WasInGame = false
 
-local NotifGlyphs = { bell = true, moon = true, swords = true, heart_outline = true, heart_fill = true, stack = true, buyback = true }
+local NotifGlyphs = { bell = true, moon = true, swords = true, heart_outline = true, heart_fill = true, stack = true, buyback = true, volume = true, mute = true, headphones = true, display = true, battery_low = true, bolt = true }
 
 local NotificationQueue = {
     List = {},
@@ -1648,6 +1721,7 @@ local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 
 local SCRIPT_VERSION = "2.1.0"
 
 local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
+local SystemState = { LastPoll = 0, Seen = false }
 local SatelliteSubBounds = {}
 local ImageCache = {}
 
@@ -1797,6 +1871,9 @@ local VectorIcons = {
     ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="#FFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
     ["bolt"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M13.6 2.2 4.8 13.1a.8.8 0 0 0 .6 1.3h5.4l-1.2 7.1c-.1.7.8 1.1 1.2.5l8.7-10.9a.8.8 0 0 0-.6-1.3h-5.4l1.2-7.1c.1-.7-.8-1.1-1.1-.5z" fill="#FFF"/></svg>',
     ["music"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M18.5 3.6v11.2a3.1 3.1 0 1 1-1.8-2.8V7.9l-7.4 1.9v7.3a3.1 3.1 0 1 1-1.8-2.8V6.3c0-.6.4-1.1 1-1.3l8.9-2.3c.6-.1 1.1.3 1.1.9z" fill="#FFF"/></svg>',
+    ["headphones"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4.4 15.4V12a7.6 7.6 0 0 1 15.2 0v3.4" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="3.2" y="13.2" width="4.8" height="7.6" rx="2" fill="#FFF"/><rect x="16" y="13.2" width="4.8" height="7.6" rx="2" fill="#FFF"/></svg>',
+    ["display"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="3" y="4.4" width="18" height="12.2" rx="2.2" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M8.6 20.2h6.8M12 16.8v3.2" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+    ["battery_low"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="2.4" y="7.2" width="17" height="9.6" rx="2.8" fill="none" stroke="#FFF" stroke-width="1.8"/><rect x="20.4" y="10.2" width="1.8" height="3.6" rx=".9" fill="#FFF"/><rect x="4.6" y="9.4" width="3.6" height="5.2" rx="1.2" fill="#FFF"/></svg>',
     ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3A6.364 6.364 0 0 0 21 12A9 9 0 1 1 12 3Z" fill="#FFFFFF"/></svg>',
     ["bell"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3a6 6 0 0 0-6 6v4.3L4.4 16v1.2h15.2V16L18 13.3V9a6 6 0 0 0-6-6z" fill="#FFFFFF"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0z" fill="#FFFFFF"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
@@ -2260,8 +2337,7 @@ local Haptic = {
         RATCHET_NOTCH = 5,
         BOUNDARY_BUMP = 6,
         SUCCESS_APPLE_PAY = 7,
-        HEARTBEAT = 8,
-        STUN_DISRUPT = 9
+        HEARTBEAT = 8
     },
     State = {
         OffsetX = 0.0,
@@ -2291,8 +2367,7 @@ local Haptic = {
             [5] = 0.035,
             [6] = 0.12,
             [7] = 0.30,
-            [8] = 0.25,
-            [9] = 0.40
+            [8] = 0.25
         }
     },
     Pattern = {
@@ -2304,6 +2379,8 @@ local Haptic = {
 }
 
 local function HapticPlaySound(appleSoundName, arg2, arg3)
+    if Haptic.Quiet then return end
+    if not ToggleOn(UI and UI.Haptics and UI.Haptics.Enabled) then return end
     if not (UI and UI.Haptics and UI.Haptics.AudioFeedback and UI.Haptics.AudioFeedback:Get()) then
         return
     end
@@ -2318,10 +2395,10 @@ local function HapticPlaySound(appleSoundName, arg2, arg3)
             if UI and UI.Haptics and UI.Haptics.AudioDucking and UI.Haptics.AudioDucking:Get() then
                 local shouldDuck = false
                 local weight = 0.5
-                if appleSoundName == "wheel_notch" or appleSoundName == "wheel_boundary_bump" or appleSoundName == "toast_dismiss" or appleSoundName == "button_dismiss" then
+                if appleSoundName == "wheel_notch" or appleSoundName == "wheel_boundary_bump" or appleSoundName == "toast_dismiss" then
                     shouldDuck = false
                     weight = 0.0
-                elseif appleSoundName == "match_found" or appleSoundName == "hero_stunned" or appleSoundName == "low_hp_heartbeat" or appleSoundName == "courier_death_or_fail" then
+                elseif appleSoundName == "match_found" or appleSoundName == "low_hp_heartbeat" or appleSoundName == "courier_death_or_fail" then
                     shouldDuck = (not UI.Haptics.DuckingAlerts) or UI.Haptics.DuckingAlerts:Get()
                     weight = 1.0
                 elseif appleSoundName == "courier_delivered" then
@@ -2330,7 +2407,7 @@ local function HapticPlaySound(appleSoundName, arg2, arg3)
                 elseif appleSoundName == "notification_toast" or appleSoundName == "game_paused" or appleSoundName == "game_unpaused" or appleSoundName == "timer_chime" then
                     shouldDuck = (not UI.Haptics.DuckingNotifs) or UI.Haptics.DuckingNotifs:Get()
                     weight = (appleSoundName == "timer_chime") and 0.4 or 0.7
-                elseif appleSoundName == "island_expand" or appleSoundName == "island_collapse" or appleSoundName == "island_hover" then
+                elseif appleSoundName == "island_expand" or appleSoundName == "island_collapse" then
                     shouldDuck = UI.Haptics.DuckingMotion and UI.Haptics.DuckingMotion:Get()
                     weight = 0.4
                 else
@@ -2349,6 +2426,19 @@ local function HapticPlaySound(appleSoundName, arg2, arg3)
             pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/sound?name=" .. appleSoundName .. "&vol=" .. string.format("%.2f", finalVol) .. forceParam .. duckParam, {}, function() end)
         end
     end
+end
+
+function Haptic.WheelQuery(bump)
+    if not ToggleOn(UI and UI.Haptics and UI.Haptics.Enabled) or not ToggleOn(UI and UI.Haptics and UI.Haptics.AudioFeedback) then return "?nosound=1" end
+    local userVol = (UI and UI.Haptics and UI.Haptics.Volume) and (UI.Haptics.Volume:Get() / 100.0) or 0.5
+    local vol = math.max(0.01, math.min(1.0, (bump and 0.65 or 0.45) * userVol))
+    return (bump and "?bump=1&vol=" or "?vol=") .. string.format("%.2f", vol)
+end
+
+function Haptic.Silent(hType)
+    Haptic.Quiet = true
+    Haptic.Trigger(hType)
+    Haptic.Quiet = false
 end
 
 function Haptic.Trigger(hType, p1, p2)
@@ -2598,6 +2688,7 @@ function Impl.InitMenu()
     local gAll = pAlerts:Create("di_group_alerts_all", Enum.GroupSide.FullWidth)
     local gCombat = pAlerts:Create("di_group_combat_alerts", Enum.GroupSide.Left)
     local gMap = pAlerts:Create("di_group_map_alerts", Enum.GroupSide.Right)
+    local gSystem = pAlerts:Create("di_group_system", Enum.GroupSide.Right)
     local gLive = pAlerts:Create("di_group_live", Enum.GroupSide.Left)
     local pMedia = tab:Create(L("di_tab_media"))
     local gMedia = pMedia:Create("di_group_media", Enum.GroupSide.Left)
@@ -2609,7 +2700,7 @@ function Impl.InitMenu()
     local gHaptics = pHaptics:Create("di_group_haptics", Enum.GroupSide.Left)
     local gDuck = pHaptics:Create("di_group_ducking", Enum.GroupSide.Right)
 
-    UI = { Main = {}, Media = {}, Combat = {}, Runes = {}, Timings = {}, Haptics = {}, Priority = {}, Durations = {}, Focus = {}, Reminders = {} }
+    UI = { Main = {}, Media = {}, Combat = {}, Runes = {}, Timings = {}, Haptics = {}, Priority = {}, Durations = {}, Focus = {}, Reminders = {}, System = {} }
     local M, Md, C, R, T, H, P, D = UI.Main, UI.Media, UI.Combat, UI.Runes, UI.Timings, UI.Haptics, UI.Priority, UI.Durations
 
     local function prio(gear, key, def)
@@ -2637,6 +2728,9 @@ function Impl.InitMenu()
     M.Enabled = gIsland:Switch("di_main_enabled", true, "\u{f0eb}")
     local gMore = M.Enabled:Gear("di_gear_more")
     M.OnlyInGame = gMore:Switch("di_main_only_in_game", false, "\u{f108}")
+    M.ExpandMode = gMore:Combo("di_main_expand", { "di_main_expand_hover", "di_main_expand_hold" }, 0)
+    M.ExpandMode:Icon("\u{f065}")
+    M.ExpandMode:ToolTip("di_main_expand_tip")
     T.ToastDuration = gAll:Slider("di_timings_toast_duration", 1, 10, 4, "%d s")
     T.ToastDuration:Icon("\u{f254}")
     T.ToastDuration:ToolTip("di_toast_duration_tip")
@@ -2739,6 +2833,12 @@ function Impl.InitMenu()
     D.Level = dur(gLevel)
     C.CourierDelivery = gLive:Switch("di_combat_courier_delivery", true, "\u{f48b}")
     C.PauseAlert = gLive:Switch("di_combat_pause_alert", true, "\u{f04c}")
+    UI.System.Output = gSystem:Switch("di_sys_output", true, "\u{f025}")
+    UI.System.Output:ToolTip("di_sys_output_tip")
+    UI.System.Mute = gSystem:Switch("di_sys_mute", true, "\u{f6a9}")
+    UI.System.Mute:ToolTip("di_sys_mute_tip")
+    UI.System.Battery = gSystem:Switch("di_sys_battery", true, "\u{f240}")
+    UI.System.Battery:ToolTip("di_sys_battery_tip")
 
     R.ActiveRunes = gMap:Switch("di_runes_active_runes", true, "\u{f0e7}")
     local gPower = R.ActiveRunes:Gear("di_gear_alert")
@@ -2968,9 +3068,7 @@ local function TriggerStateTransition(nextState)
         MotionEngine.CurrentProfile = "BOUNCY"
         StateMachine.Spring.Squish.value = 0.2
         StateMachine.Spring.Squish.vel = 1.2
-        if Haptic and Haptic.Trigger then
-            Haptic.Trigger(Haptic.Types.TAP_MEDIUM)
-        end
+        Haptic.Silent(Haptic.Types.TAP_MEDIUM)
     else
         MotionEngine.CurrentProfile = "SMOOTH"
         StateMachine.Spring.Squish.value = 0.0
@@ -3156,11 +3254,11 @@ local function FormatTime(seconds)
     return string.format("%d:%02d", m, rem)
 end
 
-local function FormatNegativeTime(seconds)
+local function FormatTrackTime(seconds, neg)
     local s = math.max(0, math.floor(seconds or 0))
-    local m = math.floor(s / 60)
-    local rem = s % 60
-    return string.format("-%d:%02d", m, rem)
+    local h, m, rem = s // 3600, (s % 3600) // 60, s % 60
+    local out = h > 0 and string.format("%d:%02d:%02d", h, m, rem) or string.format("%d:%02d", m, rem)
+    return neg and ("-" .. out) or out
 end
 
 local IsNotifDeferred
@@ -3241,7 +3339,15 @@ function Impl.PopHighestPriorityNotif()
             bestIdx, bestPriority = i, p
         end
     end
-    return table.remove(list, bestIdx)
+    local n = table.remove(list, bestIdx)
+    Impl.NotifChime(n)
+    return n
+end
+
+function Impl.NotifChime(n)
+    if not n or n.Chimed or n.Silent then return end
+    n.Chimed = true
+    HapticPlaySound(n.Chime or "notification_toast", 0.45)
 end
 
 function DynamicIsland.PushNotification(notif)
@@ -3264,19 +3370,16 @@ function DynamicIsland.PushNotification(notif)
         Focus.Suppressed = Focus.Suppressed + 1
         return
     end
-    HapticPlaySound("notification_toast", 0.45)
-
     if NotificationQueue.Active and notif.Priority > (NotificationQueue.Active.Priority or DEFAULT_NOTIF_PRIORITY) then
         table.insert(NotificationQueue.List, 1, NotificationQueue.Active)
         NotificationQueue.Active = notif
         NotificationQueue.StartTime = os.clock()
+        Impl.NotifChime(notif)
         if not IsNotifDeferred(notif) then
             TriggerStateTransition(StateMachine.States.NOTIFICATION)
             StateMachine.Spring.Squish.value = 1.0
             StateMachine.Spring.Squish.vel = 5.0
-            if Haptic and Haptic.Trigger then
-                Haptic.Trigger(Haptic.Types.SNAP_EXPAND)
-            end
+            Haptic.Silent(Haptic.Types.SNAP_EXPAND)
         end
     else
         table.insert(NotificationQueue.List, notif)
@@ -3366,7 +3469,8 @@ function Reminders.Tick()
                         AccentColor = Color(255, 159, 10, 255),
                         IconType = "svg",
                         FallbackSvg = "bell",
-                        Duration = 4.0
+                        Duration = 4.0,
+                        Chime = "timer_chime"
                     })
                 end
             end
@@ -3425,11 +3529,10 @@ function Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
     local paths = {
         coverPath,
         coverJpg,
+        cheatDir .. "dynamic_island_covers/dynamic_island_cover_" .. vStr .. ".png",
+        cheatDir .. "dynamic_island_covers/dynamic_island_cover_" .. vStr .. ".jpg",
         cheatDir .. "dynamic_island_cover_" .. vStr .. ".png",
-        cheatDir .. "dynamic_island_cover.png",
-        cheatDir .. "dynamic_island_cover.jpg",
-        "dynamic_island_cover_" .. vStr .. ".png",
-        "dynamic_island_cover.png"
+        cheatDir .. "dynamic_island_cover.png"
     }
     for _, p in ipairs(paths) do
         if p and p ~= "" then
@@ -3659,6 +3762,65 @@ function Impl.PollBridgeStatus()
         BridgeStatus.MediaSessions = string.match(body, '"media_sessions"%s*:%s*"([^"]*)"') or ""
         BridgeStatus.SpotifyDebug = string.match(body, '"spotify_debug"%s*:%s*"([^"]*)"') or ""
     end, "bridge_status")
+end
+
+function Impl.SystemNotif(glyph, accent, tag, title)
+    DynamicIsland.PushNotification({
+        Type = "system",
+        Tag = tag,
+        Title = title,
+        AccentColor = accent,
+        IconType = "svg",
+        FallbackSvg = glyph,
+        Duration = 2.5,
+        FocusExempt = true,
+        Silent = true
+    })
+end
+
+function Impl.PollSystem()
+    local sys = UI and UI.System
+    if not sys or not (ToggleOn(sys.Output) or ToggleOn(sys.Mute) or ToggleOn(sys.Battery)) then return end
+    local clk = os.clock()
+    if clk - SystemState.LastPoll < 0.5 then return end
+    SystemState.LastPoll = clk
+    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/system", {}, function(res)
+        if not res or not res.response or res.response == "" then return end
+        local body = res.response
+        local id = string.match(body, '"device_id"%s*:%s*"([^"]*)"')
+        if not id then return end
+        local cur = {
+            id = id,
+            name = string.match(body, '"device"%s*:%s*"(.-)"%s*,%s*"device_id"') or "",
+            kind = string.match(body, '"device_kind"%s*:%s*"([^"]*)"') or "",
+            muted = string.match(body, '"muted"%s*:%s*(%a+)') == "true",
+            battery = tonumber(string.match(body, '"battery"%s*:%s*(%-?%d+)') or "-1") or -1,
+            ac = string.match(body, '"on_ac"%s*:%s*(%a+)') == "true"
+        }
+        local prev = SystemState.Last
+        SystemState.Last = cur
+        if not prev then return end
+        local C = Config.Colors
+        if cur.id ~= prev.id and cur.id ~= "" and prev.id ~= "" and ToggleOn(sys.Output) then
+            local glyph, tag = "volume", L("di_sys_speakers")
+            if cur.kind == "headphones" then glyph, tag = "headphones", L("di_sys_headphones")
+            elseif cur.kind == "display" then glyph, tag = "display", L("di_sys_display") end
+            Impl.SystemNotif(glyph, C.Blue, tag, cur.name ~= "" and cur.name or tag)
+        elseif cur.muted ~= prev.muted and cur.id == prev.id and ToggleOn(sys.Mute) then
+            if cur.muted then
+                Impl.SystemNotif("mute", C.Red, L("di_sys_sound"), L("di_sys_muted"))
+            else
+                Impl.SystemNotif("volume", C.Blue, L("di_sys_sound"), L("di_sys_unmuted"))
+            end
+        end
+        if cur.battery >= 0 and prev.battery >= 0 and ToggleOn(sys.Battery) then
+            if cur.ac and not prev.ac then
+                Impl.SystemNotif("bolt", C.Green, L("di_sys_battery_tag"), string.format(L("di_sys_charging"), cur.battery))
+            elseif not cur.ac and ((cur.battery <= 20 and prev.battery > 20) or (cur.battery <= 10 and prev.battery > 10)) then
+                Impl.SystemNotif("battery_low", C.Red, L("di_sys_battery_tag"), string.format(L("di_sys_low"), cur.battery))
+            end
+        end
+    end, "system_state")
 end
 
 function Impl.ParseVersion(s)
@@ -5342,6 +5504,7 @@ function Impl.ProcessCourierTracker()
         CourierTracker.ETA = math.ceil(remainingDist / math.max(100, speed))
 
         if isDead or (myHero and not Entity.IsAlive(myHero)) then
+            if isDead then HapticPlaySound("courier_death_or_fail", 0.6) end
             CourierTracker.Delivering = false
             CourierTracker.DeliveryOrderedTime = 0
             CourierTracker.StartDistance = 0
@@ -5412,7 +5575,7 @@ function DynamicIsland.OnKeyEvent(data)
                         VolumeState.Overstretch = math.min(10, (VolumeState.Overstretch or 0) + 2.5)
                         if (nowClk - (VolumeState.LastBumpTime or 0)) >= 0.20 then
                             VolumeState.LastBumpTime = nowClk
-                            SendMediaCommand("volup?bump=1")
+                            SendMediaCommand("volup" .. Haptic.WheelQuery(true))
                             if Haptic and Haptic.Trigger then
                                 Haptic.Trigger(Haptic.Types.BOUNDARY_BUMP, 1)
                             end
@@ -5421,7 +5584,7 @@ function DynamicIsland.OnKeyEvent(data)
                         VolumeState.Target = math.min(100, VolumeState.Target + 4)
                         if (nowClk - (VolumeState.LastSoundTime or 0)) >= 0.038 then
                             VolumeState.LastSoundTime = nowClk
-                            SendMediaCommand("volup")
+                            SendMediaCommand("volup" .. Haptic.WheelQuery(false))
                             if Haptic and Haptic.Trigger then
                                 Haptic.Trigger(Haptic.Types.RATCHET_NOTCH, 1, VolumeState.Target)
                             end
@@ -5434,7 +5597,7 @@ function DynamicIsland.OnKeyEvent(data)
                         VolumeState.Overstretch = math.max(-10, (VolumeState.Overstretch or 0) - 2.5)
                         if (nowClk - (VolumeState.LastBumpTime or 0)) >= 0.20 then
                             VolumeState.LastBumpTime = nowClk
-                            SendMediaCommand("voldown?bump=1")
+                            SendMediaCommand("voldown" .. Haptic.WheelQuery(true))
                             if Haptic and Haptic.Trigger then
                                 Haptic.Trigger(Haptic.Types.BOUNDARY_BUMP, -1)
                             end
@@ -5443,7 +5606,7 @@ function DynamicIsland.OnKeyEvent(data)
                         VolumeState.Target = math.max(0, VolumeState.Target - 4)
                         if (nowClk - (VolumeState.LastSoundTime or 0)) >= 0.038 then
                             VolumeState.LastSoundTime = nowClk
-                            SendMediaCommand("voldown")
+                            SendMediaCommand("voldown" .. Haptic.WheelQuery(false))
                             if Haptic and Haptic.Trigger then
                                 Haptic.Trigger(Haptic.Types.RATCHET_NOTCH, -1, VolumeState.Target)
                             end
@@ -5551,7 +5714,7 @@ function Impl.HandleInteractions()
                     VolumeState.Overstretch = math.min(10, (VolumeState.Overstretch or 0) + 2.5)
                     if (nowClk - (VolumeState.LastBumpTime or 0)) >= 0.20 then
                         VolumeState.LastBumpTime = nowClk
-                        SendMediaCommand("volup?bump=1")
+                        SendMediaCommand("volup" .. Haptic.WheelQuery(true))
                         if Haptic and Haptic.Trigger then
                             Haptic.Trigger(Haptic.Types.BOUNDARY_BUMP, 1)
                         end
@@ -5560,7 +5723,7 @@ function Impl.HandleInteractions()
                     VolumeState.Target = math.min(100, VolumeState.Target + 4)
                     if (nowClk - (VolumeState.LastSoundTime or 0)) >= 0.038 then
                         VolumeState.LastSoundTime = nowClk
-                        SendMediaCommand("volup")
+                        SendMediaCommand("volup" .. Haptic.WheelQuery(false))
                         if Haptic and Haptic.Trigger then
                             Haptic.Trigger(Haptic.Types.RATCHET_NOTCH, 1, VolumeState.Target)
                         end
@@ -5576,7 +5739,7 @@ function Impl.HandleInteractions()
                     VolumeState.Overstretch = math.max(-10, (VolumeState.Overstretch or 0) - 2.5)
                     if (nowClk - (VolumeState.LastBumpTime or 0)) >= 0.20 then
                         VolumeState.LastBumpTime = nowClk
-                        SendMediaCommand("voldown?bump=1")
+                        SendMediaCommand("voldown" .. Haptic.WheelQuery(true))
                         if Haptic and Haptic.Trigger then
                             Haptic.Trigger(Haptic.Types.BOUNDARY_BUMP, -1)
                         end
@@ -5585,7 +5748,7 @@ function Impl.HandleInteractions()
                     VolumeState.Target = math.max(0, VolumeState.Target - 4)
                     if (nowClk - (VolumeState.LastSoundTime or 0)) >= 0.038 then
                         VolumeState.LastSoundTime = nowClk
-                        SendMediaCommand("voldown")
+                        SendMediaCommand("voldown" .. Haptic.WheelQuery(false))
                         if Haptic and Haptic.Trigger then
                             Haptic.Trigger(Haptic.Types.RATCHET_NOTCH, -1, VolumeState.Target)
                         end
@@ -6159,14 +6322,35 @@ function Impl.HandleInteractions()
 
     if HUDCustomizer.IsOpen then return end
 
-    local openOnHover = true
+    local holdMode = UI.Main.ExpandMode and UI.Main.ExpandMode:Get() == 1
+    local openOnHover = not holdMode
     local hoverDelaySec = 0.10
+    local expandable = StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY
+        or StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA
+
+    if holdMode then
+        if isLeftClicked and isHover and not isCtrlOnly and expandable then
+            StateMachine.PressAt = nowClk
+            StateMachine.Spring.Squish.value = -0.12
+            StateMachine.Spring.Squish.vel = -0.8
+            Haptic.Silent(Haptic.Types.TAP_LIGHT)
+        end
+        if StateMachine.PressAt and (not isLMouseDown or not isHover or not expandable) then
+            StateMachine.PressAt = nil
+        end
+        if StateMachine.PressAt and nowClk - StateMachine.PressAt >= 0.35 then
+            StateMachine.PressAt = nil
+            openOnHover = true
+            hoverDelaySec = 0
+            StateMachine.HoverStartTime = nowClk
+        end
+    end
 
     if isHover and not isCtrlOnly then
         if not StateMachine.IsHovered then
             StateMachine.IsHovered = true
             StateMachine.HoverStartTime = nowClk
-            if Haptic and Haptic.Trigger then
+            if not holdMode and Haptic and Haptic.Trigger then
                 Haptic.Trigger(Haptic.Types.TAP_LIGHT)
             end
         end
@@ -6195,7 +6379,7 @@ function Impl.HandleInteractions()
         end
         StateMachine.HoverStartTime = 0
 
-        if openOnHover then
+        do
             if StateMachine.TargetState == StateMachine.States.LARGE_FIGHT then
                 if StateMachine.UnhoverStartTime > 0 and (nowClk - StateMachine.UnhoverStartTime) >= 0.22 then
                     TriggerStateTransition(StateMachine.States.COMPACT_FIGHT)
@@ -6395,7 +6579,53 @@ local function SoftShadow(p1, p2, r, col, thick, off)
     Render.ShadowConvexPoly(pts, col, thick, flags, off)
 end
 
-local function RenderMarqueeText(font, size, text, boxX, boxY, boxW, color, scale, rightFadeOnly)
+local TruncateCache = {}
+local function TruncateToWidth(font, size, text, maxW)
+    local key = tostring(font) .. "|" .. text .. "|" .. math.floor(size * 10) .. "|" .. math.floor(maxW)
+    local hit = TruncateCache[key]
+    if hit then return hit end
+    local result = text
+    if Render.TextSize(font, size, text).x > maxW then
+        local chars = {}
+        for ch in string.gmatch(text, "[\0-\x7F\xC2-\xF4][\x80-\xBF]*") do
+            chars[#chars + 1] = ch
+        end
+        result = "…"
+        for n = #chars - 1, 1, -1 do
+            local candidate = (table.concat(chars, "", 1, n):gsub("%s+$", "")) .. "…"
+            if Render.TextSize(font, size, candidate).x <= maxW then
+                result = candidate
+                break
+            end
+        end
+    end
+    TruncateCache[key] = result
+    return result
+end
+
+local Marquee = { Runs = {}, Glyphs = {}, GlyphCount = 0 }
+
+function Marquee.Layout(font, size, text)
+    local key = font .. ":" .. size .. ":" .. text
+    local g = Marquee.Glyphs[key]
+    if g then return g end
+    if Marquee.GlyphCount > 48 then
+        Marquee.Glyphs = {}
+        Marquee.GlyphCount = 0
+    end
+    g = {}
+    local prefix = ""
+    for ch in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+        local x0 = #prefix > 0 and Render.TextSize(font, size, prefix).x or 0
+        prefix = prefix .. ch
+        g[#g + 1] = { ch = ch, x0 = x0, x1 = Render.TextSize(font, size, prefix).x }
+    end
+    Marquee.Glyphs[key] = g
+    Marquee.GlyphCount = Marquee.GlyphCount + 1
+    return g
+end
+
+local function RenderMarqueeText(font, size, text, boxX, boxY, boxW, color, scale)
     local fullSize = Render.TextSize(font, size, text)
     local ix = math.floor(boxX)
     local iy = math.floor(boxY)
@@ -6406,24 +6636,46 @@ local function RenderMarqueeText(font, size, text, boxX, boxY, boxW, color, scal
         return
     end
 
-    local speed = (UI and UI.Media and UI.Media.MarqueeSpeed) and UI.Media.MarqueeSpeed:Get() or 45
-    local spacer = "      "
-    local spacerSize = Render.TextSize(font, size, spacer)
-    local totalCycle = fullSize.x + spacerSize.x
-
     local now = os.clock()
-    local offset = math.floor((now * speed) % totalCycle)
-
-    Render.PushClip(Vec2(ix, iy - 2), Vec2(ix + iw, iy + fullSize.y + 4))
-
-    local x1 = ix - offset
-    Render.Text(font, size, text, Vec2(x1, iy), color)
-
-    local x2 = x1 + totalCycle
-    if x2 < ix + iw then
-        Render.Text(font, size, text, Vec2(x2, iy), color)
+    local run = Marquee.Runs[text]
+    if not run or now - run.seen > 0.5 then
+        run = { t0 = now }
+        Marquee.Runs[text] = run
     end
+    run.seen = now
 
+    local speed = (UI and UI.Media and UI.Media.MarqueeSpeed) and UI.Media.MarqueeSpeed:Get() or 45
+    local gap = math.floor(math.max(28 * scale, iw * 0.2))
+    local totalCycle = fullSize.x + gap
+    local hold = 2.2
+    local phase = (now - run.t0) % (hold + totalCycle / speed)
+    local offset = phase < hold and 0 or math.floor((phase - hold) * speed)
+
+    local fadeW = math.floor(14 * scale)
+    local leftFade = math.min(1, offset / math.max(1, fadeW))
+    if offset > totalCycle - fadeW then leftFade = math.max(0, (totalCycle - offset) / math.max(1, fadeW)) end
+    local glyphs = Marquee.Layout(font, size, text)
+    local baseA = color.a or 255
+    local right = ix + iw
+
+    Render.PushClip(Vec2(ix, iy - 2), Vec2(right, iy + fullSize.y + 4))
+    for copy = 0, 1 do
+        local ox = ix - offset + copy * totalCycle
+        if ox < right and ox + fullSize.x > ix then
+            for _, gl in ipairs(glyphs) do
+                local gx0, gx1 = ox + gl.x0, ox + gl.x1
+                if gx1 > ix and gx0 < right then
+                    local mid = (gx0 + gx1) / 2
+                    local a = 1
+                    if mid > right - fadeW then a = math.max(0, (right - mid) / fadeW) end
+                    if mid < ix + fadeW then a = math.min(a, 1 - leftFade * (1 - math.max(0, (mid - ix) / fadeW))) end
+                    if a > 0.01 then
+                        Render.Text(font, size, gl.ch, Vec2(math.floor(gx0), iy), Color(color.r, color.g, color.b, math.floor(baseA * a)))
+                    end
+                end
+            end
+        end
+    end
     Render.PopClip()
 end
 
@@ -6437,7 +6689,7 @@ local function DrawAlbumThumbnail(x, y, size, radius, alphaMul, scaleMul, custom
 
     local function Placeholder(a)
         if a <= 0.01 then return end
-        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(Color(58, 58, 60, 255), a), ir)
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(Config.Colors.Placeholder, a), ir)
         Glyph("music", ix + isz / 2, iy + isz / 2, math.floor(isz * 0.5), FadeColor(Color(142, 142, 147, 255), a))
     end
 
@@ -7137,7 +7389,7 @@ function Impl.RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
         local barH = 8 * scale
         local barY = rowY + (rowH - barH) / 2
         local barR = barH / 2
-        local segSteps = 48
+        local segSteps = 6
         local midW = segW - barR * 2
 
         local c0r, c0g, c0b = HSVtoRGB(0, 0.90, 1.0)
@@ -7146,11 +7398,12 @@ function Impl.RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
         Render.FilledCircle(Vec2(segX + segW - barR, barY + barR), barR, FadeColor(Color(c1r, c1g, c1b, 255), aMul), 0, 1.0, 16)
 
         for i = 0, segSteps - 1 do
-            local h1 = (i / segSteps) * 360
-            local hr, hg, hb = HSVtoRGB(h1, 0.90, 1.0)
+            local ar, ag, ab = HSVtoRGB(i / segSteps * 360, 0.90, 1.0)
+            local br, bg, bb = HSVtoRGB((i + 1) / segSteps * 360, 0.90, 1.0)
             local x1 = segX + barR + (i / segSteps) * midW
-            local x2 = segX + barR + ((i + 1) / segSteps) * midW + 0.6
-            Render.FilledRect(Vec2(x1, barY), Vec2(x2, barY + barH), FadeColor(Color(hr, hg, hb, 255), aMul), 0)
+            local x2 = segX + barR + ((i + 1) / segSteps) * midW + (i < segSteps - 1 and 0.6 or 0)
+            local ca, cb = FadeColor(Color(ar, ag, ab, 255), aMul), FadeColor(Color(br, bg, bb, 255), aMul)
+            Render.Gradient(Vec2(x1, barY), Vec2(x2, barY + barH), ca, cb, ca, cb, 0)
         end
         Render.Rect(Vec2(segX, barY), Vec2(segX + segW, barY + barH), FadeColor(Color(255, 255, 255, 55), aMul), barR, Enum.DrawFlags.None, 1.0)
 
@@ -7247,7 +7500,7 @@ function Impl.RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     SoftShadow(p1, p2, popRad, Color(0, 0, 0, math.floor(220 * popA)), 28, Vec2(0, 8))
     DrawerSurface(p1, p2, popRad, popA)
 
-    local hdrY = popY + 11 * scale
+    local hdrY = math.floor(popY + 11 * scale)
     local fH, sH = TF("FootnoteEm", scale)
     Render.Text(fH, sH, L("di_ui_color_picker"), Vec2(popX + pad, hdrY), FadeColor(Config.Colors.TextPrimary, popA))
 
@@ -7274,6 +7527,9 @@ function Impl.RenderColorPickerPopover(cx, cy, cardW, scale, dt)
         local selected = string.upper(curHex) == q[4]
         local rr = selected and (r - 3.5 * scale) or r
         Render.FilledCircle(Vec2(qx, qy), rr, FadeColor(Color(q[1], q[2], q[3], 255), popA), 0, 1.0, 24)
+        if q[4] == "FFFFFF" then
+            Render.Circle(Vec2(qx, qy), rr, FadeColor(Config.Colors.Separator, popA), 1.0, 0, 1.0, false, 32)
+        end
         if selected then
             Render.Circle(Vec2(qx, qy), r - 1, FadeColor(Color(q[1], q[2], q[3], 255), popA), 2 * scale, 0, 1.0, false, 32)
         end
@@ -7289,21 +7545,15 @@ function Impl.RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     local canvasX = popX + pad
     local canvasY = popY + canvasTop
     local canvasW = popW - pad * 2
-    local cStepsX = 18
-    local cStepsY = 10
-    local stepW = canvasW / cStepsX
-    local stepH = canvasH / cStepsY
 
     Render.Line(Vec2(popX + pad, canvasY - 6 * scale), Vec2(popX + popW - pad, canvasY - 6 * scale), FadeColor(Config.Colors.Separator, popA), 1.0)
 
-    for xi = 0, cStepsX - 1 do
-        local s = xi / (cStepsX - 1)
-        for yi = 0, cStepsY - 1 do
-            local v = 1.0 - (yi / (cStepsY - 1))
-            local cr, cg, cb = HSVtoRGB(curHue, s, v)
-            Render.FilledRect(Vec2(canvasX + xi * stepW, canvasY + yi * stepH), Vec2(canvasX + (xi + 1) * stepW + 0.6, canvasY + (yi + 1) * stepH + 0.6), FadeColor(Color(cr, cg, cb, 255), popA), 0)
-        end
-    end
+    local pr, pg, pb = HSVtoRGB(curHue, 1, 1)
+    local cA, cB = Vec2(canvasX, canvasY), Vec2(canvasX + canvasW, canvasY + canvasH)
+    local white, pure = FadeColor(Color(255, 255, 255, 255), popA), FadeColor(Color(pr, pg, pb, 255), popA)
+    local clear, black = Color(0, 0, 0, 0), FadeColor(Color(0, 0, 0, 255), popA)
+    Render.Gradient(cA, cB, white, pure, white, pure, 4 * scale)
+    Render.Gradient(cA, cB, clear, clear, black, black, 4 * scale)
     Render.Rect(Vec2(canvasX, canvasY), Vec2(canvasX + canvasW, canvasY + canvasH), FadeColor(Config.Colors.Border, popA), 4 * scale, Enum.DrawFlags.None, 1.0)
 
     local reticleX = canvasX + curSat * canvasW
@@ -7332,8 +7582,9 @@ function Impl.RenderColorPickerPopover(cx, cy, cardW, scale, dt)
         Render.FilledCircle(Vec2(canvasX + canvasW - barR, barY + barR), barR, FadeColor(c1, popA), 0, 1.0, 16)
         for i = 0, steps - 1 do
             local x1 = canvasX + barR + (i / steps) * midW
-            local x2 = canvasX + barR + ((i + 1) / steps) * midW + 0.6
-            Render.FilledRect(Vec2(x1, barY), Vec2(x2, barY + barH), FadeColor(colorAt(i / (steps - 1)), popA), 0)
+            local x2 = canvasX + barR + ((i + 1) / steps) * midW + (i < steps - 1 and 0.6 or 0)
+            local ca, cb = FadeColor(colorAt(i / steps), popA), FadeColor(colorAt((i + 1) / steps), popA)
+            Render.Gradient(Vec2(x1, barY), Vec2(x2, barY + barH), ca, cb, ca, cb, 0)
         end
         local kx = canvasX + knobT * canvasW
         local ky = barY + barH / 2
@@ -7353,11 +7604,11 @@ function Impl.RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     end
 
     local hr0, hg0, hb0 = HSVtoRGB(curHue, 0.90, 1.0)
-    local hEnd = Bar(canvasY + canvasH + 9 * scale, 36, function(t)
+    local hEnd = Bar(canvasY + canvasH + 9 * scale, 6, function(t)
         local r, g, b = HSVtoRGB(t * 360, 0.90, 1.0)
         return Color(r, g, b, 255)
     end, curHue / 360, Color(hr0, hg0, hb0, 255), "drag_pop_hue")
-    local vEnd = Bar(hEnd + 6 * scale, 24, function(t)
+    local vEnd = Bar(hEnd + 6 * scale, 1, function(t)
         local r, g, b = HSVtoRGB(curHue, curSat, t)
         return Color(r, g, b, 255)
     end, curVal, curCol, "drag_pop_val")
@@ -7503,8 +7754,8 @@ function Impl.RenderHUDDrawer(layout, dt)
     end
 
     if hintsOn then
-        local hint = L("di_ui_drawer_hint")
         local fh, sh = TF("Caption", scale)
+        local hint = TruncateToWidth(fh, sh, L("di_ui_drawer_hint"), math.floor(cardW - 24 * scale))
         local hs = Render.TextSize(fh, sh, hint)
         Render.Text(fh, sh, hint, Vec2(math.floor(cx + (cardW - hs.x) / 2), math.floor(py + anim.h - 18 * scale)), FadeColor(Config.Colors.TextSecondary, contentA))
     end
@@ -7514,30 +7765,6 @@ function Impl.RenderHUDDrawer(layout, dt)
     if HUDCustomizer.IsOpen and HUDCustomizer.InspectedChip then
         Impl.RenderColorPickerPopover(px, py, cardW, scale, dt)
     end
-end
-
-local TruncateCache = {}
-local function TruncateToWidth(font, size, text, maxW)
-    local key = text .. "|" .. math.floor(size * 10) .. "|" .. math.floor(maxW)
-    local hit = TruncateCache[key]
-    if hit then return hit end
-    local result = text
-    if Render.TextSize(font, size, text).x > maxW then
-        local chars = {}
-        for ch in string.gmatch(text, "[\0-\x7F\xC2-\xF4][\x80-\xBF]*") do
-            chars[#chars + 1] = ch
-        end
-        result = "…"
-        for n = #chars - 1, 1, -1 do
-            local candidate = (table.concat(chars, "", 1, n):gsub("%s+$", "")) .. "…"
-            if Render.TextSize(font, size, candidate).x <= maxW then
-                result = candidate
-                break
-            end
-        end
-    end
-    TruncateCache[key] = result
-    return result
 end
 
 function Impl.RenderSecondarySatelliteBubble(layout)
@@ -7791,18 +8018,18 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
         local showTitle = CompactMediaTitle()
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
             local oldStr = TrackTransition.OldTitle .. (TrackTransition.OldArtist ~= "" and (" • " .. TrackTransition.OldArtist) or "")
-            if showTitle then RenderMarqueeText(fontBold, headSize, oldStr, textStartX + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale, false) end
+            if showTitle then RenderMarqueeText(fontBold, headSize, oldStr, textStartX + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale) end
             DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
         end
         if inAlpha > 0.02 then
-            if showTitle then RenderMarqueeText(fontBold, headSize, displayStr, textStartX + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale, false) end
+            if showTitle then RenderMarqueeText(fontBold, headSize, displayStr, textStartX + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale) end
             DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, inAlpha, 0.85 + t * 0.15)
         end
         if t >= 1.0 then
             TrackTransition.Active = false
         end
     else
-        if CompactMediaTitle() then RenderMarqueeText(fontBold, headSize, displayStr, textStartX, textY, textAvailW, textCol, scale, false) end
+        if CompactMediaTitle() then RenderMarqueeText(fontBold, headSize, displayStr, textStartX, textY, textAvailW, textCol, scale) end
         DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, aMul)
     end
 
@@ -7835,7 +8062,7 @@ function Impl.RenderFightCompact(layout, alphaMul, yOffset)
     local tH = Render.TextSize(f, s, "Ag").y
     local textY = math.floor(layout.y + (layout.h - tH) / 2 + yOff)
 
-    RenderMarqueeText(f, s, fullText, textStartX, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, aMul), scale, false)
+    RenderMarqueeText(f, s, fullText, textStartX, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, aMul), scale)
 end
 
 local CachedDotaMapHandle = nil
@@ -8103,8 +8330,25 @@ function Impl.RenderNotificationState(layout, alphaMul, yOffset)
         local titleSize = Render.TextSize(fTitle, sTitle, "Ag")
         local totalH = tagSize.y + titleSize.y
         local startY = math.floor(layout.y + (layout.h - totalH) / 2 + yOff)
-        Render.Text(fTag, sTag, TruncateToWidth(fTag, sTag, tagStr, maxW), Vec2(textX, startY), FadeColor(tagCol, aMul))
-        Render.Text(fTitle, sTitle, TruncateToWidth(fTitle, sTitle, titleStr or "", maxW), Vec2(textX, startY + tagSize.y), textCol)
+        Render.Text(fTag, sTag, TruncateToWidth(fTag, sTag, tagStr, maxW), Vec2(textX, startY), FadeColor(Impl.OnLight(tagCol), aMul))
+        Render.Text(fTitle, sTitle, TruncateToWidth(fTitle, sTitle, titleStr or "", maxW), Vec2(textX, math.floor(startY + tagSize.y)), textCol)
+    end
+
+    local function QueueBadge()
+        local n = (notif == NotificationQueue.Active) and #NotificationQueue.List or 0
+        if n <= 0 then return 0 end
+        local fB, sB = TF("Caption", scale)
+        fB = Config.Fonts.Semibold
+        local txt = "+" .. n
+        local tw = Odometer.Width(fB, sB, txt)
+        local th = Render.TextSize(fB, sB, txt).y
+        local h = math.floor(18 * scale)
+        local w = math.floor(math.max(h, tw + 12 * scale))
+        local bx = math.floor(layout.x + layout.w - 14 * scale - w)
+        local by = math.floor(layout.y + (layout.h - h) / 2 + yOff)
+        Render.FilledRect(Vec2(bx, by), Vec2(bx + w, by + h), FadeColor(Config.Colors.Fill, aMul), h / 2)
+        Odometer.Draw(fB, sB, txt, Vec2(math.floor(bx + (w - tw) / 2), math.floor(by + (h - th) / 2)), FadeColor(Config.Colors.TextSecondary, aMul))
+        return math.floor(w + 8 * scale)
     end
 
     if notif.Type == "apple_pay" then
@@ -8122,7 +8366,8 @@ function Impl.RenderNotificationState(layout, alphaMul, yOffset)
         Glyph("check", iconX + iconSz / 2, iconY + iconSz / 2, math.floor(iconSz * 0.62 * checkScale), FadeColor(Color(255, 255, 255, 255), aMul))
 
         local textX = math.floor(iconX + iconSz + 10 * scale)
-        TwoLines(textX, math.floor(layout.x + layout.w - textX - 14 * scale), notif.Tag or L("di_ui_notification"), green, notif.Title or L("di_ui_success"))
+        local qW = QueueBadge()
+        TwoLines(textX, math.floor(layout.x + layout.w - textX - 14 * scale - qW), notif.Tag or L("di_ui_notification"), green, notif.Title or L("di_ui_success"))
         return
     end
 
@@ -8225,7 +8470,8 @@ function Impl.RenderNotificationState(layout, alphaMul, yOffset)
     end
 
     local textX = math.floor(layout.x + 12 * scale + iconW + 10 * scale)
-    TwoLines(textX, math.floor(layout.x + layout.w - textX - 16 * scale), notif.Tag or L("di_ui_notification"), accent, notif.Title)
+    local qW = QueueBadge()
+    TwoLines(textX, math.floor(layout.x + layout.w - textX - 16 * scale - qW), notif.Tag or L("di_ui_notification"), accent, notif.Title)
 end
 
 function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
@@ -8281,7 +8527,7 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
     else
         local titleSize = Render.TextSize(fontBold, titleSz, titleStr)
         if titleSize.x > maxInfoW then
-            RenderMarqueeText(fontBold, titleSz, titleStr, infoX, infoY, maxInfoW, textCol, scale, false)
+            RenderMarqueeText(fontBold, titleSz, titleStr, infoX, infoY, maxInfoW, textCol, scale)
         else
             Render.Text(fontBold, titleSz, titleStr, Vec2(infoX, infoY), textCol)
         end
@@ -8290,7 +8536,7 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
         local artYPos = math.floor(infoY + titleSize.y + 2 * scale)
         local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(layout.x + layout.w - pad - 16 * scale - 10 * scale - infoX)) or maxInfoW
         if artSizeText.x > artistW then
-            RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, artistW, subCol, scale, false)
+            RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, artistW, subCol, scale)
         else
             Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artYPos), subCol)
         end
@@ -8322,9 +8568,9 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
     end
     ButtonHits.MediaSeek = { x1 = barX1, y1 = progressY - 8 * scale, x2 = barX2, y2 = progressY + progressH + 8 * scale }
 
-    local posText = FormatTime(curPos)
+    local posText = FormatTrackTime(curPos)
     local remSec = math.max(0, duration - curPos)
-    local remText = FormatNegativeTime(remSec)
+    local remText = FormatTrackTime(remSec, true)
 
     local timeY = math.floor(progressY + 8 * scale)
     Odometer.Draw(fTime, sTime, posText, Vec2(layout.x + pad, timeY), subCol)
@@ -8750,7 +8996,7 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
     local compactAlpha = math.max(0.0, 1.0 - artT * 2.5)
     if compactAlpha > 0.01 and CompactMediaTitle() then
         local compStr = (artistStr ~= "" and titleStr ~= "") and (titleStr .. " \u{2022} " .. artistStr) or titleStr
-        RenderMarqueeText(fontHead, headSz, compStr, cTextStartX, cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale, false)
+        RenderMarqueeText(fontHead, headSz, compStr, cTextStartX, cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale)
     end
 
     local largeAlpha = math.max(0.0, (artT - 0.25) / 0.75)^1.5
@@ -8758,11 +9004,11 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
         local slideY = math.floor((1.0 - (artT - 0.25) / 0.75) * 5 * scale)
         local curLY = lInfoY + slideY
         local lTitleSize = Render.TextSize(fontBold, titleSz, titleStr)
-        RenderMarqueeText(fontBold, titleSz, titleStr, lInfoX, curLY, lMaxInfoW, FadeColor(Config.Colors.TextPrimary, largeAlpha), scale, false)
+        RenderMarqueeText(fontBold, titleSz, titleStr, lInfoX, curLY, lMaxInfoW, FadeColor(Config.Colors.TextPrimary, largeAlpha), scale)
         if artistStr ~= "" then
             local artY = curLY + lTitleSize.y + 2 * scale
             local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(lL.x + lL.w - pad - 16 * scale - 10 * scale - lInfoX)) or lMaxInfoW
-            RenderMarqueeText(fontMain, artistSz, artistStr, lInfoX, artY, artistW, FadeColor(Config.Colors.TextSecondary, largeAlpha), scale, false)
+            RenderMarqueeText(fontMain, artistSz, artistStr, lInfoX, artY, artistW, FadeColor(Config.Colors.TextSecondary, largeAlpha), scale)
         end
     end
 
@@ -8780,9 +9026,9 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
             Render.FilledRect(Vec2(lL.x + pad, progressY), Vec2(lL.x + pad + progressW * progressPct, progressY + progressH), FadeColor(Config.Colors.TextPrimary, secAlpha), 2.5 * scale)
         end
 
-        local posText = FormatTime(curPos)
+        local posText = FormatTrackTime(curPos)
         local remSec = math.max(0, duration - curPos)
-        local remText = FormatNegativeTime(remSec)
+        local remText = FormatTrackTime(remSec, true)
         local timeY = math.floor(progressY + 8 * scale)
         Odometer.Draw(fTime, sTime, posText, Vec2(lL.x + pad, timeY), FadeColor(Config.Colors.TextSecondary, secAlpha))
         local remW = Odometer.Width(fTime, sTime, remText)
@@ -9140,6 +9386,10 @@ function ContentFx.Begin(layout, alpha, k, reveal, stagger)
     ContentFx.cy = layout.y + layout.h / 2
     ContentFx.top = layout.y
     ContentFx.h = layout.h
+    if ContentFx.k == 1 and alpha >= 0.999 and (not reveal or reveal >= 1) then
+        ContentFx.End()
+        return
+    end
     if not ContentFx.Installed then
         for name, f in pairs(ContentFx.Fns) do Render[name] = f end
         ContentFx.Installed = true
@@ -9338,6 +9588,7 @@ function DynamicIsland.OnFrame()
         C.ChipInactive = C.FillTertiary
         C.SegTrack = C.FillTertiary
         C.Grabber = C.TextMuted
+        C.Placeholder = D(58, 58, 60, 255, 229, 229, 234, 255)
     end
 
     if inGame and CachedDotaMapHandle == nil and os.clock() - LastMapWarmCheck > 10.0 then
@@ -9549,6 +9800,7 @@ function DynamicIsland.OnUpdateEx()
     Impl.HandleInteractions()
     Impl.PollMediaBridge()
     Impl.PollBridgeStatus()
+    Impl.PollSystem()
 end
 
 function DynamicIsland.OnScriptsLoaded()

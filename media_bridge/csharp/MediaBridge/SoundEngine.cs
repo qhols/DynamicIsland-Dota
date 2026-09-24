@@ -19,16 +19,13 @@ public static class SoundEngine
     public static readonly IReadOnlyDictionary<string, int> Durations = new Dictionary<string, int>
     {
         ["toast_dismiss"] = 100,
-        ["button_dismiss"] = 100,
         ["button_press"] = 350,
         ["courier_death_or_fail"] = 2400,
         ["courier_delivered"] = 900,
         ["game_paused"] = 500,
         ["game_unpaused"] = 600,
-        ["hero_stunned"] = 1100,
         ["island_collapse"] = 450,
         ["island_expand"] = 650,
-        ["island_hover"] = 350,
         ["low_hp_heartbeat"] = 2200,
         ["match_found"] = 3500,
         ["notification_toast"] = 2500,

@@ -19,6 +19,7 @@ public record StatusResponse(string status, string version, string latest_versio
 [JsonSerializable(typeof(FocusResponse))]
 [JsonSerializable(typeof(SoundResponse))]
 [JsonSerializable(typeof(StatusResponse))]
+[JsonSerializable(typeof(SystemInfo))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 
 internal static class AppJson
@@ -51,6 +52,7 @@ internal static class Program
 
         SoundEngine.Init(exeDir);
         AppAudioControl.StartFocusWatcher();
+        SystemWatcher.Start();
         UpdateChecker.Start();
         SpotifyFlags.StartHealer();
         DotaLifetime.StartExitWatcher();
@@ -164,7 +166,12 @@ internal static class Program
 
                 if ((cmd == "volup" || cmd == "voldown") && !noSound)
                 {
-                    SoundEngine.Play(bump ? "wheel_boundary_bump" : "wheel_notch", bump ? 0.65 : 0.45);
+                    double notchVol = bump ? 0.65 : 0.45;
+                    if (double.TryParse(request.QueryString["vol"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedNotch))
+                    {
+                        notchVol = Math.Max(0.01, Math.Min(1.0, parsedNotch));
+                    }
+                    SoundEngine.Play(bump ? "wheel_boundary_bump" : "wheel_notch", notchVol);
                 }
 
                 float? curVol = await MediaSessionService.HandleMediaCommandAsync(cmd);
@@ -195,6 +202,10 @@ internal static class Program
 
                 if (soundName != null) SoundEngine.Play(soundName, vol, force);
                 await WriteJsonAsync(response, new SoundResponse("ok"), AppJson.Context.SoundResponse);
+            }
+            else if (path == "/system")
+            {
+                await WriteJsonAsync(response, SystemWatcher.Current, AppJson.Context.SystemInfo);
             }
             else if (path == "/focus")
             {

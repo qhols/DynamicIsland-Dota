@@ -49,8 +49,46 @@ internal static class WinRtAsync
 
 public static class MediaSessionService
 {
-    private static readonly string TempDir = Path.GetTempPath();
-    private const string UmbrellaDir = @"C:\Umbrella\scripts";
+    private static readonly string TempDir = Path.Combine(Path.GetTempPath(), "dynamic_island_covers");
+    private const string ScriptsDir = @"C:\Umbrella\scripts";
+    private static readonly string UmbrellaDir = Path.Combine(ScriptsDir, "dynamic_island_covers");
+    private static bool _coverDirsReady;
+
+    private static void PrepareCoverDirs()
+    {
+        if (_coverDirsReady) return;
+        _coverDirsReady = true;
+        try { Directory.CreateDirectory(TempDir); } catch { }
+        if (Directory.Exists(ScriptsDir))
+        {
+            try { Directory.CreateDirectory(UmbrellaDir); } catch { }
+            foreach (var dir in new[] { ScriptsDir, UmbrellaDir, Path.GetTempPath(), TempDir })
+            {
+                try
+                {
+                    foreach (var f in Directory.GetFiles(dir, "dynamic_island_cover*.*")) File.Delete(f);
+                }
+                catch { }
+            }
+        }
+    }
+
+    private static void DropOldCovers(string dir, int keepVer)
+    {
+        try
+        {
+            if (!Directory.Exists(dir)) return;
+            string keep = $"dynamic_island_cover_{keepVer}.";
+            string prev = $"dynamic_island_cover_{keepVer - 1}.";
+            foreach (var f in Directory.GetFiles(dir, "dynamic_island_cover*.*"))
+            {
+                string name = Path.GetFileName(f);
+                if (name.StartsWith(keep, StringComparison.Ordinal) || name.StartsWith(prev, StringComparison.Ordinal)) continue;
+                File.Delete(f);
+            }
+        }
+        catch { }
+    }
 
     private static string _coverJpg = "";
     private static string _coverPng = "";
@@ -286,6 +324,7 @@ public static class MediaSessionService
 
     private static async Task<bool> FetchCoverAsync(GlobalSystemMediaTransportControlsSessionMediaProperties? props)
     {
+        PrepareCoverDirs();
         int ver = _coverVersion + 1;
         string targetJpg = Path.Combine(TempDir, $"dynamic_island_cover_{ver}.jpg");
         string targetPng = Path.Combine(TempDir, $"dynamic_island_cover_{ver}.png");
@@ -314,7 +353,6 @@ public static class MediaSessionService
                         try
                         {
                             File.WriteAllBytes(umbJpg, bytes);
-                            File.WriteAllBytes(Path.Combine(UmbrellaDir, "dynamic_island_cover.jpg"), bytes);
                         }
                         catch { }
                     }
@@ -327,7 +365,6 @@ public static class MediaSessionService
                         if (!string.IsNullOrEmpty(umbPng))
                         {
                             img.Save(umbPng, ImageFormat.Png);
-                            try { img.Save(Path.Combine(UmbrellaDir, "dynamic_island_cover.png"), ImageFormat.Png); } catch { }
                         }
                     }
                     catch { }
@@ -343,15 +380,8 @@ public static class MediaSessionService
             _coverVersion = ver;
             try
             {
-                if (ver > 2)
-                {
-                    int prevVer = ver - 2;
-                    if (umbAvailable)
-                    {
-                        foreach (var f in Directory.GetFiles(UmbrellaDir, $"dynamic_island_cover_{prevVer}.*")) File.Delete(f);
-                    }
-                    foreach (var f in Directory.GetFiles(TempDir, $"dynamic_island_cover_{prevVer}.*")) File.Delete(f);
-                }
+                if (umbAvailable) DropOldCovers(UmbrellaDir, ver);
+                DropOldCovers(TempDir, ver);
 
                 byte[] fileBytes = File.Exists(targetPng) ? File.ReadAllBytes(targetPng) : File.ReadAllBytes(targetJpg);
                 _coverBase64 = Convert.ToBase64String(fileBytes);
