@@ -20,6 +20,9 @@ iPhone style dynamic island for dota, made for umbrella. one small pill at the t
 - rampage timer after an ultra kill
 - match flow in the menu: queue timer, accept countdown, who accepted, loading, draft with picks and bans
 - do not disturb and your own reminders (like "smoke at 12:00")
+- system alerts: headphones or speakers switching, windows sound muted, laptop charging and low battery
+- notification center with your last alerts, even the ones do not disturb kept quiet
+- updates right from the island: a new version shows up in the menu and installs in one click
 - english and russian, switches live with the umbrella language
 
 ## Install
@@ -48,7 +51,8 @@ Needs [spicetify](https://spicetify.app) and spotify started with `--remote-debu
 
 ## Controls
 
-- hover the island to expand it
+- hover the island to expand it, or press and hold if you pick that in the settings
+- scroll down on the expanded island for the notification center
 - drag the progress bar to seek
 - scroll over the player for volume
 - right click the island with the umbrella menu open for the widget editor

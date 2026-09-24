@@ -620,6 +620,38 @@ local localization = qLocalization.new({
         di_ui_controls_hint = "Ctrl + LMB: move  \u{2022}  RMB: widgets",
         di_ui_music = "Music",
         di_ui_fight = "Fight",
+        di_main_demo = "Show all screens",
+        di_upd_available = "Update available",
+        di_upd_manual = "Download it from GitHub",
+        di_upd_bridge_title = "Update MediaBridge",
+        di_upd_bridge_sub = "New features need the new version",
+        di_upd_later = "Later",
+        di_upd_install = "Update",
+        di_upd_ok = "OK",
+        di_upd_downloading = "Downloading…",
+        di_upd_installing = "Installing…",
+        di_upd_ready = "Update installed",
+        di_upd_ready_sub = "Restart scripts to finish",
+        di_upd_restart = "Restart",
+        di_upd_failed = "Couldn't update",
+        di_upd_failed_sub = "Check your connection and try again",
+        di_upd_retry = "Try Again",
+        di_wn_title = "What's New",
+        di_wn_continue = "Continue",
+        di_wn_1_t = "System alerts",
+        di_wn_1_d = "Headphones, sound and battery in the island",
+        di_wn_2_t = "Notification Center",
+        di_wn_2_d = "Expand the island and scroll down",
+        di_wn_3_t = "Press and hold",
+        di_wn_3_d = "Opens the island like on iPhone, see settings",
+        di_wn_4_t = "One-click updates",
+        di_wn_4_d = "New versions install right from the island",
+        di_nc_title = "Notifications",
+        di_nc_clear = "Clear",
+        di_nc_empty = "No notifications",
+        di_nc_now = "now",
+        di_nc_min = "%dm",
+        di_nc_hour = "%dh",
         di_main_expand = "Expand island",
         di_main_expand_hover = "On hover",
         di_main_expand_hold = "Press and hold",
@@ -1029,6 +1061,38 @@ local localization = qLocalization.new({
         di_ui_controls_hint = "Ctrl + ЛКМ: двигать  \u{2022}  ПКМ: виджеты",
         di_ui_music = "Музыка",
         di_ui_fight = "Бой",
+        di_main_demo = "Показать все экраны",
+        di_upd_available = "Доступно обновление",
+        di_upd_manual = "Скачай новую версию на GitHub",
+        di_upd_bridge_title = "Обнови MediaBridge",
+        di_upd_bridge_sub = "Новым функциям нужна новая версия",
+        di_upd_later = "Позже",
+        di_upd_install = "Обновить",
+        di_upd_ok = "Понятно",
+        di_upd_downloading = "Загрузка…",
+        di_upd_installing = "Установка…",
+        di_upd_ready = "Обновление установлено",
+        di_upd_ready_sub = "Осталось перезапустить скрипты",
+        di_upd_restart = "Перезапустить",
+        di_upd_failed = "Не удалось обновить",
+        di_upd_failed_sub = "Проверь интернет и попробуй снова",
+        di_upd_retry = "Повторить",
+        di_wn_title = "Что нового",
+        di_wn_continue = "Продолжить",
+        di_wn_1_t = "Системные уведомления",
+        di_wn_1_d = "Наушники, звук и батарея прямо в островке",
+        di_wn_2_t = "Центр уведомлений",
+        di_wn_2_d = "Раскрой островок и прокрути вниз",
+        di_wn_3_t = "Раскрытие удержанием",
+        di_wn_3_d = "Как на айфоне, включается в настройках",
+        di_wn_4_t = "Обновления в один клик",
+        di_wn_4_d = "Новая версия ставится прямо из островка",
+        di_nc_title = "Уведомления",
+        di_nc_clear = "Очистить",
+        di_nc_empty = "Нет уведомлений",
+        di_nc_now = "сейчас",
+        di_nc_min = "%d мин",
+        di_nc_hour = "%d ч",
         di_main_expand = "Раскрытие",
         di_main_expand_hover = "При наведении",
         di_main_expand_hold = "Удержанием",
@@ -1407,7 +1471,9 @@ local StateMachine = {
         COURIER_DELIVERY = 12,
         COURIER_DELIVERED = 13,
         COURIER_LARGE = 14,
-        FOCUS_BANNER = 17
+        FOCUS_BANNER = 17,
+        SHEET = 18,
+        NOTIF_CENTER = 19
     },
     Current = 1,
     TargetState = 1,
@@ -1718,10 +1784,13 @@ local Success = { Fired = {} }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts = {}, LayoutCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
-local SCRIPT_VERSION = "2.1.0"
+local SCRIPT_VERSION = "2.2.0"
 
 local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
 local SystemState = { LastPoll = 0, Seen = false }
+local Sheet = { Kind = nil, Hits = {}, Dismissed = false, SeenVer = nil, ConfigLoaded = false, MenuSince = nil, Forced = nil, Upd = { State = "idle", Progress = 0, Error = "", Version = "", LastPoll = 0, LastOk = 0 } }
+local NotifCenter = { Items = {}, Hits = {} }
+local Demo = { Active = false, Step = 0, At = 0 }
 local SatelliteSubBounds = {}
 local ImageCache = {}
 
@@ -1874,6 +1943,8 @@ local VectorIcons = {
     ["headphones"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4.4 15.4V12a7.6 7.6 0 0 1 15.2 0v3.4" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="3.2" y="13.2" width="4.8" height="7.6" rx="2" fill="#FFF"/><rect x="16" y="13.2" width="4.8" height="7.6" rx="2" fill="#FFF"/></svg>',
     ["display"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="3" y="4.4" width="18" height="12.2" rx="2.2" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M8.6 20.2h6.8M12 16.8v3.2" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
     ["battery_low"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="2.4" y="7.2" width="17" height="9.6" rx="2.8" fill="none" stroke="#FFF" stroke-width="1.8"/><rect x="20.4" y="10.2" width="1.8" height="3.6" rx=".9" fill="#FFF"/><rect x="4.6" y="9.4" width="3.6" height="5.2" rx="1.2" fill="#FFF"/></svg>',
+    ["arrow_down"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 4.2v14.6M5.8 12.6l6.2 6.2 6.2-6.2" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+    ["hold"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="3.6" fill="#FFF"/><circle cx="12" cy="12" r="8" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
     ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3A6.364 6.364 0 0 0 21 12A9 9 0 1 1 12 3Z" fill="#FFFFFF"/></svg>',
     ["bell"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3a6 6 0 0 0-6 6v4.3L4.4 16v1.2h15.2V16L18 13.3V9a6 6 0 0 0-6-6z" fill="#FFFFFF"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0z" fill="#FFFFFF"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
@@ -2010,6 +2081,7 @@ local function SaveAllConfig()
             local activeStr = table.concat(HUDCustomizer.ActiveChips, ",")
             f:write("active=" .. activeStr .. "\n")
             f:write(string.format("drag_center=%d,%d\n", math.floor(DragState.CustomX or -1), math.floor(DragState.CustomY or -1)))
+            if Sheet.SeenVer then f:write("seen_ver=" .. Sheet.SeenVer .. "\n") end
 
             for id, cfg in pairs(HUDCustomizer.WidgetConfigs) do
                 f:write(string.format("cfg_%s=%s,%d,%d,%s,%s\n", id, cfg.bold and "1" or "0", cfg.colorMode or 1, cfg.format or 1, cfg.showIcon and "1" or "0", cfg.customHex or ""))
@@ -2132,7 +2204,10 @@ function Impl.LoadAllConfig()
     for line in f:lines() do
         local activeMatch = string.match(line, "^active=([%w_,]+)")
         local dragMatchX, dragMatchY = string.match(line, "^drag_center=([%-]?%d+),([%-]?%d+)")
-        if activeMatch then
+        local seenMatch = string.match(line, "^seen_ver=([%w%.]+)")
+        if seenMatch then
+            Sheet.SeenVer = seenMatch
+        elseif activeMatch then
             local newActive = {}
             for item in string.gmatch(activeMatch, "[%w_]+") do
                 table.insert(newActive, item)
@@ -2731,6 +2806,7 @@ function Impl.InitMenu()
     M.ExpandMode = gMore:Combo("di_main_expand", { "di_main_expand_hover", "di_main_expand_hold" }, 0)
     M.ExpandMode:Icon("\u{f065}")
     M.ExpandMode:ToolTip("di_main_expand_tip")
+    M.Demo = gMore:Button("di_main_demo", function() Demo.Start() end)
     T.ToastDuration = gAll:Slider("di_timings_toast_duration", 1, 10, 4, "%d s")
     T.ToastDuration:Icon("\u{f254}")
     T.ToastDuration:ToolTip("di_toast_duration_tip")
@@ -3006,8 +3082,8 @@ end
 local function TriggerStateTransition(nextState)
     if StateMachine.TargetState == nextState then return end
 
-    local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE)
-    local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE)
+    local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE or StateMachine.TargetState == StateMachine.States.SHEET or StateMachine.TargetState == StateMachine.States.NOTIF_CENTER)
+    local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE or nextState == StateMachine.States.SHEET or nextState == StateMachine.States.NOTIF_CENTER)
 
     local tr = StateMachine.Transition
     local prev = StateMachine.TargetState
@@ -3353,6 +3429,7 @@ end
 function DynamicIsland.PushNotification(notif)
     if not notif then return end
     if notif.Type == "neutral" and UI and UI.Runes and UI.Runes.Neutrals and not UI.Runes.Neutrals:Get() then return end
+    NotifCenter.Add(notif)
     local shared = (UI and UI.Timings and UI.Timings.ToastDuration) and UI.Timings.ToastDuration:Get() or 4
     local durKey = notif.Type and Impl.NotifDurationKey[notif.Type]
     if durKey then
@@ -3584,7 +3661,7 @@ IsNotifDeferred = function(notif)
 end
 
 function Impl.PollMediaBridge()
-    if not UI or not UI.Media.Enabled:Get() then return end
+    if not UI or not UI.Media.Enabled:Get() or Demo.Active then return end
     local clk = os.clock()
     if clk - MediaData.LastPollTime < MediaData.PollInterval then return end
     MediaData.LastPollTime = clk
@@ -5560,6 +5637,19 @@ function DynamicIsland.OnKeyEvent(data)
     local isDown = (data.key == Enum.ButtonCode.KEY_MWHEELDOWN or data.key == 125 or data.event == Enum.EKeyEvent.EKeyEvent_SCROLL_DOWN or data.event == 0)
 
     if isUp or isDown then
+        local st = StateMachine.TargetState
+        if st == StateMachine.States.LARGE_IDLE or st == StateMachine.States.NOTIF_CENTER then
+            local lay = GetIslandLayout()
+            local mx, my = Input.GetCursorPos()
+            if lay and mx >= lay.x - 12 and mx <= lay.x + lay.w + 12 and my >= lay.y - 12 and my <= lay.y + lay.h + 12 then
+                if isDown and st == StateMachine.States.LARGE_IDLE then
+                    TriggerStateTransition(StateMachine.States.NOTIF_CENTER)
+                elseif isUp and st == StateMachine.States.NOTIF_CENTER then
+                    TriggerStateTransition(StateMachine.States.LARGE_IDLE)
+                end
+                return false
+            end
+        end
         if not IsMediaActive() then
             return true
         end
@@ -5667,7 +5757,8 @@ function Impl.HandleInteractions()
     local isWheelUp = Input.IsKeyDown(Enum.ButtonCode.KEY_MWHEELUP) or Input.IsKeyDown(124)
     local isWheelDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MWHEELDOWN) or Input.IsKeyDown(125)
 
-    if NotificationQueue.Active then
+    if Demo.Active then
+    elseif NotificationQueue.Active then
         local elapsed = nowClk - NotificationQueue.StartTime
         if elapsed >= NotificationQueue.Active.Duration then
             NotificationQueue.LastDismissed = NotificationQueue.Active
@@ -6157,7 +6248,9 @@ function Impl.HandleInteractions()
     Focus.Tick(nowClk)
     Journey.Hidden = Journey.HiddenPhase()
 
-    if Journey.Hidden then
+    if Demo.Active then
+        Demo.Tick(nowClk)
+    elseif Journey.Hidden then
         Journey.Reset()
     elseif Focus.BannerStart <= nowClk and Focus.BannerUntil > nowClk and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
         if StateMachine.TargetState ~= StateMachine.States.FOCUS_BANNER then
@@ -6172,6 +6265,10 @@ function Impl.HandleInteractions()
             else
                 local isSearching = Impl.GetMatchSearchInfo()
                 detected = isSearching and StateMachine.States.MENU_SEARCHING or StateMachine.States.MENU_IDLE
+            end
+            Sheet.MenuSince = Sheet.MenuSince or nowClk
+            if detected == StateMachine.States.MENU_IDLE and Sheet.Pick(nowClk) then
+                detected = StateMachine.States.SHEET
             end
             if detected ~= StateMachine.States.MENU_MATCH_FOUND and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
                 Journey.Reset()
@@ -6191,6 +6288,7 @@ function Impl.HandleInteractions()
             end
         end
     else
+        Sheet.MenuSince = nil
         local pauseEnabled = ToggleOn(UI and UI.Combat and UI.Combat.PauseAlert)
         if PauseTracker.IsPaused and pauseEnabled then
             if StateMachine.TargetState ~= StateMachine.States.GAME_PAUSED then
@@ -6213,7 +6311,7 @@ function Impl.HandleInteractions()
                 if StateMachine.TargetState ~= StateMachine.States.COMPACT_FIGHT and StateMachine.TargetState ~= StateMachine.States.LARGE_FIGHT then
                     TriggerStateTransition(StateMachine.States.COMPACT_FIGHT)
                 end
-            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.FOCUS_BANNER or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
+            elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION or StateMachine.TargetState == StateMachine.States.MENU_IDLE or StateMachine.TargetState == StateMachine.States.MENU_SEARCHING or StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND or StateMachine.TargetState == StateMachine.States.FOCUS_BANNER or StateMachine.TargetState == StateMachine.States.GAME_PAUSED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY or StateMachine.TargetState == StateMachine.States.COURIER_LARGE or StateMachine.TargetState == StateMachine.States.SHEET then
                 local desired = (mediaActive and not HUDCustomizer.IsOpen) and StateMachine.States.COMPACT_MEDIA or StateMachine.States.COMPACT_IDLE
                 TriggerStateTransition(desired)
             elseif StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA or StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT then
@@ -6286,6 +6384,15 @@ function Impl.HandleInteractions()
         Config.Dimensions.CompactTargetW = (UI and UI.Combat and UI.Combat.FightLargeW) and UI.Combat.FightLargeW:Get() or Config.Dimensions.LargeFightW
         Config.Dimensions.CompactTargetH = (UI and UI.Combat and UI.Combat.FightLargeH) and UI.Combat.FightLargeH:Get() or Config.Dimensions.LargeFightH
         Config.Dimensions.CompactTargetR = Config.Dimensions.LargeFightRadius
+    elseif StateMachine.TargetState == StateMachine.States.SHEET then
+        local sw, sh = Sheet.Size()
+        Config.Dimensions.CompactTargetW = sw
+        Config.Dimensions.CompactTargetH = sh
+        Config.Dimensions.CompactTargetR = 28
+    elseif StateMachine.TargetState == StateMachine.States.NOTIF_CENTER then
+        Config.Dimensions.CompactTargetW = Config.Dimensions.LargeW
+        Config.Dimensions.CompactTargetH = NotifCenter.Height()
+        Config.Dimensions.CompactTargetR = 28
     elseif StateMachine.TargetState == StateMachine.States.LARGE_IDLE then
         Config.Dimensions.CompactTargetW = Config.Dimensions.LargeW
         Config.Dimensions.CompactTargetH = Config.Dimensions.LargeH
@@ -6320,7 +6427,25 @@ function Impl.HandleInteractions()
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierLargeRadius
     end
 
-    if HUDCustomizer.IsOpen then return end
+    if isLeftClicked and not isCtrlOnly and not Demo.Active then
+        local hits = (StateMachine.TargetState == StateMachine.States.SHEET and Sheet.Hits) or (StateMachine.TargetState == StateMachine.States.NOTIF_CENTER and NotifCenter.Hits) or nil
+        if hits then
+            for _, h in ipairs(hits) do
+                if cx >= h.x1 and cx <= h.x2 and cy >= h.y1 and cy <= h.y2 then
+                    Sheet.Action(h.action, nowClk)
+                    Haptic.Trigger(Haptic.Types.TAP_MEDIUM)
+                    return
+                end
+            end
+        elseif isHover and StateMachine.TargetState == StateMachine.States.MENU_IDLE and Sheet.BadgeOn() then
+            Sheet.Dismissed = false
+            Sheet.MenuSince = nowClk - 2
+            Haptic.Trigger(Haptic.Types.TAP_MEDIUM)
+            return
+        end
+    end
+
+    if HUDCustomizer.IsOpen or Demo.Active then return end
 
     local holdMode = UI.Main.ExpandMode and UI.Main.ExpandMode:Get() == 1
     local openOnHover = not holdMode
@@ -6388,7 +6513,7 @@ function Impl.HandleInteractions()
                 if StateMachine.UnhoverStartTime > 0 and (nowClk - StateMachine.UnhoverStartTime) >= 0.22 then
                     TriggerStateTransition(StateMachine.States.COURIER_DELIVERY)
                 end
-            elseif StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_IDLE then
+            elseif StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.NOTIF_CENTER then
                 if StateMachine.UnhoverStartTime > 0 and (nowClk - StateMachine.UnhoverStartTime) >= 0.22 then
                     local nextC = mediaActive and StateMachine.States.COMPACT_MEDIA or StateMachine.States.COMPACT_IDLE
                     TriggerStateTransition(nextC)
@@ -9245,6 +9370,468 @@ function Impl.RenderIdleSharedTransition(fromState, toState, layout, progress)
     end
 end
 
+function Sheet.BridgeOnline()
+    return BridgeStatus.LastOk > 0 and (os.clock() - BridgeStatus.LastOk) < 10
+end
+
+function Sheet.UpdateInfo()
+    if not Sheet.BridgeOnline() then return nil end
+    local mine = Impl.ParseVersion(SCRIPT_VERSION)
+    local bridge = Impl.ParseVersion(BridgeStatus.Version)
+    local latest = Impl.ParseVersion(BridgeStatus.Latest)
+    local canSelf = bridge and not Impl.VersionLess(bridge, { 2, 2, 0 })
+    if latest and ((mine and Impl.VersionLess(mine, latest)) or (bridge and Impl.VersionLess(bridge, latest))) then
+        return { title = "Dynamic Island " .. BridgeStatus.Latest:gsub("^[vV]", ""), sub = canSelf and L("di_upd_available") or L("di_upd_manual"), canSelf = canSelf }
+    end
+    if bridge and mine and Impl.VersionLess(bridge, mine) then
+        return { title = L("di_upd_bridge_title"), sub = canSelf and L("di_upd_bridge_sub") or L("di_upd_manual"), canSelf = canSelf }
+    end
+    return nil
+end
+
+function Sheet.BadgeOn()
+    return Sheet.Dismissed and Sheet.Upd.State == "idle" and Sheet.UpdateInfo() ~= nil
+end
+
+function Sheet.Pick(now)
+    if Sheet.Forced then
+        Sheet.Kind = Sheet.Forced
+        return true
+    end
+    if not Sheet.MenuSince or now - Sheet.MenuSince < 1.5 then return false end
+    if Sheet.Upd.State ~= "idle" then
+        Sheet.Kind = "update"
+        return true
+    end
+    if Sheet.ConfigLoaded and Sheet.SeenVer ~= SCRIPT_VERSION then
+        Sheet.Kind = "whatsnew"
+        return true
+    end
+    if not Sheet.Dismissed and Sheet.UpdateInfo() then
+        Sheet.Kind = "update"
+        return true
+    end
+    return false
+end
+
+Sheet.News = {
+    { glyph = "headphones", color = "Blue", t = "di_wn_1_t", d = "di_wn_1_d" },
+    { glyph = "bell", color = "Orange", t = "di_wn_2_t", d = "di_wn_2_d" },
+    { glyph = "hold", color = "Purple", t = "di_wn_3_t", d = "di_wn_3_d" },
+    { glyph = "arrow_down", color = "Green", t = "di_wn_4_t", d = "di_wn_4_d" }
+}
+
+function Sheet.Size()
+    if Sheet.Kind == "whatsnew" then
+        return 360, 18 + 30 + #Sheet.News * 46 + 6 + 36 + 18
+    end
+    local st = Sheet.Upd.State
+    if st == "downloading" or st == "installing" or st == "restarting" then
+        return 340, 80
+    end
+    return 340, 126
+end
+
+function Sheet.UrlEncode(s)
+    return (s:gsub("[^%w%-%._~]", function(c) return string.format("%%%02X", string.byte(c)) end))
+end
+
+function Sheet.StartUpdate(now)
+    local dir = "C:\\Umbrella\\scripts"
+    if Engine and Engine.GetCheatDirectory then
+        local ok, cd = pcall(Engine.GetCheatDirectory)
+        if ok and cd and cd ~= "" then dir = cd:gsub("/", "\\"):gsub("\\$", "") .. "\\scripts" end
+    end
+    Sheet.Upd.State = "downloading"
+    Sheet.Upd.Progress = 0
+    Sheet.Upd.Error = ""
+    Sheet.Upd.LastOk = now
+    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/start?dir=" .. Sheet.UrlEncode(dir), {}, function() end, "di_update_start")
+end
+
+function Sheet.PollUpdate()
+    local u = Sheet.Upd
+    local now = os.clock()
+    if u.State == "restarting" then
+        if u.ReloadAt and now >= u.ReloadAt then
+            u.ReloadAt = nil
+            if Engine and Engine.ReloadScriptSystem then pcall(Engine.ReloadScriptSystem) end
+        end
+        return
+    end
+    if u.State ~= "downloading" and u.State ~= "installing" then return end
+    if now - u.LastOk > 20 then
+        u.State = "error"
+        u.Error = "offline"
+        return
+    end
+    if now - u.LastPoll < 0.25 then return end
+    u.LastPoll = now
+    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/status", {}, function(res)
+        if not res or not res.response or res.response == "" then return end
+        local body = res.response
+        local st = string.match(body, '"state"%s*:%s*"([^"]*)"')
+        if not st then return end
+        u.LastOk = os.clock()
+        u.Progress = tonumber(string.match(body, '"progress"%s*:%s*([%d%.eE%-]+)') or "0") or 0
+        u.Error = string.match(body, '"error"%s*:%s*"([^"]*)"') or ""
+        if st == "downloading" or st == "installing" or st == "ready" or st == "error" then
+            u.State = st
+        end
+    end, "di_update_status")
+end
+
+function Sheet.Action(action, now)
+    if action == "later" then
+        Sheet.Dismissed = true
+        Sheet.Upd.State = "idle"
+    elseif action == "install" then
+        Sheet.StartUpdate(now)
+    elseif action == "restart" then
+        Sheet.Upd.State = "restarting"
+        Sheet.Upd.ReloadAt = now + 1.2
+        pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/restart", {}, function() end, "di_update_restart")
+    elseif action == "seen" then
+        Sheet.SeenVer = SCRIPT_VERSION
+        Sheet.Forced = nil
+        SaveAllConfig()
+    elseif action == "nc_clear" then
+        NotifCenter.Items = {}
+    end
+end
+
+function Sheet.Button(x, y, w, h, label, primary, action, aMul, s)
+    local C = Config.Colors
+    Render.FilledRect(Vec2(x, y), Vec2(x + w, y + h), FadeColor(primary and C.Blue or C.FillSecondary, aMul), h / 2)
+    local f, sz = TF("Headline", s)
+    local ts = Render.TextSize(f, sz, label)
+    Render.Text(f, sz, label, Vec2(math.floor(x + (w - ts.x) / 2), math.floor(y + (h - ts.y) / 2)), FadeColor(primary and Color(255, 255, 255, 255) or C.TextPrimary, aMul))
+    if aMul > 0.9 and action then
+        table.insert(Sheet.Hits, { x1 = x, y1 = y, x2 = x + w, y2 = y + h, action = action })
+    end
+end
+
+function Sheet.Buttons(layout, y, aMul, s, a, b)
+    local pad = math.floor(16 * s)
+    local h = math.floor(34 * s)
+    local x0 = layout.x + pad
+    local w = layout.w - pad * 2
+    if b then
+        local gap = math.floor(10 * s)
+        local bw = math.floor((w - gap) / 2)
+        Sheet.Button(x0, y, bw, h, a[1], a[2], a[3], aMul, s)
+        Sheet.Button(x0 + bw + gap, y, w - bw - gap, h, b[1], b[2], b[3], aMul, s)
+    else
+        Sheet.Button(x0, y, w, h, a[1], a[2], a[3], aMul, s)
+    end
+end
+
+function Sheet.Render(layout, alphaMul, yOffset)
+    if Sheet.Kind == "whatsnew" then
+        Sheet.RenderNews(layout, alphaMul, yOffset)
+    else
+        Sheet.RenderUpdate(layout, alphaMul, yOffset)
+    end
+end
+
+function Sheet.RenderUpdate(layout, alphaMul, yOffset)
+    local a = alphaMul or 1
+    local s = layout.scale
+    local C = Config.Colors
+    local u = Sheet.Upd
+    local info = Sheet.UpdateInfo() or { title = "Dynamic Island", sub = "", canSelf = true }
+    local pad = math.floor(16 * s)
+    local isz = math.floor(44 * s)
+    local ix = layout.x + pad
+    local iy = math.floor(layout.y + pad + (yOffset or 0))
+    local icx, icy = ix + isz / 2, iy + isz / 2
+    local title, sub = info.title, info.sub
+    local busy = u.State == "downloading" or u.State == "installing" or u.State == "restarting"
+
+    if busy then
+        local r = math.floor(18 * s)
+        Render.Circle(Vec2(icx, icy), r, FadeColor(C.Fill, a), 3 * s, 0, 1.0, false, 48)
+        local p = u.State == "downloading" and math.max(0.02, math.min(1, u.Progress)) or 1
+        Render.Circle(Vec2(icx, icy), r, FadeColor(C.Blue, a), 3 * s, 270, p, true, 48)
+        local fP, sP = TF("Caption2", s)
+        local pct = string.format("%d", math.floor(p * 100 + 0.5))
+        local pw = Odometer.Width(fP, sP, pct)
+        local ph = Render.TextSize(fP, sP, pct).y
+        Odometer.Draw(fP, sP, pct, Vec2(math.floor(icx - pw / 2), math.floor(icy - ph / 2)), FadeColor(C.TextPrimary, a))
+        sub = title
+        title = u.State == "downloading" and L("di_upd_downloading") or L("di_upd_installing")
+    elseif u.State == "ready" then
+        Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(C.Green, a), 0, 1.0, 32)
+        Glyph("check", icx, icy, math.floor(isz * 0.5), FadeColor(Color(255, 255, 255, 255), a))
+        title, sub = L("di_upd_ready"), L("di_upd_ready_sub")
+    elseif u.State == "error" then
+        Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(C.Red, a), 0, 1.0, 32)
+        Glyph("close", icx, icy, math.floor(isz * 0.46), FadeColor(Color(255, 255, 255, 255), a))
+        title, sub = L("di_upd_failed"), L("di_upd_failed_sub")
+    else
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(C.Blue, a), math.floor(11 * s))
+        Glyph("arrow_down", icx, icy, math.floor(isz * 0.52), FadeColor(Color(255, 255, 255, 255), a))
+    end
+
+    local tx = ix + isz + math.floor(12 * s)
+    local maxW = layout.x + layout.w - pad - tx
+    local fT, sT = TF("Title", s)
+    local fS, sS = TF("Subhead", s)
+    local th = Render.TextSize(fT, sT, "Ag").y
+    local sh = Render.TextSize(fS, sS, "Ag").y
+    local ty = math.floor(icy - (th + sh + 2 * s) / 2)
+    Render.Text(fT, sT, TruncateToWidth(fT, sT, title, maxW), Vec2(tx, ty), FadeColor(C.TextPrimary, a))
+    Render.Text(fS, sS, TruncateToWidth(fS, sS, sub, maxW), Vec2(tx, math.floor(ty + th + 2 * s)), FadeColor(C.TextSecondary, a))
+
+    if busy then return end
+    local by = iy + isz + math.floor(16 * s)
+    if u.State == "ready" then
+        Sheet.Buttons(layout, by, a, s, { L("di_upd_restart"), true, "restart" })
+    elseif u.State == "error" then
+        Sheet.Buttons(layout, by, a, s, { L("di_upd_later"), false, "later" }, { L("di_upd_retry"), true, "install" })
+    elseif info.canSelf then
+        Sheet.Buttons(layout, by, a, s, { L("di_upd_later"), false, "later" }, { L("di_upd_install"), true, "install" })
+    else
+        Sheet.Buttons(layout, by, a, s, { L("di_upd_ok"), true, "later" })
+    end
+end
+
+function Sheet.RenderNews(layout, alphaMul, yOffset)
+    local a = alphaMul or 1
+    local s = layout.scale
+    local C = Config.Colors
+    local pad = math.floor(18 * s)
+    local y = math.floor(layout.y + pad + (yOffset or 0))
+    local fT, sT = TF("Title", s)
+    Render.Text(fT, sT, L("di_wn_title"), Vec2(layout.x + pad, y), FadeColor(C.TextPrimary, a))
+    local fV, sV = TF("Footnote", s)
+    local ver = SCRIPT_VERSION
+    local vw = Odometer.Width(fV, sV, ver)
+    local vy = math.floor(y + (Render.TextSize(fT, sT, "Ag").y - Render.TextSize(fV, sV, "Ag").y) / 2)
+    Odometer.Draw(fV, sV, ver, Vec2(math.floor(layout.x + layout.w - pad - vw), vy), FadeColor(C.TextSecondary, a))
+
+    local fH, sH = TF("Headline", s)
+    local fD, sD = TF("Footnote", s)
+    local isz = math.floor(30 * s)
+    local rowY = y + math.floor(30 * s)
+    for i, n in ipairs(Sheet.News) do
+        local ry = rowY + (i - 1) * math.floor(46 * s)
+        local cx, cy = layout.x + pad + isz / 2, ry + isz / 2 + math.floor(2 * s)
+        Render.FilledCircle(Vec2(cx, cy), isz / 2, FadeColor(C[n.color] or C.Blue, a), 0, 1.0, 28)
+        Glyph(n.glyph, cx, cy, math.floor(isz * 0.56), FadeColor(Color(255, 255, 255, 255), a))
+        local tx = layout.x + pad + isz + math.floor(12 * s)
+        local maxW = layout.x + layout.w - pad - tx
+        local hh = Render.TextSize(fH, sH, "Ag").y
+        Render.Text(fH, sH, TruncateToWidth(fH, sH, L(n.t), maxW), Vec2(tx, ry), FadeColor(C.TextPrimary, a))
+        Render.Text(fD, sD, TruncateToWidth(fD, sD, L(n.d), maxW), Vec2(tx, math.floor(ry + hh + 1 * s)), FadeColor(C.TextSecondary, a))
+    end
+    local by = rowY + #Sheet.News * math.floor(46 * s) + math.floor(6 * s)
+    Sheet.Buttons(layout, by, a, s, { L("di_wn_continue"), true, "seen" })
+end
+
+function Sheet.RenderBadge(layout)
+    if StateMachine.TargetState ~= StateMachine.States.MENU_IDLE or not Sheet.BadgeOn() then return end
+    local s = layout.scale
+    local r = math.floor(5 * s)
+    local c = Vec2(math.floor(layout.x + layout.w - layout.r * 0.3), math.floor(layout.y + layout.r * 0.3))
+    Render.FilledCircle(c, r + math.floor(2 * s), Color(0, 0, 0, 200), 0, 1.0, 20)
+    Render.FilledCircle(c, r, Config.Colors.Red, 0, 1.0, 20)
+end
+
+function NotifCenter.Add(n)
+    table.insert(NotifCenter.Items, 1, { tag = n.Tag or "", title = n.Title or "", accent = n.AccentColor, fb = n.FallbackSvg, icon = n.Icon, t = os.clock() })
+    while #NotifCenter.Items > 5 do table.remove(NotifCenter.Items) end
+end
+
+function NotifCenter.Height()
+    local n = #NotifCenter.Items
+    if n == 0 then return 96 end
+    return 46 + n * 42 + 6
+end
+
+function NotifCenter.Ago(t)
+    local d = math.max(0, os.clock() - t)
+    if d < 60 then return L("di_nc_now") end
+    if d < 3600 then return string.format(L("di_nc_min"), math.floor(d / 60)) end
+    return string.format(L("di_nc_hour"), math.floor(d / 3600))
+end
+
+function NotifCenter.Render(layout, alphaMul, yOffset)
+    local a = alphaMul or 1
+    local s = layout.scale
+    local C = Config.Colors
+    local pad = math.floor(16 * s)
+    local yOff = yOffset or 0
+    local items = NotifCenter.Items
+    local fH, sH = TF("FootnoteEm", s)
+    local hy = math.floor(layout.y + 16 * s + yOff)
+    Render.Text(fH, sH, L("di_nc_title"), Vec2(layout.x + pad, hy), FadeColor(C.TextSecondary, a))
+
+    if #items == 0 then
+        local fE, sE = TF("Subhead", s)
+        local msg = L("di_nc_empty")
+        local ts = Render.TextSize(fE, sE, msg)
+        Render.Text(fE, sE, msg, Vec2(math.floor(layout.x + (layout.w - ts.x) / 2), math.floor(layout.y + 50 * s + yOff)), FadeColor(C.TextMuted, a))
+        return
+    end
+
+    local clr = L("di_nc_clear")
+    local cs = Render.TextSize(fH, sH, clr)
+    local cx = math.floor(layout.x + layout.w - pad - cs.x)
+    Render.Text(fH, sH, clr, Vec2(cx, hy), FadeColor(C.Blue, a))
+    if a > 0.9 then
+        table.insert(NotifCenter.Hits, { x1 = cx - 6, y1 = hy - 6, x2 = cx + cs.x + 6, y2 = hy + cs.y + 6, action = "nc_clear" })
+    end
+
+    local fT, sT = TF("Caption", s)
+    local fB, sB = TF("Subhead", s)
+    local isz = math.floor(28 * s)
+    local rowY = math.floor(layout.y + 46 * s + yOff)
+    for i, it in ipairs(items) do
+        local ry = rowY + (i - 1) * math.floor(42 * s)
+        local icx, icy = layout.x + pad + isz / 2, ry + isz / 2 + math.floor(2 * s)
+        local accent = it.accent or C.Blue
+        local img = it.icon and GetCachedImage(it.icon) or nil
+        if not img and it.fb and not NotifGlyphs[it.fb] then img = GetCachedImage(nil, it.fb) end
+        if img then
+            Render.Image(img, Vec2(math.floor(icx - isz / 2), math.floor(icy - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), a), math.floor(isz / 2))
+        else
+            Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(accent, a), 0, 1.0, 24)
+            Glyph(it.fb or "bell", icx, icy, math.floor(isz * 0.56), FadeColor(Color(255, 255, 255, 255), a))
+        end
+        local ago = NotifCenter.Ago(it.t)
+        local aw = Render.TextSize(fT, sT, ago).x
+        local tx = layout.x + pad + isz + math.floor(10 * s)
+        local maxW = layout.x + layout.w - pad - tx - aw - math.floor(8 * s)
+        local th = Render.TextSize(fT, sT, "Ag").y
+        Render.Text(fT, sT, TruncateToWidth(fT, sT, it.tag, maxW), Vec2(tx, ry), FadeColor(Impl.OnLight(accent), a))
+        Render.Text(fT, sT, ago, Vec2(math.floor(layout.x + layout.w - pad - aw), ry), FadeColor(C.TextMuted, a))
+        Render.Text(fB, sB, TruncateToWidth(fB, sB, it.title, layout.x + layout.w - pad - tx), Vec2(tx, math.floor(ry + th)), FadeColor(C.TextPrimary, a))
+    end
+end
+
+Demo.Steps = {
+    { s = "COMPACT_IDLE", d = 1.6 },
+    { s = "LARGE_IDLE", d = 2.4 },
+    { s = "NOTIF_CENTER", d = 2.6 },
+    { s = "COMPACT_MEDIA", d = 1.8, media = true },
+    { s = "LARGE_MEDIA", d = 2.8, media = true },
+    { s = "NOTIFICATION", d = 2.4, notif = true },
+    { s = "COURIER_DELIVERY", d = 2.4, courier = true },
+    { s = "COURIER_DELIVERED", d = 2.2, delivered = true },
+    { s = "GAME_PAUSED", d = 2.0, pause = true },
+    { s = "FOCUS_BANNER", d = 2.2, banner = true },
+    { s = "SHEET", d = 3.4, sheet = "whatsnew" }
+}
+
+Demo.MediaKeys = { "HasReceivedData", "Title", "Artist", "LastTrackKey", "IsPlaying", "Duration", "Position", "PosSmooth", "PosTarget", "LastPauseTime" }
+
+function Demo.Start()
+    if Demo.Active then return end
+    local now = os.clock()
+    HUDCustomizer.IsOpen = false
+    local media = {}
+    for _, k in ipairs(Demo.MediaKeys) do media[k] = MediaData[k] end
+    Demo.Saved = {
+        media = media,
+        realMedia = IsMediaActive(),
+        notif = NotificationQueue.Active,
+        notifStart = NotificationQueue.StartTime,
+        eta = CourierTracker.ETA,
+        progress = CourierTracker.Progress,
+        delivered = CourierTracker.DeliveredStartTime,
+        pause = PauseTracker.PauseStartTime,
+        banner = { Focus.BannerOn, Focus.BannerStart, Focus.BannerUntil },
+        kind = Sheet.Kind
+    }
+    NotificationQueue.Active = nil
+    Demo.Notif = {
+        Type = "stack",
+        Tag = L("di_ui_stack"),
+        Title = string.format(L("di_ui_stack_in_n_s"), 10),
+        AccentColor = Color(48, 209, 88, 255),
+        IconType = "svg",
+        FallbackSvg = "stack",
+        Duration = 99,
+        Priority = 1,
+        Chimed = true
+    }
+    Demo.Active = true
+    Demo.Step = 0
+    Demo.Next(now)
+end
+
+function Demo.Next(now)
+    Demo.Step = Demo.Step + 1
+    local st = Demo.Steps[Demo.Step]
+    if not st then
+        Demo.Stop()
+        return
+    end
+    if st.media and not (UI and UI.Media and UI.Media.Enabled:Get()) then
+        return Demo.Next(now)
+    end
+    Demo.At = now
+    if st.media and not Demo.Saved.realMedia then
+        MediaData.HasReceivedData = true
+        MediaData.Title = "Blinding Lights"
+        MediaData.Artist = "The Weeknd"
+        MediaData.LastTrackKey = "demo"
+        MediaData.IsPlaying = true
+        MediaData.Duration = 200
+        MediaData.Position = 63
+        MediaData.PosSmooth = 63
+        MediaData.PosTarget = 63
+    end
+    NotificationQueue.Active = st.notif and Demo.Notif or nil
+    NotificationQueue.StartTime = now
+    if st.courier then
+        CourierTracker.ETA = 14
+        CourierTracker.Progress = 0.55
+    end
+    if st.delivered then CourierTracker.DeliveredStartTime = now end
+    if st.pause then PauseTracker.PauseStartTime = now - 83 end
+    if st.banner then
+        Focus.BannerOn = true
+        Focus.BannerStart = now
+        Focus.BannerUntil = now + st.d
+    end
+    Sheet.Forced = st.sheet
+    if st.sheet then Sheet.Kind = st.sheet end
+    TriggerStateTransition(StateMachine.States[st.s])
+end
+
+function Demo.Tick(now)
+    local st = Demo.Steps[Demo.Step]
+    if not st then
+        Demo.Stop()
+        return
+    end
+    if now - Demo.At >= st.d then
+        Demo.Next(now)
+        return
+    end
+    local target = StateMachine.States[st.s]
+    if StateMachine.TargetState ~= target then TriggerStateTransition(target) end
+end
+
+function Demo.Stop()
+    local sv = Demo.Saved
+    Demo.Active = false
+    Sheet.Forced = nil
+    if not sv then return end
+    for _, k in ipairs(Demo.MediaKeys) do MediaData[k] = sv.media[k] end
+    NotificationQueue.Active = sv.notif
+    NotificationQueue.StartTime = sv.notifStart or os.clock()
+    CourierTracker.ETA = sv.eta
+    CourierTracker.Progress = sv.progress
+    CourierTracker.DeliveredStartTime = sv.delivered
+    PauseTracker.PauseStartTime = sv.pause
+    Focus.BannerOn, Focus.BannerStart, Focus.BannerUntil = sv.banner[1], sv.banner[2], sv.banner[3]
+    Sheet.Kind = sv.kind
+    Demo.Saved = nil
+end
+
 local function RenderStateLayer(state, layout, alphaMul, yOffset)
     if alphaMul <= 0.01 then return end
     if state == StateMachine.States.COMPACT_IDLE then
@@ -9297,6 +9884,10 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
         Journey.RenderMatchFound(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.FOCUS_BANNER then
         Focus.RenderBanner(layout, alphaMul, yOffset)
+    elseif state == StateMachine.States.SHEET then
+        Sheet.Render(layout, alphaMul, yOffset)
+    elseif state == StateMachine.States.NOTIF_CENTER then
+        NotifCenter.Render(layout, alphaMul, yOffset)
     end
 end
 
@@ -9715,6 +10306,8 @@ function DynamicIsland.OnFrame()
 
     Render.PushClip(p1, p2)
 
+    Sheet.Hits = {}
+    NotifCenter.Hits = {}
     Impl.RenderContent(layout, dt)
 
     if VolumeState.Visible and VolumeState.Alpha > 0.01 then
@@ -9723,6 +10316,7 @@ function DynamicIsland.OnFrame()
 
     Render.PopClip()
 
+    Sheet.RenderBadge(layout)
     Impl.RenderSecondarySatelliteBubble(layout)
     Focus.RenderBubble(layout)
     Impl.RenderMenuClosedHint(layout)
@@ -9737,14 +10331,16 @@ function DynamicIsland.OnUpdateEx()
         if HeroData.Local and HeroData.HeroName == "" then
             HeroData.HeroName = NPC.GetUnitName(HeroData.Local)
         end
-        if HeroData.Local then
+        if HeroData.Local and not Demo.Active then
             Impl.ProcessFightDetector()
         end
         Impl.ProcessGameEvents()
         Reminders.Tick()
         Rampage.Tick()
-        Impl.ProcessPauseTracker()
-        Impl.ProcessCourierTracker()
+        if not Demo.Active then
+            Impl.ProcessPauseTracker()
+            Impl.ProcessCourierTracker()
+        end
     else
         if WasInGame then
             WasInGame = false
@@ -9801,12 +10397,14 @@ function DynamicIsland.OnUpdateEx()
     Impl.PollMediaBridge()
     Impl.PollBridgeStatus()
     Impl.PollSystem()
+    Sheet.PollUpdate()
 end
 
 function DynamicIsland.OnScriptsLoaded()
     Impl.LoadScriptFonts()
     Impl.InitMenu()
     Impl.LoadAllConfig()
+    Sheet.ConfigLoaded = true
 
     local inGame = Engine.IsInGame and Engine.IsInGame()
     if inGame then

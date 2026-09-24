@@ -20,6 +20,7 @@ public record StatusResponse(string status, string version, string latest_versio
 [JsonSerializable(typeof(SoundResponse))]
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(SystemInfo))]
+[JsonSerializable(typeof(UpdateStatus))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 
 internal static class AppJson
@@ -45,7 +46,10 @@ internal static class Program
         CleanupOtherInstances();
 
         using var singleInstanceMutex = new Mutex(false, "Global\\DynamicIslandMediaBridge");
-        if (!singleInstanceMutex.WaitOne(0))
+        bool owned;
+        try { owned = singleInstanceMutex.WaitOne(0); }
+        catch (AbandonedMutexException) { owned = true; }
+        if (!owned)
         {
             return;
         }
@@ -203,6 +207,30 @@ internal static class Program
                 if (soundName != null) SoundEngine.Play(soundName, vol, force);
                 await WriteJsonAsync(response, new SoundResponse("ok"), AppJson.Context.SoundResponse);
             }
+            else if (path == "/update/start")
+            {
+                Updater.Start(request.QueryString["dir"]);
+                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
+            }
+            else if (path == "/update/test")
+            {
+                Updater.SetTest(request.QueryString["on"] == "1", request.QueryString["fail"] == "1");
+                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
+            }
+            else if (path == "/update/status")
+            {
+                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
+            }
+            else if (path == "/update/restart")
+            {
+                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
+                _ = Task.Run(async () => { await Task.Delay(300); Updater.Restart(); });
+            }
+            else if (path == "/open")
+            {
+                Updater.OpenReleasePage();
+                await WriteJsonAsync(response, new SoundResponse("ok"), AppJson.Context.SoundResponse);
+            }
             else if (path == "/system")
             {
                 await WriteJsonAsync(response, SystemWatcher.Current, AppJson.Context.SystemInfo);
@@ -213,7 +241,7 @@ internal static class Program
             }
             else if (path == "/status")
             {
-                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync()), AppJson.Context.StatusResponse);
+                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, Updater.TestMode ? "v9.9.9" : UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync()), AppJson.Context.StatusResponse);
             }
             else
             {
