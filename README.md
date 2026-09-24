@@ -2,6 +2,13 @@
 
 iPhone style dynamic island for dota, made for umbrella. one small pill at the top of the screen that shows what matters right now and gets out of the way when nothing does.
 
+## Download
+
+- [script](https://github.com/qhols/DynamicIsland-Dota/releases/latest/download/dynamic_island.lua)
+- [media bridge](https://github.com/qhols/DynamicIsland-Dota/releases/latest/download/media_bridge.exe)
+- [media bridge source](media_bridge)
+- [start the bridge together with dota](docs/autostart.md)
+
 ## What's in it
 
 - clock, kda, gold, net worth, cs, fps, ping, pick what you want and drag them around
