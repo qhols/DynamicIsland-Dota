@@ -373,6 +373,8 @@ local localization = qLocalization.new({
         di_focus_until_match = "When the match ends",
         di_focus_urgent = "Let urgent alerts through",
         di_focus_urgent_tip = "Alerts with priority 5 still show up",
+        di_focus_moon_tint = "Moon in artwork color",
+        di_focus_moon_tint_tip = "While music plays, the Do Not Disturb moon takes the color of the cover",
         di_focus_name = "Do Not Disturb",
         di_focus_on = "On",
         di_focus_off = "Off",
@@ -593,9 +595,11 @@ local localization = qLocalization.new({
         di_ui_controls_hint = "Ctrl + LMB : Drag   •   RMB : Quick HUD",
         di_ui_music = "Music",
         di_ui_fight = "Fight",
+        di_ui_tap = "Tap",
+        di_num_sep = ",",
         di_ui_map = "Map",
-        di_ui_success = "Success!",
-        di_ui_notification = "NOTIFICATION",
+        di_ui_success = "Done",
+        di_ui_notification = "Notification",
         di_ui_track = "Track",
         di_ui_match = "Match ",
         di_tab_general = "General",
@@ -758,6 +762,8 @@ local localization = qLocalization.new({
         di_focus_until_match = "После матча",
         di_focus_urgent = "Пропускать срочные",
         di_focus_urgent_tip = "Оповещения с приоритетом 5 всё равно покажутся",
+        di_focus_moon_tint = "Луна в цвет обложки",
+        di_focus_moon_tint_tip = "Пока играет музыка, луна «Не беспокоить» красится в цвет обложки",
         di_focus_name = "Не беспокоить",
         di_focus_on = "Вкл",
         di_focus_off = "Выкл",
@@ -978,9 +984,11 @@ local localization = qLocalization.new({
         di_ui_controls_hint = "Ctrl + ЛКМ : Перемещение   •   ПКМ : Редактор виджетов",
         di_ui_music = "Музыка",
         di_ui_fight = "Бой",
+        di_ui_tap = "Тап",
+        di_num_sep = "\u{00A0}",
         di_ui_map = "Карта",
-        di_ui_success = "Успешно!",
-        di_ui_notification = "ОПОВЕЩЕНИЕ",
+        di_ui_success = "Готово",
+        di_ui_notification = "Уведомление",
         di_ui_track = "Трек",
         di_ui_match = "Матч ",
         di_tab_general = "Главная",
@@ -1060,7 +1068,7 @@ local localization = qLocalization.new({
         di_media_import_cfg = "Импорт всех настроек из файла",
         di_courier_delivering = "Доставка вещей",
         di_courier_delivered = "Доставлено",
-        di_courier_eta = "ETA",
+        di_courier_eta = "Через",
         di_courier_speed = "Скор.",
         di_courier_hp = "ХП",
         di_island_clock = "Часы",
@@ -1309,6 +1317,8 @@ local Config = {
         FloorHeight = 34
     }
 }
+
+local Impl = {}
 
 local function TF(role, scale)
     local t = Config.Type[role]
@@ -1615,6 +1625,8 @@ local GameTracker = {
 
 local WasInGame = false
 
+local NotifGlyphs = { bell = true, moon = true, swords = true, heart_outline = true, heart_fill = true, stack = true, buyback = true }
+
 local NotificationQueue = {
     List = {},
     Active = nil,
@@ -1684,7 +1696,7 @@ local KeyItemColors = {
     ["item_moon_shard"] = { name = "Moon Shard", col = Color(191, 90, 242, 255) }
 }
 
-local StrictInvisModifiers = {
+Impl.StrictInvisModifiers = {
     ["modifier_item_invisibility_edge_windwalk"] = { name = "Shadow Blade", icon = "panorama/images/items/invis_sword_png.vtex_c", col = Color(191, 90, 242, 255) },
     ["modifier_item_silver_edge_windwalk"] = { name = "Silver Edge", icon = "panorama/images/items/silver_edge_png.vtex_c", col = Color(191, 90, 242, 255) },
     ["modifier_item_smoke_of_deceit"] = { name = "Smoke of Deceit", icon = "panorama/images/items/smoke_of_deceit_png.vtex_c", col = Color(255, 159, 10, 255) },
@@ -1707,7 +1719,7 @@ local RuneInfoList = {
     [Enum.RuneType.DOTA_RUNE_SHIELD] = { name = "di_rune_names_shield", col = Color(255, 214, 10, 255), path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield" }
 }
 
-local RuneModifierMap = {
+Impl.RuneModifierMap = {
     ["modifier_rune_doubledamage"] = Enum.RuneType.DOTA_RUNE_DOUBLEDAMAGE,
     ["modifier_rune_haste"] = Enum.RuneType.DOTA_RUNE_HASTE,
     ["modifier_rune_regen"] = Enum.RuneType.DOTA_RUNE_REGENERATION,
@@ -1718,7 +1730,7 @@ local RuneModifierMap = {
     ["modifier_rune_illusion"] = Enum.RuneType.DOTA_RUNE_ILLUSION
 }
 
-local MapLandmarks = {
+Impl.MapLandmarks = {
     { name = "di_landmarks_top_roshan_river", pos = { x = -2400, y = 1800 } },
     { name = "di_landmarks_bot_roshan_river", pos = { x = 2400, y = -1800 } },
     { name = "di_landmarks_top_river_rune", pos = { x = -1600, y = 1200 } },
@@ -1758,7 +1770,7 @@ local VectorIcons = {
     ["rune_regen"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#4CAF50"/><path fill="#FFF" d="M12 19.5l-1.2-1.1C6.5 14.5 3.5 11.8 3.5 8.5 3.5 5.8 5.6 3.7 8.3 3.7c1.5 0 3 .7 3.7 1.8.7-1.1 2.2-1.8 3.7-1.8 2.7 0 4.8 2.1 4.8 4.8 0 3.3-3 6-7.3 9.9L12 19.5z"/></svg>',
     ["rune_arcane"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#E91E63"/><path fill="#FFF" d="M13.5 2s.7 2.3.7 4.2c0 1.8-1.2 3.3-3 3.3-1.8 0-3.2-1.5-3.2-3.3l.03-.3C5.5 7.8 4.5 10.5 4.5 13.5c0 3.9 3.1 7 7 7s7-3.1 7-7c0-4.7-2.3-8.9-5-11.5z"/></svg>',
     ["rune_shield"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#FFC107"/><path fill="#FFF" d="M12 3L4.5 6.5v5.3c0 4.9 3.4 9.5 7.5 10.7 4.1-1.2 7.5-5.8 7.5-10.7V6.5L12 3z"/></svg>',
-    ["buyback"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD700" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>',
+    ["buyback"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 3.8v4.2h-4.2" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["swords"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4.5 4.5 14 14" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 16.5l5-5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 15.5l4 4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 4.5 10 14" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 16.5l-5-5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 15.5l-4 4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["flame"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M12 2C9.5 5.5 8 8.5 8 11.5c0 1.2.3 2.3.8 3.3-.5-.4-.9-.9-1.2-1.5-.4-.9-.6-1.9-.6-2.9C5.3 12.2 4 14.5 4 17c0 4.4 3.6 8 8 8s8-3.6 8-8c0-4.5-3.5-8.5-8-15zm1 18.5c-2.5 0-4.5-2-4.5-4.5 0-1.5.8-2.9 2-3.7.3.8.8 1.5 1.5 2 .7.5 1.5.8 2.4.8.4 0 .7-.1 1.1-.2-.4 3.2-2.3 5.6-2.5 5.6z"/></svg>',
     ["media_prev"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M11.5 7.3v9.4c0 .8-.9 1.3-1.6.9L2.8 13c-.7-.4-.7-1.5 0-1.9l7.1-4.6c.7-.5 1.6 0 1.6.8z" fill="#FFF"/><path d="M21.5 7.3v9.4c0 .8-.9 1.3-1.6.9L12.8 13c-.7-.4-.7-1.5 0-1.9l7.1-4.6c.7-.5 1.6 0 1.6.8z" fill="#FFF"/></svg>',
@@ -1784,6 +1796,7 @@ local VectorIcons = {
     ["check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="#FFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
     ["bolt"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M13.6 2.2 4.8 13.1a.8.8 0 0 0 .6 1.3h5.4l-1.2 7.1c-.1.7.8 1.1 1.2.5l8.7-10.9a.8.8 0 0 0-.6-1.3h-5.4l1.2-7.1c.1-.7-.8-1.1-1.1-.5z" fill="#FFF"/></svg>',
+    ["music"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M18.5 3.6v11.2a3.1 3.1 0 1 1-1.8-2.8V7.9l-7.4 1.9v7.3a3.1 3.1 0 1 1-1.8-2.8V6.3c0-.6.4-1.1 1-1.3l8.9-2.3c.6-.1 1.1.3 1.1.9z" fill="#FFF"/></svg>',
     ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3A6.364 6.364 0 0 0 21 12A9 9 0 1 1 12 3Z" fill="#FFFFFF"/></svg>',
     ["bell"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3a6 6 0 0 0-6 6v4.3L4.4 16v1.2h15.2V16L18 13.3V9a6 6 0 0 0-6-6z" fill="#FFFFFF"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0z" fill="#FFFFFF"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
@@ -1791,7 +1804,7 @@ local VectorIcons = {
     ["volume"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 9.8A1.3 1.3 0 0 1 4.8 8.5h2.6l4.3-3.7c.7-.6 1.8-.1 1.8.8v12.8c0 .9-1.1 1.4-1.8.8l-4.3-3.7H4.8a1.3 1.3 0 0 1-1.3-1.3z" fill="#FFF"/><path d="M16.3 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6.5a7.8 7.8 0 0 1 0 11" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["mute"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 9.8A1.3 1.3 0 0 1 4.8 8.5h2.6l4.3-3.7c.7-.6 1.8-.1 1.8.8v12.8c0 .9-1.1 1.4-1.8.8l-4.3-3.7H4.8a1.3 1.3 0 0 1-1.3-1.3z" fill="#FFF"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["apple_check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#34C759" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.2 15.2l-4.5-4.5 1.41-1.41 3.09 3.08 7.09-7.09 1.41 1.41-8.5 8.51z"/></svg>',
-    ["stack"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10.5" fill="#30B350"/><path d="M12 5.8l5.6 2.8-5.6 2.8-5.6-2.8z" fill="#FFF"/><path d="M6.4 12l5.6 2.8 5.6-2.8M6.4 15.2l5.6 2.8 5.6-2.8" fill="none" stroke="#FFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    ["stack"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3.8l7.2 3.6L12 11 4.8 7.4z" fill="#FFF"/><path d="M4.8 11.6 12 15.2l7.2-3.6" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.8 15.6 12 19.2l7.2-3.6" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 }
 
 local PowerRunesCycleList = {
@@ -1816,9 +1829,9 @@ local function CleanUnescapedString(s)
     return res
 end
 
-local ConfigSavePaths = { "dynamic_island_config.json", "C:/Umbrella/scripts/dynamic_island_config.json", "scripts/dynamic_island_config.json" }
+Impl.ConfigSavePaths = { "dynamic_island_config.json", "C:/Umbrella/scripts/dynamic_island_config.json", "scripts/dynamic_island_config.json" }
 
-local PALETTE = {
+Impl.PALETTE = {
     { r = 255, g = 69,  b = 58,  hex = "FF453A" },
     { r = 255, g = 159, b = 10,  hex = "FF9F0A" },
     { r = 255, g = 214, b = 10,  hex = "FFD60A" },
@@ -1830,7 +1843,7 @@ local PALETTE = {
     { r = 255, g = 255, b = 255, hex = "FFFFFF" }
 }
 
-local function HexToColor(hex)
+function Impl.HexToColor(hex)
     if not hex or #hex < 6 then return nil end
     local r = tonumber(string.sub(hex, 1, 2), 16)
     local g = tonumber(string.sub(hex, 3, 4), 16)
@@ -1913,7 +1926,7 @@ local function RGBtoHue(r, g, b)
 end
 
 local function SaveAllConfig()
-    local paths = ConfigSavePaths
+    local paths = Impl.ConfigSavePaths
     for _, path in ipairs(paths) do
         local f = io.open(path, "w")
         if f then
@@ -2030,8 +2043,8 @@ local function SaveAllConfig()
     end
 end
 
-local function LoadAllConfig()
-    local paths = ConfigSavePaths
+function Impl.LoadAllConfig()
+    local paths = Impl.ConfigSavePaths
     local f = nil
     for _, path in ipairs(paths) do
         f = io.open(path, "r")
@@ -2064,7 +2077,7 @@ local function LoadAllConfig()
                 end
                 if hexStr and #hexStr == 6 then
                     HUDCustomizer.WidgetConfigs[id].customHex = hexStr
-                    HUDCustomizer.WidgetConfigs[id].customColor = HexToColor(hexStr)
+                    HUDCustomizer.WidgetConfigs[id].customColor = Impl.HexToColor(hexStr)
                 end
             elseif UI then
                 local wSec, wName, wVal = string.match(line, "^w_([%w_]+)%.([%w_]+)=(.*)$")
@@ -2194,10 +2207,10 @@ end
 
 local function GetVectorIcon(name)
     if not name or not VectorIcons[name] then return nil end
-    local cacheKey = "svg_apple_v37_" .. name
+    local cacheKey = "svg_apple_v39_" .. name
     local h = ImageCache[cacheKey]
     if h ~= nil then return h or nil end
-    local ok, handle = pcall(Render.LoadSvgString, VectorIcons[name], Vec2(48, 48), "vec_sym_apple_v37_" .. name)
+    local ok, handle = pcall(Render.LoadSvgString, VectorIcons[name], Vec2(48, 48), "vec_sym_apple_v39_" .. name)
     if ok and handle and handle ~= 0 then
         ImageCache[cacheKey] = handle
         return handle
@@ -2228,7 +2241,7 @@ local function GetCachedImage(path, fallbackSvgKey)
     return nil
 end
 
-local function LoadScriptFonts()
+function Impl.LoadScriptFonts()
     local aa = Enum.FontCreate.FONTFLAG_ANTIALIAS
     Config.Fonts.Regular = Render.LoadFont("SF Pro Text", aa, 400)
     Config.Fonts.Medium = Render.LoadFont("SF Pro Text", aa, 500)
@@ -2570,7 +2583,7 @@ function Haptic.ApplyTransform(layout)
     layout.h = newH
 end
 
-local function InitMenu()
+function Impl.InitMenu()
     local tab = Menu.Create("General", "Dynamic Island", "Dynamic Island")
     tab:Icon("\u{f0eb}")
     local extra = Menu.Create("General", "Dynamic Island", "Dynamic Island Extra")
@@ -2640,7 +2653,7 @@ local function InitMenu()
         SaveAllConfig()
     end)
     M.ImportCfg = gMore:Button("di_media_import_cfg", function()
-        LoadAllConfig()
+        Impl.LoadAllConfig()
     end)
 
     M.Preset = gIsland:Combo("di_main_preset", { "di_preset_top_center", "di_preset_custom", "di_preset_top_left", "di_preset_top_right", "di_preset_screen_center", "di_preset_bottom_center" }, 0)
@@ -2823,6 +2836,8 @@ local function InitMenu()
     UI.Focus.Until:Icon("\u{f017}")
     UI.Focus.Urgent = gFocus:Switch("di_focus_urgent", true, "\u{f0f3}")
     UI.Focus.Urgent:ToolTip("di_focus_urgent_tip")
+    UI.Focus.MoonTint = gFocus:Switch("di_focus_moon_tint", true, "\u{f53f}")
+    UI.Focus.MoonTint:ToolTip("di_focus_moon_tint_tip")
 
     local RM = UI.Reminders
     for i, key in ipairs({ "di_rem_1", "di_rem_2", "di_rem_3", "di_rem_4" }) do
@@ -2974,14 +2989,14 @@ local function TriggerStateTransition(nextState)
     end
 end
 
-local CleanHeroNameCache = {}
+Impl.CleanHeroNameCache = {}
 local function CleanHeroName(raw)
     if not raw or raw == "" then return L("di_ui_enemy_hero") end
-    if CleanHeroNameCache[raw] then return CleanHeroNameCache[raw] end
+    if Impl.CleanHeroNameCache[raw] then return Impl.CleanHeroNameCache[raw] end
     if Engine.GetDisplayNameByUnitName then
         local ok, dn = pcall(Engine.GetDisplayNameByUnitName, raw)
         if ok and dn and dn ~= "" then
-            CleanHeroNameCache[raw] = dn
+            Impl.CleanHeroNameCache[raw] = dn
             return dn
         end
     end
@@ -3012,7 +3027,7 @@ local function CleanHeroName(raw)
     elseif formatted == "Abyssal Underlord" then formatted = "Underlord"
     elseif formatted == "Vengefulspirit" then formatted = "Vengeful Spirit"
     end
-    CleanHeroNameCache[raw] = formatted
+    Impl.CleanHeroNameCache[raw] = formatted
     return formatted
 end
 
@@ -3033,7 +3048,7 @@ local function GetPlayerDisplayName(ent)
     return CleanHeroName(NPC.GetUnitName(ent))
 end
 
-local TowerNameMap = {
+Impl.TowerNameMap = {
     ["goodguys_tower1_mid"] = "di_towers_goodguys_tower1_mid",
     ["goodguys_tower2_mid"] = "di_towers_goodguys_tower2_mid",
     ["goodguys_tower3_mid"] = "di_towers_goodguys_tower3_mid",
@@ -3054,7 +3069,7 @@ local TowerNameMap = {
     ["badguys_tower3_bot"] = "di_towers_badguys_tower3_bot"
 }
 
-local function GetClosestLandmark(pos)
+function Impl.GetClosestLandmark(pos)
     if not pos then return L("di_ui_lane") end
 
     if Towers and Towers.GetAll then
@@ -3069,7 +3084,7 @@ local function GetClosestLandmark(pos)
                 local d = dx * dx + dy * dy
                 if d < bestTowerDist then
                     local rawName = NPC.GetUnitName(tw) or ""
-                    for key, entry in pairs(TowerNameMap) do
+                    for key, entry in pairs(Impl.TowerNameMap) do
                         if string.find(rawName, key) then
                             bestTowerDist = d
                             bestTowerName = L(entry)
@@ -3084,7 +3099,7 @@ local function GetClosestLandmark(pos)
 
     local closestName = L("di_ui_lane")
     local closestDist = 999999999
-    for _, lm in ipairs(MapLandmarks) do
+    for _, lm in ipairs(Impl.MapLandmarks) do
         local dx = pos.x - lm.pos.x
         local dy = pos.y - lm.pos.y
         local d = dx * dx + dy * dy
@@ -3096,12 +3111,12 @@ local function GetClosestLandmark(pos)
     return closestName
 end
 
-local CleanItemNameCache = {}
-local function CleanItemName(raw)
+Impl.CleanItemNameCache = {}
+function Impl.CleanItemName(raw)
     if not raw or raw == "" then return "" end
-    if CleanItemNameCache[raw] then return CleanItemNameCache[raw] end
+    if Impl.CleanItemNameCache[raw] then return Impl.CleanItemNameCache[raw] end
     if KeyItemColors[raw] then
-        CleanItemNameCache[raw] = KeyItemColors[raw].name
+        Impl.CleanItemNameCache[raw] = KeyItemColors[raw].name
         return KeyItemColors[raw].name
     end
     local name = raw
@@ -3115,17 +3130,17 @@ local function CleanItemName(raw)
         table.insert(res, cap)
     end
     local result = table.concat(res, " ")
-    CleanItemNameCache[raw] = result
+    Impl.CleanItemNameCache[raw] = result
     return result
 end
 
-local function GetItemSignatureColor(rawItemName)
+function Impl.GetItemSignatureColor(rawItemName)
     if not rawItemName or rawItemName == "" then return Config.Colors.Blue end
     if KeyItemColors[rawItemName] then return KeyItemColors[rawItemName].col end
     return Config.Colors.Blue
 end
 
-local function GetItemTexturePath(rawItemName)
+function Impl.GetItemTexturePath(rawItemName)
     if not rawItemName or rawItemName == "" then return nil end
     local clean = rawItemName
     if string.sub(clean, 1, 5) == "item_" then
@@ -3138,7 +3153,7 @@ local function FormatTime(seconds)
     local s = math.max(0, math.floor(seconds or 0))
     local m = math.floor(s / 60)
     local rem = s % 60
-    return string.format("%02d:%02d", m, rem)
+    return string.format("%d:%02d", m, rem)
 end
 
 local function FormatNegativeTime(seconds)
@@ -3150,7 +3165,7 @@ end
 
 local IsNotifDeferred
 
-local NotifPriorityKey = {
+Impl.NotifPriorityKey = {
     stack = "Stack",
     roshan_kill = "RoshanKill",
     aegis = "Aegis",
@@ -3178,7 +3193,7 @@ local NotifPriorityKey = {
 
 local DEFAULT_NOTIF_PRIORITY = 3
 
-local NotifDurationKey = {
+Impl.NotifDurationKey = {
     stack = "Stack",
     roshan_kill = "Roshan",
     aegis = "Roshan",
@@ -3204,11 +3219,11 @@ local NotifDurationKey = {
     reminder = "Reminder"
 }
 
-local function GetNotifPriority(notif)
+function Impl.GetNotifPriority(notif)
     if notif.PriorityOverride then
         return notif.PriorityOverride
     end
-    local key = notif.Type and NotifPriorityKey[notif.Type]
+    local key = notif.Type and Impl.NotifPriorityKey[notif.Type]
     local widget = key and UI and UI.Priority and UI.Priority[key]
     if widget then
         return widget:Get()
@@ -3216,7 +3231,7 @@ local function GetNotifPriority(notif)
     return DEFAULT_NOTIF_PRIORITY
 end
 
-local function PopHighestPriorityNotif()
+function Impl.PopHighestPriorityNotif()
     local list = NotificationQueue.List
     if #list == 0 then return nil end
     local bestIdx, bestPriority = 1, list[1].Priority or DEFAULT_NOTIF_PRIORITY
@@ -3233,7 +3248,7 @@ function DynamicIsland.PushNotification(notif)
     if not notif then return end
     if notif.Type == "neutral" and UI and UI.Runes and UI.Runes.Neutrals and not UI.Runes.Neutrals:Get() then return end
     local shared = (UI and UI.Timings and UI.Timings.ToastDuration) and UI.Timings.ToastDuration:Get() or 4
-    local durKey = notif.Type and NotifDurationKey[notif.Type]
+    local durKey = notif.Type and Impl.NotifDurationKey[notif.Type]
     if durKey then
         local dw = UI and UI.Durations and UI.Durations[durKey]
         local own = dw and dw:Get() or 0
@@ -3244,7 +3259,7 @@ function DynamicIsland.PushNotification(notif)
     if notif.MaxDuration then
         notif.Duration = math.min(notif.Duration, notif.MaxDuration)
     end
-    notif.Priority = GetNotifPriority(notif)
+    notif.Priority = Impl.GetNotifPriority(notif)
     if Focus.Blocks(notif) then
         Focus.Suppressed = Focus.Suppressed + 1
         return
@@ -3378,7 +3393,7 @@ local function SendMediaCommand(cmd)
     end, "media_cmd")
 end
 
-local function GetScriptRelPath()
+function Impl.GetScriptRelPath()
     if Engine and Engine.GetCheatDirectory then
         local ok, cd = pcall(Engine.GetCheatDirectory)
         if ok and cd and cd ~= "" then
@@ -3390,7 +3405,7 @@ local function GetScriptRelPath()
     return "../../../../../../../../Umbrella/scripts/"
 end
 
-local function TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
+function Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
     if not curVer or curVer <= 0 then return nil end
     if coverBase64 and coverBase64 ~= "" then
         local vStr = tostring(curVer)
@@ -3443,7 +3458,7 @@ local function IsMediaActive()
     return false
 end
 
-local function AdvancePosition(dt)
+function Impl.AdvancePosition(dt)
     SeekDrag.Grow, SeekDrag.GrowVel = MotionEngine.Step(SeekDrag.Grow, SeekDrag.GrowVel, SeekDrag.Active and 1 or 0, dt, "SNAPPY")
     if MediaData.IsPlaying then
         MediaData.PosSmooth = MediaData.PosSmooth + dt
@@ -3465,7 +3480,7 @@ IsNotifDeferred = function(notif)
     return (notif.Priority or DEFAULT_NOTIF_PRIORITY) <= UI.Priority.Media:Get()
 end
 
-local function PollMediaBridge()
+function Impl.PollMediaBridge()
     if not UI or not UI.Media.Enabled:Get() then return end
     local clk = os.clock()
     if clk - MediaData.LastPollTime < MediaData.PollInterval then return end
@@ -3617,7 +3632,7 @@ local function PollMediaBridge()
         if curVer ~= MediaData.CoverVersion or not MediaData.CoverImageHandle then
             MediaData.CoverVersion = curVer
             if hasCover and curVer > 0 then
-                local img = TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
+                local img = Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
                 if img then
                     MediaData.CoverImageHandle = img
                     MediaData.CoverHandleSetAt = os.clock()
@@ -3629,7 +3644,7 @@ local function PollMediaBridge()
     end, "media_poll")
 end
 
-local function PollBridgeStatus()
+function Impl.PollBridgeStatus()
     local clk = os.clock()
     if clk - BridgeStatus.LastPoll < 3.0 then return end
     BridgeStatus.LastPoll = clk
@@ -3646,21 +3661,21 @@ local function PollBridgeStatus()
     end, "bridge_status")
 end
 
-local function ParseVersion(s)
+function Impl.ParseVersion(s)
     if not s or s == "" then return nil end
     local a, b, c = string.match(s, "^[vV]?(%d+)%.(%d+)%.?(%d*)")
     if not a then return nil end
     return { tonumber(a), tonumber(b), tonumber(c) or 0 }
 end
 
-local function VersionLess(x, y)
+function Impl.VersionLess(x, y)
     for i = 1, 3 do
         if x[i] ~= y[i] then return x[i] < y[i] end
     end
     return false
 end
 
-local function CollectStatusHints()
+function Impl.CollectStatusHints()
     local out = {}
     local clk = os.clock()
     local online = BridgeStatus.LastOk > 0 and (clk - BridgeStatus.LastOk) < 7.0
@@ -3675,18 +3690,18 @@ local function CollectStatusHints()
         table.insert(out, { text = L("di_ui_spotify_no_port"), dot = Color(255, 159, 10, 255) })
     end
 
-    local latest = ParseVersion(BridgeStatus.Latest)
+    local latest = Impl.ParseVersion(BridgeStatus.Latest)
     if latest then
-        local mine = ParseVersion(SCRIPT_VERSION)
-        local bridge = ParseVersion(BridgeStatus.Version)
-        if (mine and VersionLess(mine, latest)) or (bridge and VersionLess(bridge, latest)) then
+        local mine = Impl.ParseVersion(SCRIPT_VERSION)
+        local bridge = Impl.ParseVersion(BridgeStatus.Version)
+        if (mine and Impl.VersionLess(mine, latest)) or (bridge and Impl.VersionLess(bridge, latest)) then
             table.insert(out, { text = L("di_ui_update_available") .. BridgeStatus.Latest, dot = Color(10, 132, 255, 255) })
         end
     end
     return out
 end
 
-local function ProcessFightDetector()
+function Impl.ProcessFightDetector()
     if not UI or not UI.Combat or not UI.Combat.FightHUD:Get() then
         if FightTracker.Active then
             FightTracker.Active = false
@@ -3846,7 +3861,7 @@ local function ProcessFightDetector()
         FightTracker.Enemies = bestCluster.enemies
         FightTracker.AllyCount = #bestCluster.allies
         FightTracker.EnemyCount = #bestCluster.enemies
-        FightTracker.Landmark = GetClosestLandmark(bestCluster.center)
+        FightTracker.Landmark = Impl.GetClosestLandmark(bestCluster.center)
 
         if not FightTracker.Active then
             FightTracker.Active = true
@@ -3931,7 +3946,7 @@ local function ProcessFightDetector()
     end
 end
 
-local function ProcessGameEvents()
+function Impl.ProcessGameEvents()
     local now = GameRules.GetGameTime()
     if now - GameTracker.LastScanTime < 0.1 then return end
     GameTracker.LastScanTime = now
@@ -4059,7 +4074,7 @@ local function ProcessGameEvents()
                         if it then
                             local iname = Ability.GetName(it)
                             if iname and iname ~= "" then
-                                table.insert(HeroData.LastKilled.Items, CleanItemName(iname))
+                                table.insert(HeroData.LastKilled.Items, Impl.CleanItemName(iname))
                             end
                         end
                     end
@@ -4101,7 +4116,7 @@ local function ProcessGameEvents()
                         if rawName and KeyItemColors[rawName] and not HeroData.EnemyInventoryCache[hId][rawName] then
                             HeroData.EnemyInventoryCache[hId][rawName] = true
                             local hName = CleanHeroName(NPC.GetUnitName(h))
-                            local itemCol = GetItemSignatureColor(rawName)
+                            local itemCol = Impl.GetItemSignatureColor(rawName)
                             DynamicIsland.PushNotification({
                                 Type = "enemy_item",
                                 Tag = L("di_ui_item_alert"),
@@ -4109,7 +4124,7 @@ local function ProcessGameEvents()
                                 Subtitle = hName .. L("di_ui_purchased_item"),
                                 AccentColor = itemCol,
                                 IconType = "item",
-                                Icon = GetItemTexturePath(rawName),
+                                Icon = Impl.GetItemTexturePath(rawName),
                                 Duration = 4.0
                             })
                         end
@@ -4507,7 +4522,7 @@ function DynamicIsland.OnModifierCreate(ent, mod)
     local isEnemy = not Entity.IsSameTeam(my, ent)
 
     if isHero and UI.Runes.RunePickups:Get() then
-        local rType = RuneModifierMap[mn]
+        local rType = Impl.RuneModifierMap[mn]
         if rType then
             local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 214, 10, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
             local hName = GetPlayerDisplayName(ent)
@@ -4527,7 +4542,7 @@ function DynamicIsland.OnModifierCreate(ent, mod)
     end
 
     if isHero and isEnemy and UI.Combat.Invis:Get() then
-        local d = StrictInvisModifiers[mn]
+        local d = Impl.StrictInvisModifiers[mn]
         if d then
             local heroName = GetPlayerDisplayName(ent)
             DynamicIsland.PushNotification({
@@ -4548,7 +4563,7 @@ function DynamicIsland.OnModifierCreate(ent, mod)
     if isHero and isEnemy and UI.Combat.Teleports:Get() and mn == "modifier_teleporting" then
         local heroName = GetPlayerDisplayName(ent)
         local targetPos = Entity.GetAbsOrigin(ent)
-        local landmark = GetClosestLandmark(targetPos)
+        local landmark = Impl.GetClosestLandmark(targetPos)
         DynamicIsland.PushNotification({
             Type = "teleport",
             Tag = L("di_ui_teleport_warning"),
@@ -4787,14 +4802,14 @@ local function GetChipContent(chipId)
         if cfg.format == 2 then txt = string.format("%d/%d", HeroData.Kills, HeroData.Deaths) end
         return { isClock = false, svgKey = svgKey, text = txt, font = font, color = col }
     elseif chipId == "gold" then
-        local txt = string.format("%d", HeroData.Gold)
-        if cfg.format == 1 then txt = string.format("%d G", HeroData.Gold)
+        local txt = Odometer.Group(HeroData.Gold)
+        if cfg.format == 1 then txt = Odometer.Group(HeroData.Gold) .. " G"
         elseif cfg.format == 3 then txt = string.format("%.1fk G", HeroData.Gold / 1000.0) end
         return { isClock = false, svgKey = svgKey, text = txt, font = font, color = col }
     elseif chipId == "networth" then
         local txt = HeroData.NetWorth > 0 and string.format("%.1fk NW", HeroData.NetWorth / 1000.0) or string.format("%d NW", HeroData.Gold)
         if cfg.format == 2 then txt = HeroData.NetWorth > 0 and string.format("%.1fk", HeroData.NetWorth / 1000.0) or string.format("%d", HeroData.Gold)
-        elseif cfg.format == 3 then txt = string.format("%d NW", HeroData.NetWorth) end
+        elseif cfg.format == 3 then txt = Odometer.Group(HeroData.NetWorth) .. " NW" end
         return { isClock = false, svgKey = svgKey, text = txt, font = font, color = col }
     elseif chipId == "lasthits" then
         local txt = string.format("%d LH", HeroData.LastHits)
@@ -4821,7 +4836,7 @@ local function GetChipContent(chipId)
     return { isClock = false, svgKey = nil, text = "Chip", font = font, color = col }
 end
 
-local function HasFindingMatchClass(panel)
+function Impl.HasFindingMatchClass(panel)
     local cur = panel
     local depth = 0
     while cur and cur:IsValid() and depth < 6 do
@@ -4834,14 +4849,14 @@ local function HasFindingMatchClass(panel)
     return false
 end
 
-local function GetMatchSearchInfo()
+function Impl.GetMatchSearchInfo()
     if not Panorama or not Panorama.GetPanelByName then
         return false, "0:00"
     end
 
     local isSearching = false
     local p = Panorama.GetPanelByName("SearchingTime", false)
-    if p and p:IsValid() and HasFindingMatchClass(p) then
+    if p and p:IsValid() and Impl.HasFindingMatchClass(p) then
         isSearching = true
     end
 
@@ -4902,7 +4917,7 @@ function Journey.IdleTexts()
 end
 
 function Journey.SearchTexts()
-    local _, timeStr = GetMatchSearchInfo()
+    local _, timeStr = Impl.GetMatchSearchInfo()
     return L("di_ui_finding_match"), (timeStr and timeStr ~= "") and timeStr or "0:00"
 end
 
@@ -4927,23 +4942,23 @@ local function CalculateIdleContentWidth(scale)
     return totalW
 end
 
-local function IsChipInActiveList(chipId)
+function Impl.IsChipInActiveList(chipId)
     for _, id in ipairs(HUDCustomizer.ActiveChips) do
         if id == chipId then return true end
     end
     return false
 end
 
-local function ChipAnim(chipId)
+function Impl.ChipAnim(chipId)
     local a = HUDCustomizer.Anim.Chips[chipId]
     if not a then
-        a = { fill = IsChipInActiveList(chipId) and 1 or 0, fillVel = 0, scale = 1, scaleVel = 0 }
+        a = { fill = Impl.IsChipInActiveList(chipId) and 1 or 0, fillVel = 0, scale = 1, scaleVel = 0 }
         HUDCustomizer.Anim.Chips[chipId] = a
     end
     return a
 end
 
-local function ToggleChipInActiveList(chipId)
+function Impl.ToggleChipInActiveList(chipId)
     local foundIdx = nil
     for idx, id in ipairs(HUDCustomizer.ActiveChips) do
         if id == chipId then
@@ -4961,12 +4976,12 @@ local function ToggleChipInActiveList(chipId)
     else
         table.insert(HUDCustomizer.ActiveChips, chipId)
     end
-    local a = ChipAnim(chipId)
+    local a = Impl.ChipAnim(chipId)
     a.scale, a.scaleVel = 0.86, -2.2
     SaveAllConfig()
 end
 
-local function GetFountainPosition(hero, courier)
+function Impl.GetFountainPosition(hero, courier)
     if CourierTracker.BasePos then
         return CourierTracker.BasePos
     end
@@ -4989,7 +5004,7 @@ local function GetFountainPosition(hero, courier)
     end
 end
 
-local function GetLocalCourier()
+function Impl.GetLocalCourier()
     if Couriers and Couriers.GetLocal then
         local ok, c = pcall(Couriers.GetLocal)
         if ok and c and Entity.IsAlive(c) then
@@ -5038,7 +5053,7 @@ local function GetLocalCourier()
     return nil
 end
 
-local function ProcessPauseTracker()
+function Impl.ProcessPauseTracker()
     local paused = GameRules.IsPaused and GameRules.IsPaused() or false
     if paused then
         if not PauseTracker.IsPaused then
@@ -5066,13 +5081,13 @@ function DynamicIsland.OnPrepareUnitOrders(data)
                 CourierTracker.Delivering = true
                 CourierTracker.Delivered = false
                 CourierTracker.Progress = 0.0
-                local c = GetLocalCourier()
+                local c = Impl.GetLocalCourier()
                 local myHero = HeroData.Local or (Heroes and Heroes.GetLocal and Heroes.GetLocal())
                 local dist = 1000
                 if c and myHero then
                     local cO = Entity.GetAbsOrigin(c)
                     local hO = Entity.GetAbsOrigin(myHero)
-                    local basePos = GetFountainPosition(myHero, c)
+                    local basePos = Impl.GetFountainPosition(myHero, c)
                     local cState = Courier.GetCourierState and Courier.GetCourierState(c) or 0
                     local isAtBase = (cState == Enum.CourierState.COURIER_STATE_AT_BASE or cState == 1)
                     local hasStash = false
@@ -5168,7 +5183,7 @@ function DynamicIsland.OnPrepareUnitOrders(data)
     return true
 end
 
-local function ProcessCourierTracker()
+function Impl.ProcessCourierTracker()
     local isEnabled = true
     if UI and UI.Combat and UI.Combat.CourierDelivery then
         isEnabled = UI.Combat.CourierDelivery:Get()
@@ -5194,7 +5209,7 @@ local function ProcessCourierTracker()
         end
     end
 
-    local c = GetLocalCourier()
+    local c = Impl.GetLocalCourier()
     if not c or not Entity.IsAlive(c) then
         return
     end
@@ -5229,7 +5244,7 @@ local function ProcessCourierTracker()
 
     local cOrigin = Entity.GetAbsOrigin(c)
     local hOrigin = myHero and Entity.GetAbsOrigin(myHero)
-    local basePos = GetFountainPosition(myHero, c)
+    local basePos = Impl.GetFountainPosition(myHero, c)
     local distHero = (cOrigin and hOrigin) and (cOrigin - hOrigin):Length() or 0
     local distBase = (cOrigin and basePos) and (cOrigin - basePos):Length() or 0
     local distBaseToHero = (basePos and hOrigin) and (basePos - hOrigin):Length() or 0
@@ -5247,7 +5262,7 @@ local function ProcessCourierTracker()
                     hasStashItems = true
                     table.insert(stashItems, {
                         name = name,
-                        icon = GetItemTexturePath(name)
+                        icon = Impl.GetItemTexturePath(name)
                     })
                 end
             end
@@ -5264,7 +5279,7 @@ local function ProcessCourierTracker()
                 itemCount = itemCount + 1
                 table.insert(items, {
                     name = name,
-                    icon = GetItemTexturePath(name)
+                    icon = Impl.GetItemTexturePath(name)
                 })
             end
         end
@@ -5448,7 +5463,7 @@ function DynamicIsland.OnKeyEvent(data)
     return true
 end
 
-local function HandleInteractions()
+function Impl.HandleInteractions()
     if not UI or not UI.Main.Enabled:Get() then return end
 
     local nowClk = os.clock()
@@ -5495,7 +5510,7 @@ local function HandleInteractions()
             NotificationQueue.LastDismissed = NotificationQueue.Active
             NotificationQueue.Active = nil
             if #NotificationQueue.List > 0 then
-                NotificationQueue.Active = PopHighestPriorityNotif()
+                NotificationQueue.Active = Impl.PopHighestPriorityNotif()
                 NotificationQueue.StartTime = nowClk
                 if not IsNotifDeferred(NotificationQueue.Active) then
                     TriggerStateTransition(StateMachine.States.NOTIFICATION)
@@ -5510,7 +5525,7 @@ local function HandleInteractions()
             end
         end
     elseif #NotificationQueue.List > 0 then
-        NotificationQueue.Active = PopHighestPriorityNotif()
+        NotificationQueue.Active = Impl.PopHighestPriorityNotif()
         NotificationQueue.StartTime = nowClk
         if not IsNotifDeferred(NotificationQueue.Active) then
             TriggerStateTransition(StateMachine.States.NOTIFICATION)
@@ -5681,7 +5696,7 @@ local function HandleInteractions()
                     NotificationQueue.LastDismissed = NotificationQueue.Active
                     NotificationQueue.Active = nil
                     if #NotificationQueue.List > 0 then
-                        NotificationQueue.Active = PopHighestPriorityNotif()
+                        NotificationQueue.Active = Impl.PopHighestPriorityNotif()
                         NotificationQueue.StartTime = nowClk
                     end
                 else
@@ -5710,7 +5725,7 @@ local function HandleInteractions()
             Haptic.State.GlowColor = Color(255, 255, 255, 255)
         end
         if #NotificationQueue.List > 0 then
-            NotificationQueue.Active = PopHighestPriorityNotif()
+            NotificationQueue.Active = Impl.PopHighestPriorityNotif()
             NotificationQueue.StartTime = nowClk
         end
         if NotificationQueue.Active and not IsNotifDeferred(NotificationQueue.Active) then
@@ -5860,7 +5875,7 @@ local function HandleInteractions()
             for _, b in ipairs(HUDCustomizer.DrawerBounds) do
                 if cx >= b.x1 and cx <= b.x2 and cy >= b.y1 and cy <= b.y2 then
                     if b.action == "toggle" then
-                        ToggleChipInActiveList(b.id)
+                        Impl.ToggleChipInActiveList(b.id)
                         if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_MEDIUM) end
                     end
                     break
@@ -5992,7 +6007,7 @@ local function HandleInteractions()
             if canAccept or (Journey.AcceptedAt and nowClk - Journey.AcceptedAt < 1.2) then
                 detected = StateMachine.States.MENU_MATCH_FOUND
             else
-                local isSearching = GetMatchSearchInfo()
+                local isSearching = Impl.GetMatchSearchInfo()
                 detected = isSearching and StateMachine.States.MENU_SEARCHING or StateMachine.States.MENU_IDLE
             end
             if detected ~= StateMachine.States.MENU_MATCH_FOUND and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
@@ -6091,7 +6106,7 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactMediaRadius
     elseif StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT then
         local fH, sH = TF("Headline", layout.scale)
-        local lm = FightTracker.Landmark ~= "" and FightTracker.Landmark or "Fight"
+        local lm = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_fight")
         local fw = Odometer.Width(fH, sH, string.format("%d vs %d \u{2022} %s", FightTracker.AllyCount, FightTracker.EnemyCount, lm)) / layout.scale
         Config.Dimensions.CompactTargetW = math.max(Config.Dimensions.CompactFightW, math.min(320, math.ceil((fw + 48) / 4) * 4))
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactFightH
@@ -6260,7 +6275,7 @@ local function HandleInteractions()
                 if BridgeStatus.SpotifyDebug == "closed" and string.find(string.lower(MediaData.App or ""), "spotify", 1, true) then
                     DynamicIsland.PushNotification({
                         Type = "spotify_like",
-                        Tag = "SPOTIFY",
+                        Tag = "Spotify",
                         Title = L("di_ui_likes_unavailable"),
                         Subtitle = L("di_ui_restart_spotify"),
                         AccentColor = Color(255, 159, 10, 255),
@@ -6278,7 +6293,7 @@ local function HandleInteractions()
                 SendMediaCommand("like")
                 DynamicIsland.PushNotification({
                     Type = "spotify_like",
-                    Tag = "SPOTIFY",
+                    Tag = "Spotify",
                     Title = isNowLiked and L("di_ui_liked_songs") or L("di_ui_removed_from_favorites"),
                     Subtitle = isNowLiked and L("di_ui_saved_to_library") or L("di_ui_removed_from_spotify"),
                     AccentColor = Color(255, 55, 95, 255),
@@ -6335,11 +6350,7 @@ local function DrawAppleWaveform(x, y, maxH, count, isPlaying, scale, customColo
         local intH = math.max(2, math.floor(curH))
         local by = math.floor(y + (maxH * scale - intH) / 2)
 
-        local shift = (i - math.floor((count + 1) / 2)) * 10
-        local cr = math.min(255, math.max(0, baseCol.r + shift))
-        local cg = math.min(255, math.max(0, baseCol.g + shift))
-        local cb = math.min(255, math.max(0, baseCol.b + shift))
-        local col = FadeColor(Color(cr, cg, cb, 255), aMul)
+        local col = FadeColor(Color(baseCol.r, baseCol.g, baseCol.b, 255), aMul)
         local cornerR = math.max(1, math.floor(barW / 2))
 
         Render.FilledRect(Vec2(bx, by), Vec2(bx + barW, by + intH), col, cornerR)
@@ -6351,6 +6362,37 @@ local function Glyph(name, cx, cy, sz, col)
     if h and sz > 0 then
         Render.Image(h, Vec2(math.floor(cx - sz / 2 + 0.5), math.floor(cy - sz / 2 + 0.5)), Vec2(sz, sz), col, 0)
     end
+end
+
+local function SoftShadow(p1, p2, r, col, thick, off)
+    local w, h = p2.x - p1.x, p2.y - p1.y
+    if w <= 0 or h <= 0 then return end
+    local flags = Enum.DrawFlags.ShadowCutOutShapeBackground
+    off = off or Vec2(0, 0)
+    r = math.max(0, math.min(r or 0, w / 2, h / 2))
+    if r < 1 or not Render.ShadowConvexPoly then
+        Render.Shadow(p1, p2, col, thick, r, flags, off)
+        return
+    end
+    if math.abs(w - h) < 1 and r >= w / 2 - 0.5 then
+        Render.ShadowCircle(Vec2(p1.x + w / 2, p1.y + h / 2), r, col, thick, 32, flags, off)
+        return
+    end
+    local pts = {}
+    local corners = { { p2.x - r, p1.y + r, -90 }, { p2.x - r, p2.y - r, 0 }, { p1.x + r, p2.y - r, 90 }, { p1.x + r, p1.y + r, 180 } }
+    for _, c in ipairs(corners) do
+        for i = 0, 8 do
+            local ang = math.rad(c[3] + 90 * i / 8)
+            local px, py = c[1] + math.cos(ang) * r, c[2] + math.sin(ang) * r
+            local last = pts[#pts]
+            if not last or math.abs(last.x - px) + math.abs(last.y - py) > 0.05 then
+                pts[#pts + 1] = Vec2(px, py)
+            end
+        end
+    end
+    local first, last = pts[1], pts[#pts]
+    if math.abs(first.x - last.x) + math.abs(first.y - last.y) <= 0.05 then pts[#pts] = nil end
+    Render.ShadowConvexPoly(pts, col, thick, flags, off)
 end
 
 local function RenderMarqueeText(font, size, text, boxX, boxY, boxW, color, scale, rightFadeOnly)
@@ -6393,6 +6435,12 @@ local function DrawAlbumThumbnail(x, y, size, radius, alphaMul, scaleMul, custom
     local iy = math.floor(y + (size - isz) * 0.5)
     local ir = math.floor(radius * sMul + 0.5)
 
+    local function Placeholder(a)
+        if a <= 0.01 then return end
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(Color(58, 58, 60, 255), a), ir)
+        Glyph("music", ix + isz / 2, iy + isz / 2, math.floor(isz * 0.5), FadeColor(Color(142, 142, 147, 255), a))
+    end
+
     local imgH = customHandle or MediaData.CoverImageHandle
     if imgH and imgH > 0 then
         local fadeIn = 1.0
@@ -6400,18 +6448,10 @@ local function DrawAlbumThumbnail(x, y, size, radius, alphaMul, scaleMul, custom
             local since = os.clock() - (MediaData.CoverHandleSetAt or 0)
             fadeIn = math.max(0.0, math.min(1.0, since / 0.25))
         end
-        if fadeIn < 1.0 then
-            local baseCol = customCol or MediaData.CoverColor or Config.Colors.Red
-            Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(baseCol, aMul * (1.0 - fadeIn)), ir)
-            local iconR = isz * 0.28
-            Render.FilledCircle(Vec2(ix + isz / 2, iy + isz / 2), iconR, FadeColor(Color(255, 255, 255, 220), aMul * (1.0 - fadeIn)), 0, 1.0, 24)
-        end
+        if fadeIn < 1.0 then Placeholder(aMul * (1.0 - fadeIn)) end
         Render.Image(imgH, Vec2(ix, iy), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul * fadeIn), ir)
     else
-        local baseCol = customCol or MediaData.CoverColor or Config.Colors.Red
-        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(baseCol, aMul), ir)
-        local iconR = isz * 0.28
-        Render.FilledCircle(Vec2(ix + isz / 2, iy + isz / 2), iconR, FadeColor(Color(255, 255, 255, 220), aMul), 0, 1.0, 24)
+        Placeholder(aMul)
     end
 end
 
@@ -6434,10 +6474,21 @@ function Journey.DrawLine(layout, aMul, yOff, drawIcon, label, labelCol, right, 
 end
 
 function Journey.Spinner(cx, cy, r, col, aMul)
-    local t = math.max(1.5, r * 0.28)
-    Render.Circle(Vec2(cx, cy), r, FadeColor(Config.Colors.FillTertiary, aMul), t, 0, 1.0, false, 28)
-    local start = (os.clock() * 320) % 360
-    Render.Circle(Vec2(cx, cy), r, FadeColor(col, aMul), t, start, 0.28, true, 28)
+    local n = 8
+    local step = math.floor(os.clock() * 10) % n
+    local w = math.max(1.5, r * 0.28)
+    for i = 0, n - 1 do
+        local ang = math.rad(i * 360 / n - 90)
+        local age = (step - i) % n
+        local a = 1 - age / n * 0.75
+        local c, s = math.cos(ang), math.sin(ang)
+        local p1 = Vec2(cx + c * r * 0.42, cy + s * r * 0.42)
+        local p2 = Vec2(cx + c * (r - w / 2), cy + s * (r - w / 2))
+        local colA = FadeColor(col, aMul * a)
+        Render.Line(p1, p2, colA, w)
+        Render.FilledCircle(p1, w / 2, colA, 0, 1.0, 8)
+        Render.FilledCircle(p2, w / 2, colA, 0, 1.0, 8)
+    end
 end
 
 function Journey.RenderIdle(layout, alphaMul, yOffset)
@@ -6455,7 +6506,7 @@ function Journey.RenderSearching(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local label, right = Journey.SearchTexts()
     Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
-        Journey.Spinner(x + sz / 2, midY, sz * 0.42, Config.Colors.Blue, aMul)
+        Journey.Spinner(x + sz / 2, midY, sz * 0.5, Config.Colors.TextPrimary, aMul)
     end, label, Config.Colors.TextPrimary, right, Config.Colors.Blue, "journey_search")
 end
 
@@ -6561,9 +6612,8 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
     end
     local curBorder = borderCol
     if StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
-        local p = Journey.Accepted and 0.45 or (0.45 + 0.30 * math.sin(os.clock() * 4.0))
         local g = Config.Colors.Green
-        curBorder = Color(g.r, g.g, g.b, math.floor(255 * p))
+        curBorder = Color(g.r, g.g, g.b, 150)
     end
     Render.Rect(p1, p2, FadeColor(curBorder, a), radius, Enum.DrawFlags.None, thickness or 1.0)
 end
@@ -6655,6 +6705,18 @@ function Odometer.Layout(font, size, text)
     Odometer.Layouts[key] = lay
     Odometer.LayoutCount = Odometer.LayoutCount + 1
     return lay
+end
+
+function Odometer.Group(n)
+    local s = tostring(math.floor(math.abs(n or 0)))
+    local sep = L("di_num_sep")
+    local out, len = "", #s
+    for i = 1, len do
+        out = out .. s:sub(i, i)
+        local left = len - i
+        if left > 0 and left % 3 == 0 then out = out .. sep end
+    end
+    return ((n or 0) < 0 and "-" or "") .. out
 end
 
 function Odometer.Tabular(text)
@@ -6845,7 +6907,7 @@ function Satellite.Draw(layout, st, side, fullW, content)
     local p1, p2 = Vec2(x1, y1), Vec2(x2, y2)
     local r = math.floor((y2 - y1) / 2)
     if UI.Media.Shadow:Get() then
-        Render.Shadow(p1, p2, FadeColor(Config.Colors.Shadow, a), 12, r, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+        SoftShadow(p1, p2, r, FadeColor(Config.Colors.Shadow, a), 12, Vec2(0, 3))
     end
     IslandSurface(p1, p2, r, Config.Colors.Border, nil, a)
     local ca = math.max(0, math.min(1, (p - 0.45) / 0.35)) * a
@@ -6869,6 +6931,18 @@ function Focus.SatRow(layout)
     return math.floor(layout.y + refH / 2 - bh / 2 + 0.5), bh
 end
 
+function Focus.MoonColor()
+    local now = os.clock()
+    local dtm = math.min(0.1, math.max(0, now - (Focus.TintClk or now)))
+    Focus.TintClk = now
+    local want = Focus.Accent
+    if UI and UI.Focus and UI.Focus.MoonTint and UI.Focus.MoonTint:Get() and IsMediaActive() and MediaData.IsPlaying then
+        want = MediaTint()
+    end
+    Focus.TintCol = Focus.TintCol and LerpColor(Focus.TintCol, want, math.min(1, dtm * 5)) or want
+    return Focus.TintCol
+end
+
 function Focus.RenderBubble(layout)
     local ts = StateMachine.TargetState
     local want = Focus.Active and not HUDCustomizer.IsOpen and ts ~= StateMachine.States.FOCUS_BANNER and ts ~= StateMachine.States.MENU_MATCH_FOUND
@@ -6881,11 +6955,12 @@ function Focus.RenderBubble(layout)
         local c = Vec2((x1 + x2) / 2, (y1 + y2) / 2)
         local bt = now - Focus.BumpAt
         local bump = 1 - 0.14 * math.exp(-bt * 9) * math.cos(bt * 22)
-        Render.FilledCircle(c, d * 0.30, FadeColor(Color(Focus.Accent.r, Focus.Accent.g, Focus.Accent.b, 38), ca), 0, 1.0, 32)
+        local accent = Focus.MoonColor()
+        Render.FilledCircle(c, d * 0.30, FadeColor(Color(accent.r, accent.g, accent.b, 38), ca), 0, 1.0, 32)
         local isz = math.floor(d * 0.52 * bump)
         local h = GetVectorIcon("moon")
         if h then
-            Render.Image(h, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Focus.Accent, ca), 0)
+            Render.Image(h, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(accent, ca), 0)
         end
         if Focus.Until > Focus.StartedAt then
             local frac = math.max(0, math.min(1, (Focus.Until - now) / (Focus.Until - Focus.StartedAt)))
@@ -6893,7 +6968,7 @@ function Focus.RenderBubble(layout)
             local rt = math.max(1.2, 1.5 * scale)
             Render.Circle(c, rr, FadeColor(Config.Colors.FillTertiary, ca), rt, 0, 1.0, false, 48)
             if frac > 0.002 then
-                Render.Circle(c, rr, FadeColor(Focus.Accent, ca), rt, 270, frac, true, 48)
+                Render.Circle(c, rr, FadeColor(accent, ca), rt, 270, frac, true, 48)
             end
         end
     end)
@@ -6955,12 +7030,13 @@ function Focus.RenderTile(layout, x1, x2, y1, aMul)
     Focus.ButtonAt = now
 end
 
-local function RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, action)
+function Impl.RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, action)
     local n = #items
     spring.v, spring.vel = MotionEngine.Step(spring.v, spring.vel, sel - 1, dt, "SNAPPY")
     Render.FilledRect(Vec2(x, y), Vec2(x + w, y + h), FadeColor(Config.Colors.SegTrack, aMul), h / 2)
     local segW = w / n
     local tx = x + 2 + spring.v * segW
+    SoftShadow(Vec2(tx, y + 2), Vec2(tx + segW - 4, y + h - 2), (h - 4) / 2, Color(0, 0, 0, math.floor(60 * aMul)), 5, Vec2(0, 1))
     Render.FilledRect(Vec2(tx, y + 2), Vec2(tx + segW - 4, y + h - 2), FadeColor(Config.Colors.SegThumb, aMul), (h - 4) / 2)
     for i, it in ipairs(items) do
         local act = (i == sel)
@@ -6974,25 +7050,27 @@ local function RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, 
     end
 end
 
-local function RenderSwitch(x, y, w, h, on, spring, dt, aMul)
+function Impl.RenderSwitch(x, y, w, h, on, spring, dt, aMul)
     spring.v, spring.vel = MotionEngine.Step(spring.v, spring.vel, on and 1 or 0, dt, "SNAPPY")
     local t = math.min(1, math.max(0, spring.v))
     Render.FilledRect(Vec2(x, y), Vec2(x + w, y + h), FadeColor(LerpColor(Config.Colors.Fill, Config.Colors.Green, t), aMul), h / 2)
     local kr = h / 2 - 2
+    local kc = Vec2(x + 2 + kr + (w - 4 - kr * 2) * t, y + h / 2)
+    SoftShadow(Vec2(kc.x - kr, kc.y - kr), Vec2(kc.x + kr, kc.y + kr), kr, Color(0, 0, 0, math.floor(70 * aMul)), 5, Vec2(0, 1.5))
     Render.FilledCircle(Vec2(x + 2 + kr + (w - 4 - kr * 2) * t, y + h / 2), kr, FadeColor(Color(255, 255, 255, 255), aMul), 0, 1.0, 24)
 end
 
-local SEG_WEIGHT = { { label = "di_drawer_bold", val = 1 }, { label = "di_drawer_regular", val = 2 } }
-local SEG_COLOR = { { label = "di_drawer_white", val = 1 }, { label = "di_drawer_dim", val = 2 }, { label = "di_drawer_custom", val = 3 } }
-local SEG_FORMAT = { { label = "di_drawer_standard", val = 1 }, { label = "di_drawer_minimal", val = 2 }, { label = "di_drawer_detailed", val = 3 } }
+Impl.SEG_WEIGHT = { { label = "di_drawer_bold", val = 1 }, { label = "di_drawer_regular", val = 2 } }
+Impl.SEG_COLOR = { { label = "di_drawer_white", val = 1 }, { label = "di_drawer_dim", val = 2 }, { label = "di_drawer_custom", val = 3 } }
+Impl.SEG_FORMAT = { { label = "di_drawer_standard", val = 1 }, { label = "di_drawer_minimal", val = 2 }, { label = "di_drawer_detailed", val = 3 } }
 
-local function RenderSettingsLabel(x, y, rowH, label, scale, aMul)
+function Impl.RenderSettingsLabel(x, y, rowH, label, scale, aMul)
     local f, s = TF("Footnote", scale)
     local ts = Render.TextSize(f, s, label)
     Render.Text(f, s, label, Vec2(x, math.floor(y + (rowH - ts.y) / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
 end
 
-local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
+function Impl.RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
     local id = HUDCustomizer.InspectedChip
     local cfg = HUDCustomizer.WidgetConfigs[id]
     if not cfg then return end
@@ -7024,26 +7102,26 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
     local segX = cx + cw - padX - segW
     local rowY = cy + 30 * scale
 
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_weight"), scale, aMul)
-    RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, SEG_WEIGHT, cfg.bold and 1 or 2, anim.SegWeight, dt, scale, aMul, "set_bold")
+    Impl.RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_weight"), scale, aMul)
+    Impl.RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, Impl.SEG_WEIGHT, cfg.bold and 1 or 2, anim.SegWeight, dt, scale, aMul, "set_bold")
 
     rowY = rowY + rowH
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_color"), scale, aMul)
-    RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, SEG_COLOR, cfg.colorMode or 1, anim.SegColor, dt, scale, aMul, "set_color")
+    Impl.RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_color"), scale, aMul)
+    Impl.RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, Impl.SEG_COLOR, cfg.colorMode or 1, anim.SegColor, dt, scale, aMul, "set_color")
 
     if cfg.colorMode == 3 then
         rowY = rowY + rowH
         local curCol = cfg.customColor or GetDefaultWidgetColor(id)
         local curHex = cfg.customHex or select(2, GetDefaultWidgetColor(id))
 
-        RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_palette"), scale, aMul)
+        Impl.RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_palette"), scale, aMul)
         local fL, sL = TF("Footnote", scale)
         local lblSize = Render.TextSize(fL, sL, L("di_ui_palette"))
 
         local prevR = 8 * scale
         local prevX = cx + padX + lblSize.x + 14 * scale
         local prevY = rowY + rowH / 2
-        Render.Shadow(Vec2(prevX - prevR, prevY - prevR), Vec2(prevX + prevR, prevY + prevR), Color(0, 0, 0, math.floor(110 * aMul)), 6, prevR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1))
+        SoftShadow(Vec2(prevX - prevR, prevY - prevR), Vec2(prevX + prevR, prevY + prevR), prevR, Color(0, 0, 0, math.floor(110 * aMul)), 6, Vec2(0, 1))
         Render.FilledCircle(Vec2(prevX, prevY), prevR, FadeColor(curCol, aMul), 0, 1.0, 22)
         local ringCol = HUDCustomizer.ColorPickerOpen and Config.Colors.Blue or Config.Colors.TextSecondary
         Render.Circle(Vec2(prevX, prevY), prevR + 1.5 * scale, FadeColor(ringCol, aMul), 1.8 * scale)
@@ -7081,7 +7159,7 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
         local knobY = barY + barH / 2
         local knobR = 6.5 * scale
 
-        Render.Shadow(Vec2(knobX - knobR, knobY - knobR), Vec2(knobX + knobR, knobY + knobR), Color(0, 0, 0, math.floor(120 * aMul)), 6, knobR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1.5))
+        SoftShadow(Vec2(knobX - knobR, knobY - knobR), Vec2(knobX + knobR, knobY + knobR), knobR, Color(0, 0, 0, math.floor(120 * aMul)), 6, Vec2(0, 1.5))
         Render.FilledCircle(Vec2(knobX, knobY), knobR, FadeColor(Color(255, 255, 255, 255), aMul), 0, 1.0, 20)
         Render.FilledCircle(Vec2(knobX, knobY), knobR - 2.2 * scale, FadeColor(curCol, aMul), 0, 1.0, 16)
         Render.Circle(Vec2(knobX, knobY), knobR, FadeColor(Color(255, 255, 255, 220), aMul), 1.0)
@@ -7097,21 +7175,21 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
     end
 
     rowY = rowY + rowH
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_format"), scale, aMul)
-    RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, SEG_FORMAT, cfg.format or 1, anim.SegFormat, dt, scale, aMul, "set_format")
+    Impl.RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_format"), scale, aMul)
+    Impl.RenderSegmented(segX, rowY + (rowH - segH) / 2, segW, segH, Impl.SEG_FORMAT, cfg.format or 1, anim.SegFormat, dt, scale, aMul, "set_format")
 
     rowY = rowY + rowH
-    RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_icon"), scale, aMul)
+    Impl.RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_icon"), scale, aMul)
     local swW, swH = 42 * scale, 25 * scale
     local swX = cx + cw - padX - swW
     local swY = rowY + (rowH - swH) / 2
-    RenderSwitch(swX, swY, swW, swH, cfg.showIcon ~= false, anim.Knob, dt, aMul)
+    Impl.RenderSwitch(swX, swY, swW, swH, cfg.showIcon ~= false, anim.Knob, dt, aMul)
     if aMul > 0.6 then
         table.insert(HUDCustomizer.InspectorBounds, { x1 = swX, y1 = swY, x2 = swX + swW, y2 = swY + swH, action = "toggle_icon" })
     end
 end
 
-local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
+function Impl.RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     local anim = HUDCustomizer.Anim
     anim.ColorPickerT = anim.ColorPickerT or 0
     anim.ColorPickerT = math.min(1, math.max(0, anim.ColorPickerT + dt / 0.18 * (HUDCustomizer.ColorPickerOpen and 1 or -1.8)))
@@ -7126,8 +7204,25 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     if not curHex then curHex = string.format("%02X%02X%02X", curCol.r, curCol.g, curCol.b) end
     local curHue, curSat, curVal = RGBtoHSV(curCol.r, curCol.g, curCol.b)
 
+    local SWATCHES = {
+        { 255, 69, 58, "FF453A" }, { 255, 159, 10, "FF9F0A" }, { 255, 214, 10, "FFD60A" }, { 48, 209, 88, "30D158" },
+        { 99, 230, 226, "63E6E2" }, { 64, 200, 224, "40C8E0" }, { 100, 210, 255, "64D2FF" }, { 10, 132, 255, "0A84FF" },
+        { 94, 92, 230, "5E5CE6" }, { 191, 90, 242, "BF5AF2" }, { 255, 55, 95, "FF375F" }, { 172, 142, 104, "AC8E68" },
+        { 142, 142, 147, "8E8E93" }, { 255, 255, 255, "FFFFFF" }
+    }
+
+    local pad = 12 * scale
     local popW = 216 * scale
-    local popH = 196 * scale
+    local gap = 6 * scale
+    local cols = 7
+    local sw = (popW - pad * 2 - gap * (cols - 1)) / cols
+    local gridTop = 34 * scale
+    local gridH = sw * 2 + gap
+    local canvasTop = gridTop + gridH + 12 * scale
+    local canvasH = 70 * scale
+    local previewR = 8 * scale
+    local popH = canvasTop + canvasH + 9 * scale + 8 * scale + 6 * scale + 8 * scale + 12 * scale + previewR * 2 + pad
+
     local scr = Render.ScreenSize()
     local scrW, scrH = scr.x, scr.y
     local popX = cx + cardW + 10 * scale
@@ -7147,29 +7242,18 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     local popA = anim.ColorPickerT
     local p1 = Vec2(popX, popY)
     local p2 = Vec2(popX + popW, popY + popH)
-    local popRad = 14 * scale
+    local popRad = 16 * scale
 
-    Render.Shadow(p1, p2, Color(0, 0, 0, math.floor(220 * popA)), 28, popRad, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 8))
+    SoftShadow(p1, p2, popRad, Color(0, 0, 0, math.floor(220 * popA)), 28, Vec2(0, 8))
     DrawerSurface(p1, p2, popRad, popA)
 
-    local pad = 12 * scale
     local hdrY = popY + 11 * scale
     local fH, sH = TF("FootnoteEm", scale)
     Render.Text(fH, sH, L("di_ui_color_picker"), Vec2(popX + pad, hdrY), FadeColor(Config.Colors.TextPrimary, popA))
 
-    local hexLabel = "#" .. string.upper(curHex)
-    local fC, sC = TF("Caption", scale)
-    local hexSz = Render.TextSize(fC, sC, hexLabel)
-    local hexPillW = hexSz.x + 8 * scale
-    local hexPillH = 15 * scale
-    local hexPillX = popX + pad + Render.TextSize(fH, sH, L("di_ui_color_picker")).x + 8 * scale
-    local hexPillY = hdrY - 1 * scale
-    Render.FilledRect(Vec2(hexPillX, hexPillY), Vec2(hexPillX + hexPillW, hexPillY + hexPillH), FadeColor(Config.Colors.SegTrack, popA), 4 * scale)
-    Render.Text(fC, sC, hexLabel, Vec2(math.floor(hexPillX + 4 * scale), math.floor(hexPillY + (hexPillH - hexSz.y) / 2)), FadeColor(Config.Colors.TextSecondary, popA))
-
-    local closeR = 8 * scale
+    local closeR = 9 * scale
     local closeX = popX + popW - pad - closeR
-    local closeY = hdrY + 6 * scale
+    local closeY = hdrY + Render.TextSize(fH, sH, "Ag").y / 2
     Render.FilledCircle(Vec2(closeX, closeY), closeR, FadeColor(Config.Colors.SegTrack, popA), 0, 1.0, 18)
     Glyph("close", closeX, closeY, math.floor(closeR * 1.05), FadeColor(Config.Colors.TextSecondary, popA))
 
@@ -7181,14 +7265,36 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
         })
     end
 
+    for i, q in ipairs(SWATCHES) do
+        local col = (i - 1) % cols
+        local row = math.floor((i - 1) / cols)
+        local qx = popX + pad + col * (sw + gap) + sw / 2
+        local qy = popY + gridTop + row * (sw + gap) + sw / 2
+        local r = sw / 2
+        local selected = string.upper(curHex) == q[4]
+        local rr = selected and (r - 3.5 * scale) or r
+        Render.FilledCircle(Vec2(qx, qy), rr, FadeColor(Color(q[1], q[2], q[3], 255), popA), 0, 1.0, 24)
+        if selected then
+            Render.Circle(Vec2(qx, qy), r - 1, FadeColor(Color(q[1], q[2], q[3], 255), popA), 2 * scale, 0, 1.0, false, 32)
+        end
+        if popA > 0.6 then
+            table.insert(HUDCustomizer.InspectorBounds, {
+                x1 = qx - r, y1 = qy - r, x2 = qx + r, y2 = qy + r,
+                action = "pop_pick_quick",
+                r = q[1], g = q[2], b = q[3], hex = q[4], id = id
+            })
+        end
+    end
+
     local canvasX = popX + pad
-    local canvasY = popY + 28 * scale
+    local canvasY = popY + canvasTop
     local canvasW = popW - pad * 2
-    local canvasH = 82 * scale
     local cStepsX = 18
     local cStepsY = 10
     local stepW = canvasW / cStepsX
     local stepH = canvasH / cStepsY
+
+    Render.Line(Vec2(popX + pad, canvasY - 6 * scale), Vec2(popX + popW - pad, canvasY - 6 * scale), FadeColor(Config.Colors.Separator, popA), 1.0)
 
     for xi = 0, cStepsX - 1 do
         local s = xi / (cStepsX - 1)
@@ -7198,14 +7304,14 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
             Render.FilledRect(Vec2(canvasX + xi * stepW, canvasY + yi * stepH), Vec2(canvasX + (xi + 1) * stepW + 0.6, canvasY + (yi + 1) * stepH + 0.6), FadeColor(Color(cr, cg, cb, 255), popA), 0)
         end
     end
-    Render.Rect(Vec2(canvasX, canvasY), Vec2(canvasX + canvasW, canvasY + canvasH), FadeColor(Color(255, 255, 255, 45), popA), 4 * scale, Enum.DrawFlags.None, 1.0)
+    Render.Rect(Vec2(canvasX, canvasY), Vec2(canvasX + canvasW, canvasY + canvasH), FadeColor(Config.Colors.Border, popA), 4 * scale, Enum.DrawFlags.None, 1.0)
 
     local reticleX = canvasX + curSat * canvasW
     local reticleY = canvasY + (1.0 - curVal) * canvasH
-    Render.Shadow(Vec2(reticleX - 5 * scale, reticleY - 5 * scale), Vec2(reticleX + 5 * scale, reticleY + 5 * scale), Color(0, 0, 0, math.floor(140 * popA)), 4, 5 * scale, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1))
-    Render.FilledCircle(Vec2(reticleX, reticleY), 4.5 * scale, FadeColor(Color(255, 255, 255, 255), popA), 0, 1.0, 18)
-    Render.FilledCircle(Vec2(reticleX, reticleY), 2.8 * scale, FadeColor(curCol, popA), 0, 1.0, 16)
-    Render.Circle(Vec2(reticleX, reticleY), 4.5 * scale, FadeColor(Color(255, 255, 255, 240), popA), 1.2 * scale)
+    local retR = 6 * scale
+    SoftShadow(Vec2(reticleX - retR, reticleY - retR), Vec2(reticleX + retR, reticleY + retR), retR, Color(0, 0, 0, math.floor(110 * popA)), 4, Vec2(0, 1))
+    Render.FilledCircle(Vec2(reticleX, reticleY), retR, FadeColor(Color(255, 255, 255, 255), popA), 0, 1.0, 18)
+    Render.FilledCircle(Vec2(reticleX, reticleY), retR - 2 * scale, FadeColor(curCol, popA), 0, 1.0, 16)
 
     if popA > 0.6 then
         table.insert(HUDCustomizer.InspectorBounds, {
@@ -7216,118 +7322,58 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
         })
     end
 
-    local hBarY = canvasY + canvasH + 9 * scale
-    local hBarH = 8 * scale
-    local hBarR = hBarH / 2
-    local hSteps = 36
-    local hMidW = canvasW - hBarR * 2
-
-    local hc0r, hc0g, hc0b = HSVtoRGB(0, 0.90, 1.0)
-    Render.FilledCircle(Vec2(canvasX + hBarR, hBarY + hBarR), hBarR, FadeColor(Color(hc0r, hc0g, hc0b, 255), popA), 0, 1.0, 16)
-    local hc1r, hc1g, hc1b = HSVtoRGB(360, 0.90, 1.0)
-    Render.FilledCircle(Vec2(canvasX + canvasW - hBarR, hBarY + hBarR), hBarR, FadeColor(Color(hc1r, hc1g, hc1b, 255), popA), 0, 1.0, 16)
-
-    for i = 0, hSteps - 1 do
-        local h1 = (i / hSteps) * 360
-        local hr, hg, hb = HSVtoRGB(h1, 0.90, 1.0)
-        local x1 = canvasX + hBarR + (i / hSteps) * hMidW
-        local x2 = canvasX + hBarR + ((i + 1) / hSteps) * hMidW + 0.6
-        Render.FilledRect(Vec2(x1, hBarY), Vec2(x2, hBarY + hBarH), FadeColor(Color(hr, hg, hb, 255), popA), 0)
-    end
-    Render.Rect(Vec2(canvasX, hBarY), Vec2(canvasX + canvasW, hBarY + hBarH), FadeColor(Color(255, 255, 255, 45), popA), hBarR, Enum.DrawFlags.None, 1.0)
-
-    local hKnobX = canvasX + (curHue / 360) * canvasW
-    local hKnobY = hBarY + hBarH / 2
-    local hKnobR = 5.5 * scale
-    local hHueR, hHueG, hHueB = HSVtoRGB(curHue, 0.90, 1.0)
-    Render.Shadow(Vec2(hKnobX - hKnobR, hKnobY - hKnobR), Vec2(hKnobX + hKnobR, hKnobY + hKnobR), Color(0, 0, 0, math.floor(120 * popA)), 5, hKnobR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1))
-    Render.FilledCircle(Vec2(hKnobX, hKnobY), hKnobR, FadeColor(Color(255, 255, 255, 255), popA), 0, 1.0, 18)
-    Render.FilledCircle(Vec2(hKnobX, hKnobY), hKnobR - 1.8 * scale, FadeColor(Color(hHueR, hHueG, hHueB, 255), popA), 0, 1.0, 16)
-    Render.Circle(Vec2(hKnobX, hKnobY), hKnobR, FadeColor(Color(255, 255, 255, 220), popA), 1.0)
-
-    if popA > 0.6 then
-        table.insert(HUDCustomizer.InspectorBounds, {
-            x1 = canvasX - 2, y1 = hBarY - 4,
-            x2 = canvasX + canvasW + 2, y2 = hBarY + hBarH + 4,
-            action = "drag_pop_hue",
-            x = canvasX, w = canvasW, id = id
-        })
-    end
-
-    local bBarY = hBarY + 14 * scale
-    local bBarH = 8 * scale
-    local bBarR = bBarH / 2
-    local bSteps = 24
-    local bMidW = canvasW - bBarR * 2
-
-    local bc0r, bc0g, bc0b = HSVtoRGB(curHue, curSat, 0)
-    Render.FilledCircle(Vec2(canvasX + bBarR, bBarY + bBarR), bBarR, FadeColor(Color(bc0r, bc0g, bc0b, 255), popA), 0, 1.0, 16)
-    local bc1r, bc1g, bc1b = HSVtoRGB(curHue, curSat, 1.0)
-    Render.FilledCircle(Vec2(canvasX + canvasW - bBarR, bBarY + bBarR), bBarR, FadeColor(Color(bc1r, bc1g, bc1b, 255), popA), 0, 1.0, 16)
-
-    for i = 0, bSteps - 1 do
-        local frac = i / (bSteps - 1)
-        local br, bg, bb = HSVtoRGB(curHue, curSat, frac)
-        local x1 = canvasX + bBarR + (i / bSteps) * bMidW
-        local x2 = canvasX + bBarR + ((i + 1) / bSteps) * bMidW + 0.6
-        Render.FilledRect(Vec2(x1, bBarY), Vec2(x2, bBarY + bBarH), FadeColor(Color(br, bg, bb, 255), popA), 0)
-    end
-    Render.Rect(Vec2(canvasX, bBarY), Vec2(canvasX + canvasW, bBarY + bBarH), FadeColor(Color(255, 255, 255, 45), popA), bBarR, Enum.DrawFlags.None, 1.0)
-
-    local bKnobX = canvasX + curVal * canvasW
-    local bKnobY = bBarY + bBarH / 2
-    local bKnobR = 5.5 * scale
-    Render.Shadow(Vec2(bKnobX - bKnobR, bKnobY - bKnobR), Vec2(bKnobX + bKnobR, bKnobY + bKnobR), Color(0, 0, 0, math.floor(120 * popA)), 5, bKnobR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1))
-    Render.FilledCircle(Vec2(bKnobX, bKnobY), bKnobR, FadeColor(Color(255, 255, 255, 255), popA), 0, 1.0, 18)
-    Render.FilledCircle(Vec2(bKnobX, bKnobY), bKnobR - 1.8 * scale, FadeColor(curCol, popA), 0, 1.0, 16)
-    Render.Circle(Vec2(bKnobX, bKnobY), bKnobR, FadeColor(Color(255, 255, 255, 220), popA), 1.0)
-
-    if popA > 0.6 then
-        table.insert(HUDCustomizer.InspectorBounds, {
-            x1 = canvasX - 2, y1 = bBarY - 4,
-            x2 = canvasX + canvasW + 2, y2 = bBarY + bBarH + 4,
-            action = "drag_pop_val",
-            x = canvasX, w = canvasW, id = id
-        })
-    end
-
-    local btmY = bBarY + 17 * scale
-    local previewR = 8 * scale
-    Render.Shadow(Vec2(canvasX, btmY), Vec2(canvasX + previewR * 2, btmY + previewR * 2), Color(0, 0, 0, math.floor(100 * popA)), 5, previewR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1))
-    Render.FilledCircle(Vec2(canvasX + previewR, btmY + previewR), previewR, FadeColor(curCol, popA), 0, 1.0, 20)
-    Render.Circle(Vec2(canvasX + previewR, btmY + previewR), previewR + 1.2 * scale, FadeColor(Color(255, 255, 255, 170), popA), 1.2 * scale)
-
-    local QUICK_COLORS = {
-        { 255, 255, 255, "FFFFFF" },
-        { 255, 214, 10,  "FFD60A" },
-        { 48,  209, 88,  "30D158" },
-        { 10,  132, 255, "0A84FF" },
-        { 191, 90,  242, "BF5AF2" },
-        { 255, 69,  58,  "FF453A" }
-    }
-    local qDotR = 5.5 * scale
-    local qStartX = canvasX + previewR * 2 + 8 * scale
-    for qi, q in ipairs(QUICK_COLORS) do
-        local qx = qStartX + (qi - 1) * (qDotR * 2 + 5 * scale)
-        local qy = btmY + previewR
-        Render.FilledCircle(Vec2(qx, qy), qDotR, FadeColor(Color(q[1], q[2], q[3], 255), popA), 0, 1.0, 16)
-        if curHex == q[4] then
-            Render.Circle(Vec2(qx, qy), qDotR + 2 * scale, FadeColor(Color(255, 255, 255, 240), popA), 1.5 * scale)
+    local function Bar(barY, steps, colorAt, knobT, knobCol, action)
+        local barH = 8 * scale
+        local barR = barH / 2
+        local midW = canvasW - barR * 2
+        local c0 = colorAt(0)
+        local c1 = colorAt(1)
+        Render.FilledCircle(Vec2(canvasX + barR, barY + barR), barR, FadeColor(c0, popA), 0, 1.0, 16)
+        Render.FilledCircle(Vec2(canvasX + canvasW - barR, barY + barR), barR, FadeColor(c1, popA), 0, 1.0, 16)
+        for i = 0, steps - 1 do
+            local x1 = canvasX + barR + (i / steps) * midW
+            local x2 = canvasX + barR + ((i + 1) / steps) * midW + 0.6
+            Render.FilledRect(Vec2(x1, barY), Vec2(x2, barY + barH), FadeColor(colorAt(i / (steps - 1)), popA), 0)
         end
+        local kx = canvasX + knobT * canvasW
+        local ky = barY + barH / 2
+        local kr = 6 * scale
+        SoftShadow(Vec2(kx - kr, ky - kr), Vec2(kx + kr, ky + kr), kr, Color(0, 0, 0, math.floor(110 * popA)), 4, Vec2(0, 1))
+        Render.FilledCircle(Vec2(kx, ky), kr, FadeColor(Color(255, 255, 255, 255), popA), 0, 1.0, 18)
+        Render.FilledCircle(Vec2(kx, ky), kr - 2 * scale, FadeColor(knobCol, popA), 0, 1.0, 16)
         if popA > 0.6 then
             table.insert(HUDCustomizer.InspectorBounds, {
-                x1 = qx - qDotR - 2, y1 = qy - qDotR - 2,
-                x2 = qx + qDotR + 2, y2 = qy + qDotR + 2,
-                action = "pop_pick_quick",
-                r = q[1], g = q[2], b = q[3], hex = q[4], id = id
+                x1 = canvasX - 2, y1 = barY - 4,
+                x2 = canvasX + canvasW + 2, y2 = barY + barH + 4,
+                action = action,
+                x = canvasX, w = canvasW, id = id
             })
         end
+        return barY + barH
     end
+
+    local hr0, hg0, hb0 = HSVtoRGB(curHue, 0.90, 1.0)
+    local hEnd = Bar(canvasY + canvasH + 9 * scale, 36, function(t)
+        local r, g, b = HSVtoRGB(t * 360, 0.90, 1.0)
+        return Color(r, g, b, 255)
+    end, curHue / 360, Color(hr0, hg0, hb0, 255), "drag_pop_hue")
+    local vEnd = Bar(hEnd + 6 * scale, 24, function(t)
+        local r, g, b = HSVtoRGB(curHue, curSat, t)
+        return Color(r, g, b, 255)
+    end, curVal, curCol, "drag_pop_val")
+
+    local btmY = vEnd + 12 * scale
+    local fC, sC = TF("Caption", scale)
+    Render.FilledCircle(Vec2(canvasX + previewR, btmY + previewR), previewR, FadeColor(curCol, popA), 0, 1.0, 20)
+    Render.Circle(Vec2(canvasX + previewR, btmY + previewR), previewR, FadeColor(Config.Colors.Border, popA), 1.0, 0, 1.0, false, 24)
+    local hexLabel = "#" .. string.upper(curHex)
+    local hexSz = Render.TextSize(fC, sC, hexLabel)
+    Odometer.Draw(fC, sC, hexLabel, Vec2(math.floor(canvasX + previewR * 2 + 8 * scale), math.floor(btmY + previewR - hexSz.y / 2)), FadeColor(Config.Colors.TextSecondary, popA))
 
     local rstText = L("di_ui_reset")
     local rstS = Render.TextSize(fC, sC, rstText)
-    local rstW = rstS.x + 12 * scale
-    local rstH = 18 * scale
+    local rstW = rstS.x + 16 * scale
+    local rstH = 20 * scale
     local rstX = popX + popW - pad - rstW
     local rstY = btmY + previewR - rstH / 2
     Render.FilledRect(Vec2(rstX, rstY), Vec2(rstX + rstW, rstY + rstH), FadeColor(Config.Colors.SegTrack, popA), rstH / 2)
@@ -7345,7 +7391,7 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     end
 end
 
-local function RenderHUDDrawer(layout, dt)
+function Impl.RenderHUDDrawer(layout, dt)
     local anim = HUDCustomizer.Anim
     if not HUDCustomizer.IsOpen and anim.t <= 0 then
         anim.h, anim.hVel = 0, 0
@@ -7407,7 +7453,7 @@ local function RenderHUDDrawer(layout, dt)
         { x1 = px - 4, y1 = py - 4, x2 = px + panelW + 4, y2 = py + panelH + 4 }
     }
 
-    Render.Shadow(p1, p2, Color(0, 0, 0, math.floor(200 * emerge)), 26, rad, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 6))
+    SoftShadow(p1, p2, rad, Color(0, 0, 0, math.floor(200 * emerge)), 26, Vec2(0, 6))
     DrawerSurface(p1, p2, rad, emerge)
 
     HUDCustomizer.DrawerBounds = {}
@@ -7425,9 +7471,9 @@ local function RenderHUDDrawer(layout, dt)
     for i, chip in ipairs(HUDCustomizer.AvailableChips) do
         local bx = math.floor(cx + padX + ((i - 1) % 4) * (chipW + gap))
         local by = math.floor(chipY + math.floor((i - 1) / 4) * (chipH + gap))
-        local active = IsChipInActiveList(chip.id)
+        local active = Impl.IsChipInActiveList(chip.id)
 
-        local ca = ChipAnim(chip.id)
+        local ca = Impl.ChipAnim(chip.id)
         ca.fill, ca.fillVel = MotionEngine.Step(ca.fill, ca.fillVel, active and 1 or 0, dt, "SMOOTH")
         ca.scale, ca.scaleVel = MotionEngine.Step(ca.scale, ca.scaleVel, 1.0, dt, "SNAPPY")
         local insetX = chipW * (1 - ca.scale) / 2
@@ -7453,7 +7499,7 @@ local function RenderHUDDrawer(layout, dt)
     end
 
     if HUDCustomizer.InspectedChip then
-        RenderWidgetSettings(cx, cardW, py + baseH - 12 * scale, scale, contentA, dt)
+        Impl.RenderWidgetSettings(cx, cardW, py + baseH - 12 * scale, scale, contentA, dt)
     end
 
     if hintsOn then
@@ -7466,7 +7512,7 @@ local function RenderHUDDrawer(layout, dt)
     Render.PopClip()
 
     if HUDCustomizer.IsOpen and HUDCustomizer.InspectedChip then
-        RenderColorPickerPopover(px, py, cardW, scale, dt)
+        Impl.RenderColorPickerPopover(px, py, cardW, scale, dt)
     end
 end
 
@@ -7494,7 +7540,7 @@ local function TruncateToWidth(font, size, text, maxW)
     return result
 end
 
-local function RenderSecondarySatelliteBubble(layout)
+function Impl.RenderSecondarySatelliteBubble(layout)
     local R = Satellite.Right
     local scale = layout.scale
     local fontBold, headSize = TF("Headline", scale)
@@ -7562,11 +7608,14 @@ local function RenderSecondarySatelliteBubble(layout)
             if remain > 0.01 then
                 Render.Circle(c, ringR, FadeColor(accent, ca), rt, 270, remain, true, 48)
             end
-            local hIcon = GetCachedImage(n.Icon, n.FallbackSvg)
+            local fb = n.FallbackSvg
+            local realImg = n.Icon and GetCachedImage(n.Icon) or nil
+            local hIcon = realImg or ((fb and not NotifGlyphs[fb]) and GetCachedImage(nil, fb) or nil)
             if hIcon then
                 Render.Image(hIcon, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), ca), math.floor(isz / 2))
             else
-                Render.FilledCircle(c, isz * 0.4, FadeColor(accent, ca), 0, 1.0, 16)
+                Render.FilledCircle(c, isz / 2, FadeColor(accent, ca), 0, 1.0, 24)
+                Glyph(fb or "bell", c.x, c.y, math.floor(isz * 0.58), FadeColor(Color(255, 255, 255, 255), ca))
             end
             if ta > 0.01 then
                 Render.Text(fontBold, titleSize, title, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2)), FadeColor(Config.Colors.TextPrimary, ta))
@@ -7669,12 +7718,12 @@ local function RenderSecondarySatelliteBubble(layout)
     SatelliteBounds = Satellite.Draw(layout, sat, 1, fullW, content)
 end
 
-local function RenderMenuClosedHint(layout)
+function Impl.RenderMenuClosedHint(layout)
     if not Menu.Opened or not Menu.Opened() then return end
     if HUDCustomizer.IsOpen then return end
     if DragState.IsDragging then return end
 
-    local lines = CollectStatusHints()
+    local lines = Impl.CollectStatusHints()
     if UI.Media.Hints:Get() then
         table.insert(lines, { text = L("di_ui_controls_hint") })
     end
@@ -7733,9 +7782,10 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
     if TrackTransition.Active then
         local t = math.min(1.0, (nowClk - TrackTransition.StartTime) / (TrackTransition.Duration * AnimScale()))
         local dir = TrackTransition.Direction
-        local outOffset = -dir * (t * 18 * scale)
+        local e = EaseOutCubic(t)
+        local outOffset = -dir * (e * 6 * scale)
         local outAlpha = (1.0 - t) * aMul
-        local inOffset = dir * ((1.0 - t) * 18 * scale)
+        local inOffset = dir * ((1.0 - e) * 6 * scale)
         local inAlpha = t * aMul
 
         local showTitle = CompactMediaTitle()
@@ -7759,7 +7809,7 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
     DrawAppleWaveform(waveX, waveY, 18, waveCount, MediaData.IsPlaying, scale, waveCol, aMul)
 end
 
-local function RenderFightCompact(layout, alphaMul, yOffset)
+function Impl.RenderFightCompact(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
@@ -7777,7 +7827,7 @@ local function RenderFightCompact(layout, alphaMul, yOffset)
     end
 
     local scoreStr = string.format("%d vs %d", FightTracker.AllyCount, FightTracker.EnemyCount)
-    local lmarkStr = FightTracker.Landmark ~= "" and FightTracker.Landmark or "Fight"
+    local lmarkStr = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_fight")
     local fullText = scoreStr .. " \u{2022} " .. lmarkStr
 
     local textStartX = math.floor(iconX + iconSz + 8 * scale)
@@ -7792,7 +7842,7 @@ local CachedDotaMapHandle = nil
 local DotaMapFailed = false
 local DotaMapNextRetry = 0
 local LastMapWarmCheck = 0
-local function GetDotaMapTexture()
+function Impl.GetDotaMapTexture()
     if CachedDotaMapHandle ~= nil then return CachedDotaMapHandle end
     if DotaMapFailed and os.clock() < DotaMapNextRetry then return nil end
     local mapCandidates = {
@@ -7821,7 +7871,7 @@ local function GetDotaMapTexture()
     return nil
 end
 
-local function RenderFightLarge(layout, alphaMul, yOffset)
+function Impl.RenderFightLarge(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
@@ -7957,7 +8007,7 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     local uvMin = Vec2(math.max(0.0, uC - uHalf), math.max(0.0, vC - vHalf))
     local uvMax = Vec2(math.min(1.0, uC + uHalf), math.min(1.0, vC + vHalf))
 
-    local mapH = GetDotaMapTexture()
+    local mapH = Impl.GetDotaMapTexture()
 
     Render.FilledRect(rP1, rP2, FadeColor(Config.Colors.FillQuaternary, aMul), radarR)
 
@@ -8029,7 +8079,7 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     Render.Rect(rP1, rP2, FadeColor(Config.Colors.Border, aMul), radarR, Enum.DrawFlags.None, 1.0)
 end
 
-local function RenderNotificationState(layout, alphaMul, yOffset)
+function Impl.RenderNotificationState(layout, alphaMul, yOffset)
     local notif = NotificationQueue.Active or NotificationQueue.LastDismissed
     if not notif then
         if IsMediaActive() then
@@ -8072,7 +8122,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         Glyph("check", iconX + iconSz / 2, iconY + iconSz / 2, math.floor(iconSz * 0.62 * checkScale), FadeColor(Color(255, 255, 255, 255), aMul))
 
         local textX = math.floor(iconX + iconSz + 10 * scale)
-        TwoLines(textX, math.floor(layout.x + layout.w - textX - 14 * scale), notif.Tag or "APPLE PAY", green, notif.Title or L("di_ui_success"))
+        TwoLines(textX, math.floor(layout.x + layout.w - textX - 14 * scale), notif.Tag or L("di_ui_notification"), green, notif.Title or L("di_ui_success"))
         return
     end
 
@@ -8090,7 +8140,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
 
         Glyph(isTap and "bolt" or (isEnabled and "check" or "close"), iconX + iconSz / 2, iconY + iconSz / 2, math.floor(iconSz * 0.55), FadeColor(accent, aMul))
 
-        local badgeTxt = isTap and "TAP" or (isEnabled and "ON" or "OFF")
+        local badgeTxt = isTap and L("di_ui_tap") or (isEnabled and L("di_focus_on") or L("di_focus_off"))
         local fB, sB = TF("Caption", scale)
         fB = Config.Fonts.Semibold
         local badgeSz = Render.TextSize(fB, sB, badgeTxt)
@@ -8105,7 +8155,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         Render.Text(fB, sB, badgeTxt, Vec2(math.floor(badgeX + (badgeW - badgeSz.x) / 2), math.floor(badgeY + (badgeH - badgeSz.y) / 2)), FadeColor(Color(255, 255, 255, 255), aMul))
 
         local textX = math.floor(iconX + iconSz + 10 * scale)
-        TwoLines(textX, math.floor(badgeX - textX - 8 * scale), notif.Tag or "ACTION DIAL", Config.Colors.TextSecondary, notif.Title)
+        TwoLines(textX, math.floor(badgeX - textX - 8 * scale), notif.Tag or L("di_ui_notification"), Config.Colors.TextSecondary, notif.Title)
         return
     end
 
@@ -8148,6 +8198,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         elseif notif.IconType == "item" then
             iconW = math.floor(30 * scale)
             iconH = math.floor(22 * scale)
+            iconRadius = math.floor(5 * scale)
             iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
         elseif notif.IconType == "hero" then
             iconW = math.floor(26 * scale)
@@ -8161,11 +8212,15 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         local iconX = math.floor(layout.x + 12 * scale)
         local iconY = math.floor(layout.y + (layout.h - iconH) / 2 + yOff)
 
-        if iconHandle then
-            Render.Image(iconHandle, Vec2(iconX, iconY), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), aMul), iconRadius)
+        local fb = notif.FallbackSvg
+        local mono = fb and NotifGlyphs[fb]
+        local realImg = notif.Icon and GetCachedImage(notif.Icon) or nil
+        if realImg or (iconHandle and not mono) then
+            Render.Image(realImg or iconHandle, Vec2(iconX, iconY), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), aMul), iconRadius)
         else
-            Render.FilledCircle(Vec2(iconX + iconW / 2, iconY + iconH / 2), iconH / 2, FadeColor(accent, aMul), 0, 1.0, 24)
-            Render.FilledCircle(Vec2(iconX + iconW / 2, iconY + iconH / 2), math.floor(4 * scale), FadeColor(Color(255, 255, 255, 230), aMul), 0, 1.0, 18)
+            local cx, cy = iconX + iconW / 2, iconY + iconH / 2
+            Render.FilledCircle(Vec2(cx, cy), iconH / 2, FadeColor(accent, aMul), 0, 1.0, 24)
+            Glyph(fb or "bell", cx, cy, math.floor(iconH * 0.58), FadeColor(Color(255, 255, 255, 255), aMul))
         end
     end
 
@@ -8173,7 +8228,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
     TwoLines(textX, math.floor(layout.x + layout.w - textX - 16 * scale), notif.Tag or L("di_ui_notification"), accent, notif.Title)
 end
 
-local function RenderLargeMedia(layout, alphaMul, yOffset)
+function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
@@ -8207,9 +8262,10 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     if TrackTransition.Active then
         local t = math.min(1.0, (nowClk - TrackTransition.StartTime) / (TrackTransition.Duration * AnimScale()))
         local dir = TrackTransition.Direction
-        local outOffset = -dir * (t * 22 * scale)
+        local e = EaseOutCubic(t)
+        local outOffset = -dir * (e * 8 * scale)
         local outAlpha = (1.0 - t) * aMul
-        local inOffset = dir * ((1.0 - t) * 22 * scale)
+        local inOffset = dir * ((1.0 - e) * 8 * scale)
         local inAlpha = t * aMul
 
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
@@ -8232,8 +8288,9 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
 
         local artSizeText = Render.TextSize(fontMain, artistSz, artistStr)
         local artYPos = math.floor(infoY + titleSize.y + 2 * scale)
-        if artSizeText.x > maxInfoW then
-            RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, maxInfoW, subCol, scale, false)
+        local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(layout.x + layout.w - pad - 16 * scale - 10 * scale - infoX)) or maxInfoW
+        if artSizeText.x > artistW then
+            RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, artistW, subCol, scale, false)
         else
             Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artYPos), subCol)
         end
@@ -8331,7 +8388,7 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     }
 
     local repScale = ButtonSprings.MediaRepeat.scale
-    local repX = math.floor(prevX - 36 * scale)
+    local repX = math.floor(layout.x + layout.w - pad - 12 * scale)
     local repY = playY
     local repH = GetVectorIcon("repeat")
     if repH then
@@ -8352,8 +8409,8 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     if UI.Media.SpotifyLike:Get() then
         local likeScale = ButtonSprings.MediaLike.scale
         local isLiked = (MediaData.IsLiked == true) or (MediaData.LikedTracks[MediaData.LastTrackKey] == true)
-        local likeX = math.floor(layout.x + layout.w - pad - 12 * scale)
-        local likeY = playY
+        local likeX = math.floor(layout.x + layout.w - pad - 8 * scale)
+        local likeY = math.floor(artY + artSize - 10 * scale)
         local heartH = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
         if heartH then
             local heartCol = isLiked and Config.Colors.Red or Config.Colors.TextSecondary
@@ -8377,7 +8434,10 @@ local function IdleGeo(layout, yOff)
     local g = {}
     g.pad = math.floor(16 * scale)
     g.leftX = math.floor(layout.x + g.pad)
-    g.leftY = math.floor(layout.y + g.pad + oy)
+    local fN, sN = TF("LargeNum", scale)
+    local fF, sF = TF("Footnote", scale)
+    local block = Render.TextSize(fN, sN, "0").y + 2 * scale + Render.TextSize(fF, sF, "Ag").y
+    g.leftY = math.floor(layout.y + (Config.Dimensions.LargeH * scale - block) / 2 + oy)
     g.divX = math.floor(layout.x + 140 * scale)
     g.rightX = math.floor(g.divX + 14 * scale)
     g.col2X = math.floor(g.rightX + 92 * scale)
@@ -8421,14 +8481,14 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
         Odometer.Text(id, f, s, txt, Vec2(x + g.textDX, math.floor(y + g.icon / 2 - th / 2)), col, soft)
     end
     Row("large_kda", "kda", string.format("%d/%d/%d", HeroData.Kills, HeroData.Deaths, HeroData.Assists), g.rightX, g.row1Y, fHead, sHead, textCol)
-    Row("large_gold", "gold", string.format("%d G", HeroData.Gold), g.col2X, g.row1Y, fHead, sHead, textCol)
+    Row("large_gold", "gold", Odometer.Group(HeroData.Gold), g.col2X, g.row1Y, fHead, sHead, textCol)
     Row("large_fps", "fps", string.format("%d FPS", PerformanceData.FPS), g.rightX, g.row2Y, fSec, sSec, FadeColor(PerfTint("fps", Config.Colors.TextSecondary), aMul), true)
     Row("large_ping", "ping", string.format("%d ms", PerformanceData.Ping), g.col2X, g.row2Y, fSec, sSec, FadeColor(PerfTint("ping", Config.Colors.TextSecondary), aMul), true)
 
     Focus.RenderTile(layout, g.rightX, math.floor(layout.x + layout.w - 14 * scale), math.floor(layout.y + layout.h - 12 * scale - 26 * scale + yOff), aMul)
 end
 
-local function RenderGamePausedPill(layout, alphaMul, yOffset)
+function Impl.RenderGamePausedPill(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local centerY = math.floor(layout.y + layout.h / 2 + yOff)
@@ -8462,7 +8522,7 @@ local function RenderGamePausedPill(layout, alphaMul, yOffset)
     Odometer.Text("pause_time", fH, sH, timeText, Vec2(textStartX + w1 + wDot, textY2), FadeColor(Config.Colors.TextPrimary, alphaMul))
 end
 
-local function RenderCourierDeliveryPill(layout, alphaMul, yOffset)
+function Impl.RenderCourierDeliveryPill(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local centerY = math.floor(layout.y + layout.h / 2 + yOff)
@@ -8497,7 +8557,7 @@ local function RenderCourierDeliveryPill(layout, alphaMul, yOffset)
     end
 end
 
-local function RenderCourierDeliveredPill(layout, alphaMul, yOffset)
+function Impl.RenderCourierDeliveredPill(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local centerY = math.floor(layout.y + layout.h / 2 + yOff)
@@ -8516,7 +8576,7 @@ local function RenderCourierDeliveredPill(layout, alphaMul, yOffset)
     Render.Text(fH, sH, delivText, Vec2(math.floor(startX + iconSize + gap), math.floor(centerY - tSize.y / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
 end
 
-local function RenderCourierLarge(layout, alphaMul, yOffset)
+function Impl.RenderCourierLarge(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local fH, sH = TF("Headline", scale)
@@ -8574,7 +8634,7 @@ local function RenderCourierLarge(layout, alphaMul, yOffset)
     end
 end
 
-local function RenderVolumeOverlay(layout, alphaMul)
+function Impl.RenderVolumeOverlay(layout, alphaMul)
     if alphaMul <= 0.01 then return end
     local scale = layout.scale
     local aMul = math.max(0.0, math.min(1.0, alphaMul))
@@ -8588,7 +8648,9 @@ local function RenderVolumeOverlay(layout, alphaMul)
     local hudX = math.floor(layout.x + (layout.w - hudW) * 0.5)
     local hudY = math.floor(layout.y + (layout.h - hudH) * 0.5)
 
-    Render.FilledRect(Vec2(hudX, hudY), Vec2(hudX + hudW, hudY + hudH), FadeColor(Color(12, 12, 16, 245), aMul), hudR)
+    local ibg = UI.Main.IslandBgColor:Get()
+    local hudBg = IsPureGlass() and Color(0, 0, 0, 235) or Color(ibg.r, ibg.g, ibg.b, 255)
+    Render.FilledRect(Vec2(hudX, hudY), Vec2(hudX + hudW, hudY + hudH), FadeColor(hudBg, aMul), hudR)
     Render.Rect(Vec2(hudX, hudY), Vec2(hudX + hudW, hudY + hudH), FadeColor(Config.Colors.Border, aMul), hudR, Enum.DrawFlags.None, 1.0)
 
     local centerY = math.floor(hudY + hudH * 0.5)
@@ -8627,7 +8689,7 @@ local function RenderVolumeOverlay(layout, alphaMul)
     end
 end
 
-local function RenderMediaSharedTransition(fromState, toState, layout, progress)
+function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
     local scale = layout.scale
     local fontBold, titleSz = TF("Title", scale)
     local fontMain, artistSz = TF("Body", scale)
@@ -8699,7 +8761,8 @@ local function RenderMediaSharedTransition(fromState, toState, layout, progress)
         RenderMarqueeText(fontBold, titleSz, titleStr, lInfoX, curLY, lMaxInfoW, FadeColor(Config.Colors.TextPrimary, largeAlpha), scale, false)
         if artistStr ~= "" then
             local artY = curLY + lTitleSize.y + 2 * scale
-            RenderMarqueeText(fontMain, artistSz, artistStr, lInfoX, artY, lMaxInfoW, FadeColor(Config.Colors.TextSecondary, largeAlpha), scale, false)
+            local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(lL.x + lL.w - pad - 16 * scale - 10 * scale - lInfoX)) or lMaxInfoW
+            RenderMarqueeText(fontMain, artistSz, artistStr, lInfoX, artY, artistW, FadeColor(Config.Colors.TextSecondary, largeAlpha), scale, false)
         end
     end
 
@@ -8755,7 +8818,7 @@ local function RenderMediaSharedTransition(fromState, toState, layout, progress)
             Render.Image(shufH, Vec2(curShufX - sSz / 2, playY - sSz / 2), Vec2(sSz, sSz), FadeColor(shufCol, secAlpha), 0)
         end
 
-        local repTargetX = math.floor(prevTargetX - 36 * scale)
+        local repTargetX = math.floor(lL.x + lL.w - pad - 12 * scale)
         local repScale = ButtonSprings.MediaRepeat.scale * elemScale
         local curRepX = math.floor(midX + (repTargetX - midX) * bloomT)
         local repH = GetVectorIcon("repeat")
@@ -8768,20 +8831,21 @@ local function RenderMediaSharedTransition(fromState, toState, layout, progress)
             end
         end
 
-        local likeTargetX = math.floor(lL.x + lL.w - pad - 12 * scale)
+        local likeTargetX = math.floor(lL.x + lL.w - pad - 8 * scale)
+        local likeY = math.floor(curThumbY + curThumbSize - 10 * scale)
         local likeScale = ButtonSprings.MediaLike.scale * elemScale
-        local curLikeX = math.floor(midX + (likeTargetX - midX) * bloomT)
+        local curLikeX = likeTargetX
         local isLiked = (MediaData.IsLiked == true) or (MediaData.LikedTracks[MediaData.LastTrackKey] == true)
         local likeSvg = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
         if likeSvg and UI.Media.SpotifyLike:Get() then
             local lSz = 16 * scale * likeScale
             local lCol = isLiked and Config.Colors.Red or Config.Colors.TextSecondary
-            Render.Image(likeSvg, Vec2(curLikeX - lSz / 2, playY - lSz / 2), Vec2(lSz, lSz), FadeColor(lCol, secAlpha), 0)
+            Render.Image(likeSvg, Vec2(curLikeX - lSz / 2, likeY - lSz / 2), Vec2(lSz, lSz), FadeColor(lCol, secAlpha), 0)
         end
     end
 end
 
-local function RenderIdleSharedTransition(fromState, toState, layout, progress)
+function Impl.RenderIdleSharedTransition(fromState, toState, layout, progress)
     local scale = layout.scale
     local elemT = math.max(0.0, math.min(1.0, progress or 0.0))
     local D = Config.Dimensions
@@ -8906,7 +8970,7 @@ local function RenderIdleSharedTransition(fromState, toState, layout, progress)
             local dx0 = cm.chip.svgKey and 20 * scale or 0
             local dx = math.floor(dx0 + (g.textDX - dx0) * elemT + 0.5)
             local col = LerpColor(cm.chip.color, bigCol, elemT)
-            local mix = (bigFont == cm.chip.font) and 1 or math.max(0, math.min(1, (elemT - 0.25) / 0.5))
+            local mix = (bigFont == cm.chip.font and txt == cm.chip.text) and 1 or math.max(0, math.min(1, (elemT - 0.25) / 0.5))
             local midT = iy + iconSz / 2
             if mix < 1 then
                 local th = Render.TextSize(cm.chip.font, sz, "0").y
@@ -8925,7 +8989,7 @@ local function RenderIdleSharedTransition(fromState, toState, layout, progress)
         end
     end
     Row("kda", "kda", string.format("%d/%d/%d", HeroData.Kills, HeroData.Deaths, HeroData.Assists), g.rightX, g.row1Y, fHead, sHead, Config.Colors.TextPrimary)
-    Row("gold", "gold", string.format("%d G", HeroData.Gold), g.col2X, g.row1Y, fHead, sHead, Config.Colors.TextPrimary)
+    Row("gold", "gold", Odometer.Group(HeroData.Gold), g.col2X, g.row1Y, fHead, sHead, Config.Colors.TextPrimary)
     Row("fps", "fps", string.format("%d FPS", PerformanceData.FPS), g.rightX, g.row2Y, fSec, sSec, PerfTint("fps", Config.Colors.TextSecondary))
     Row("ping", "ping", string.format("%d ms", PerformanceData.Ping), g.col2X, g.row2Y, fSec, sSec, PerfTint("ping", Config.Colors.TextSecondary))
 
@@ -8947,7 +9011,7 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
         end
     elseif state == StateMachine.States.COMPACT_FIGHT then
         if FightTracker.Active then
-            RenderFightCompact(layout, alphaMul, yOffset)
+            Impl.RenderFightCompact(layout, alphaMul, yOffset)
         else
             if IsMediaActive() then
                 RenderCompactMedia(layout, alphaMul, yOffset)
@@ -8956,24 +9020,24 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
             end
         end
     elseif state == StateMachine.States.NOTIFICATION then
-        RenderNotificationState(layout, alphaMul, yOffset)
+        Impl.RenderNotificationState(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.GAME_PAUSED then
-        RenderGamePausedPill(layout, alphaMul, yOffset)
+        Impl.RenderGamePausedPill(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.COURIER_DELIVERY then
-        RenderCourierDeliveryPill(layout, alphaMul, yOffset)
+        Impl.RenderCourierDeliveryPill(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.COURIER_DELIVERED then
-        RenderCourierDeliveredPill(layout, alphaMul, yOffset)
+        Impl.RenderCourierDeliveredPill(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.COURIER_LARGE then
-        RenderCourierLarge(layout, alphaMul, yOffset)
+        Impl.RenderCourierLarge(layout, alphaMul, yOffset)
     elseif state == StateMachine.States.LARGE_MEDIA then
         if IsMediaActive() then
-            RenderLargeMedia(layout, alphaMul, yOffset)
+            Impl.RenderLargeMedia(layout, alphaMul, yOffset)
         else
             RenderLargeIdle(layout, alphaMul, yOffset)
         end
     elseif state == StateMachine.States.LARGE_FIGHT then
         if FightTracker.Active then
-            RenderFightLarge(layout, alphaMul, yOffset)
+            Impl.RenderFightLarge(layout, alphaMul, yOffset)
         else
             RenderLargeIdle(layout, alphaMul, yOffset)
         end
@@ -8992,6 +9056,13 @@ end
 
 local ContentFx = { k = 1, alpha = 1, cx = 0, cy = 0, top = 0, h = 1, stagger = 0, reveal = nil, Installed = false }
 local FxBase = getmetatable(Render).__index
+
+function ContentFx.TextOut(font, size, text, pos, col, ...)
+    if ContentFx.Glass and col and (col.a or 255) > 8 then
+        FxBase.Text(font, size, text, Vec2(pos.x, pos.y + 1), Color(0, 0, 0, math.floor((col.a or 255) * 0.45)))
+    end
+    return FxBase.Text(font, size, text, pos, col, ...)
+end
 
 function ContentFx.Alpha(col, y)
     if not col then return col end
@@ -9055,6 +9126,7 @@ for name, fn in pairs(ContentFx.Wrap) do
     ContentFx.Fns[name] = function(...)
         local a = table.pack(...)
         fn(a)
+        if name == "Text" then return ContentFx.TextOut(table.unpack(a, 1, a.n)) end
         return FxBase[name](table.unpack(a, 1, a.n))
     end
 end
@@ -9077,20 +9149,21 @@ end
 function ContentFx.End()
     if ContentFx.Installed then
         for name in pairs(ContentFx.Fns) do Render[name] = nil end
+        if ContentFx.Glass then Render.Text = ContentFx.TextOut end
         ContentFx.Installed = false
     end
 end
 
-local function RenderShared(kind, layout, m)
+function Impl.RenderShared(kind, layout, m)
     local S = StateMachine.States
     if kind == "media" then
-        RenderMediaSharedTransition(S.COMPACT_MEDIA, S.LARGE_MEDIA, layout, m)
+        Impl.RenderMediaSharedTransition(S.COMPACT_MEDIA, S.LARGE_MEDIA, layout, m)
     else
-        RenderIdleSharedTransition(S.COMPACT_IDLE, S.LARGE_IDLE, layout, m)
+        Impl.RenderIdleSharedTransition(S.COMPACT_IDLE, S.LARGE_IDLE, layout, m)
     end
 end
 
-local function RenderContent(layout, dt)
+function Impl.RenderContent(layout, dt)
     local tr = StateMachine.Transition
     local ghosts = StateMachine.Ghosts
     for i = #ghosts, 1, -1 do
@@ -9107,7 +9180,7 @@ local function RenderContent(layout, dt)
         local ok, err = pcall(function()
             ContentFx.Begin(layout, g.a ^ 1.5, 1 - 0.06 * (1 - g.a))
             if g.shared then
-                RenderShared(g.shared, layout, g.m)
+                Impl.RenderShared(g.shared, layout, g.m)
             else
                 RenderStateLayer(g.state, g.w and StateMachine.FrameFor(layout, g.w, g.h, g.r) or layout, 1.0, 0)
             end
@@ -9117,7 +9190,7 @@ local function RenderContent(layout, dt)
     end
     if tr.Active and tr.SharedPair then
         tr.Reveal = 1
-        RenderShared(tr.SharedPair, layout, StateMachine.SharedM(tr.SharedPair))
+        Impl.RenderShared(tr.SharedPair, layout, StateMachine.SharedM(tr.SharedPair))
     elseif tr.Active then
         local r = tr.Shrink and math.min(1, tr.Progress / 0.5) or math.max(0, math.min(1, (tr.Progress - 0.05) / 0.70))
         r = math.max(r, tr.Reveal or 0)
@@ -9137,7 +9210,7 @@ local function RenderContent(layout, dt)
     end
 end
 
-local function RenderDragGuides(layout)
+function Impl.RenderDragGuides(layout)
     if not DragState.IsDragging then return end
 
     local scr = Render.ScreenSize()
@@ -9166,6 +9239,8 @@ local LastMenuOpenState = false
 
 function DynamicIsland.OnFrame()
     if not UI or not UI.Main.Enabled:Get() then return end
+    ContentFx.Glass = IsPureGlass()
+    Render.Text = ContentFx.Glass and ContentFx.TextOut or nil
     local inGame = Engine.IsInGame and Engine.IsInGame()
     if UI.Main.OnlyInGame:Get() and not inGame then return end
     if Journey.Hidden then return end
@@ -9184,7 +9259,7 @@ function DynamicIsland.OnFrame()
         dt = math.min(0.04, math.max(0.001, curClock - StateMachine.LastDrawTime))
     end
     StateMachine.LastDrawTime = curClock
-    AdvancePosition(dt)
+    Impl.AdvancePosition(dt)
     dt = dt / AnimScale()
 
     if VolumeState.Visible then
@@ -9267,7 +9342,7 @@ function DynamicIsland.OnFrame()
 
     if inGame and CachedDotaMapHandle == nil and os.clock() - LastMapWarmCheck > 10.0 then
         LastMapWarmCheck = os.clock()
-        GetDotaMapTexture()
+        Impl.GetDotaMapTexture()
     end
 
     PerformanceData.FrameCount = PerformanceData.FrameCount + 1
@@ -9368,13 +9443,13 @@ function DynamicIsland.OnFrame()
     local layout = GetIslandLayout()
     if layout.w <= 0 or layout.h <= 0 then return end
 
-    RenderDragGuides(layout)
+    Impl.RenderDragGuides(layout)
 
     local p1 = Vec2(layout.x, layout.y)
     local p2 = Vec2(layout.x + layout.w, layout.y + layout.h)
 
     if UI.Media.Shadow:Get() then
-        Render.Shadow(p1, p2, Config.Colors.Shadow, 16, layout.r, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 3))
+        SoftShadow(p1, p2, layout.r, Config.Colors.Shadow, 16, Vec2(0, 3))
     end
 
     local borderW = (UI and UI.Main and UI.Main.BorderThickness) and UI.Main.BorderThickness:Get() or 1.0
@@ -9389,18 +9464,18 @@ function DynamicIsland.OnFrame()
 
     Render.PushClip(p1, p2)
 
-    RenderContent(layout, dt)
+    Impl.RenderContent(layout, dt)
 
     if VolumeState.Visible and VolumeState.Alpha > 0.01 then
-        RenderVolumeOverlay(layout, VolumeState.Alpha)
+        Impl.RenderVolumeOverlay(layout, VolumeState.Alpha)
     end
 
     Render.PopClip()
 
-    RenderSecondarySatelliteBubble(layout)
+    Impl.RenderSecondarySatelliteBubble(layout)
     Focus.RenderBubble(layout)
-    RenderMenuClosedHint(layout)
-    RenderHUDDrawer(layout, dt)
+    Impl.RenderMenuClosedHint(layout)
+    Impl.RenderHUDDrawer(layout, dt)
 end
 
 function DynamicIsland.OnUpdateEx()
@@ -9412,13 +9487,13 @@ function DynamicIsland.OnUpdateEx()
             HeroData.HeroName = NPC.GetUnitName(HeroData.Local)
         end
         if HeroData.Local then
-            ProcessFightDetector()
+            Impl.ProcessFightDetector()
         end
-        ProcessGameEvents()
+        Impl.ProcessGameEvents()
         Reminders.Tick()
         Rampage.Tick()
-        ProcessPauseTracker()
-        ProcessCourierTracker()
+        Impl.ProcessPauseTracker()
+        Impl.ProcessCourierTracker()
     else
         if WasInGame then
             WasInGame = false
@@ -9471,15 +9546,15 @@ function DynamicIsland.OnUpdateEx()
         CourierTracker.BasePos = nil
         CourierTracker.CachedCourier = nil
     end
-    HandleInteractions()
-    PollMediaBridge()
-    PollBridgeStatus()
+    Impl.HandleInteractions()
+    Impl.PollMediaBridge()
+    Impl.PollBridgeStatus()
 end
 
 function DynamicIsland.OnScriptsLoaded()
-    LoadScriptFonts()
-    InitMenu()
-    LoadAllConfig()
+    Impl.LoadScriptFonts()
+    Impl.InitMenu()
+    Impl.LoadAllConfig()
 
     local inGame = Engine.IsInGame and Engine.IsInGame()
     if inGame then
@@ -9503,7 +9578,7 @@ function DynamicIsland.OnScriptsLoaded()
     StateMachine.Spring.Radius.value = Config.Dimensions.CompactRadius
     StateMachine.Spring.Squish.value = 0
 
-    PollMediaBridge()
+    Impl.PollMediaBridge()
 end
 
 DynamicIsland.HapticPlaySound = HapticPlaySound
