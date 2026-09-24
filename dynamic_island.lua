@@ -318,6 +318,7 @@ end)()
 
 local MenuTextOffsetY = 0.0
 local MenuIconOffsetY = 0.0
+local Render = setmetatable({}, { __index = Render })
 
 local DynamicIsland = {}
 
@@ -663,6 +664,8 @@ local localization = qLocalization.new({
         di_media_spotify_like = "Spotify Like Button",
         di_media_volume_wheel = "Scroll Wheel Volume Control",
         di_media_marquee_speed = "Marquee Speed",
+        di_media_compact_title = "Track Title in Compact View",
+        di_media_artwork_tint = "Wave Color From Artwork",
         di_media_secondary_bubble = "Satellite Bubble",
         di_media_shadow = "Soft Shadows",
         di_media_blur = "Backdrop Glass Blur",
@@ -671,7 +674,7 @@ local localization = qLocalization.new({
         di_media_export_cfg = "Export All Settings to File",
         di_media_import_cfg = "Import All Settings from File",
         di_courier_delivering = "Delivering Items",
-        di_courier_delivered = "Delivered!",
+        di_courier_delivered = "Delivered",
         di_courier_eta = "ETA",
         di_courier_speed = "Speed",
         di_courier_hp = "HP",
@@ -1046,6 +1049,8 @@ local localization = qLocalization.new({
         di_media_spotify_like = "Лайк трека Spotify",
         di_media_volume_wheel = "Громкость колесиком мыши",
         di_media_marquee_speed = "Скорость бегущей строки",
+        di_media_compact_title = "Название трека в маленьком островке",
+        di_media_artwork_tint = "Цвет волны из обложки",
         di_media_secondary_bubble = "Второй островок/баббл",
         di_media_shadow = "Мягкие тени",
         di_media_blur = "Размытие фона (Blur)",
@@ -1054,7 +1059,7 @@ local localization = qLocalization.new({
         di_media_export_cfg = "Экспорт всех настроек в файл",
         di_media_import_cfg = "Импорт всех настроек из файла",
         di_courier_delivering = "Доставка вещей",
-        di_courier_delivered = "Доставлено!",
+        di_courier_delivered = "Доставлено",
         di_courier_eta = "ETA",
         di_courier_speed = "Скор.",
         di_courier_hp = "ХП",
@@ -1140,19 +1145,11 @@ end
 
 local MotionEngine = {
     Profiles = {
-        EXPAND = { omega = 26.0, zeta = 0.76 },
-        COLLAPSE = { omega = 30.0, zeta = 0.88 },
-        BOUNCE = { omega = 28.0, zeta = 0.65 },
-        NOTCH = { omega = 36.0, zeta = 0.80 },
-        BOUNDARY_BUMP = { omega = 32.0, zeta = 0.62 },
-        POP = { omega = 28.0, zeta = 0.72 },
-        SUBTLE = { omega = 22.0, zeta = 0.90 },
-        SQUISH = { omega = 32.0, zeta = 0.72 },
-        BUTTON = { omega = 32.0, zeta = 0.65 },
-        RUBBER_BAND = { omega = 28.0, zeta = 0.65 },
-        SHARED_ELEM = { omega = 24.0, zeta = 0.82 }
+        SNAPPY = { omega = 21.0, zeta = 0.82 },
+        SMOOTH = { omega = 16.0, zeta = 1.0 },
+        BOUNCY = { omega = 13.5, zeta = 0.72 }
     },
-    CurrentProfile = "EXPAND",
+    CurrentProfile = "BOUNCY",
     SmoothedDt = 0.016
 }
 
@@ -1181,7 +1178,12 @@ function MotionEngine.SolveSpring(pos, vel, target, dt, omega, zeta, eps)
 end
 
 function MotionEngine.GetProfile(name)
-    return MotionEngine.Profiles[name] or MotionEngine.Profiles.EXPAND
+    return MotionEngine.Profiles[name] or MotionEngine.Profiles.BOUNCY
+end
+
+function MotionEngine.Step(pos, vel, target, dt, name, eps)
+    local p = MotionEngine.Profiles[name] or MotionEngine.Profiles.SMOOTH
+    return MotionEngine.SolveSpring(pos, vel, target, dt, p.omega, p.zeta, eps)
 end
 
 function MotionEngine.UpdateSmoothedDt(rawDt)
@@ -1194,57 +1196,73 @@ local SolveDampedSpring = MotionEngine.SolveSpring
 
 local Config = {
     Fonts = {
+        Regular = nil,
+        Medium = nil,
+        Semibold = nil,
+        Display = nil,
         Main = nil,
         Bold = nil
     },
+    Type = {
+        LargeNum = { "Display", 28 },
+        Title = { "Semibold", 16 },
+        Headline = { "Semibold", 14 },
+        Body = { "Regular", 14 },
+        Subhead = { "Regular", 13 },
+        Footnote = { "Regular", 12 },
+        FootnoteEm = { "Semibold", 12 },
+        Caption = { "Medium", 11 },
+        Caption2 = { "Semibold", 9 }
+    },
     Colors = {
-        Bg = Color(0, 0, 0, 245),
         Border = Color(255, 255, 255, 28),
         Shadow = Color(0, 0, 0, 135),
         TextPrimary = Color(255, 255, 255, 255),
-        TextSecondary = Color(160, 160, 170, 255),
-        TextMuted = Color(120, 120, 130, 255),
-        Accent = Color(52, 199, 89, 255),
+        TextSecondary = Color(235, 235, 245, 153),
+        TextMuted = Color(235, 235, 245, 77),
+        TextQuaternary = Color(235, 235, 245, 46),
+        TextInverse = Color(0, 0, 0, 255),
+        Separator = Color(84, 84, 88, 153),
+        Fill = Color(120, 120, 128, 92),
+        FillSecondary = Color(120, 120, 128, 82),
+        FillTertiary = Color(118, 118, 128, 61),
+        FillQuaternary = Color(118, 118, 128, 46),
+        Accent = Color(48, 209, 88, 255),
         Red = Color(255, 69, 58, 255),
         Orange = Color(255, 159, 10, 255),
         Yellow = Color(255, 214, 10, 255),
+        Green = Color(48, 209, 88, 255),
+        Mint = Color(99, 230, 226, 255),
+        Teal = Color(64, 200, 224, 255),
+        Cyan = Color(100, 210, 255, 255),
         Blue = Color(10, 132, 255, 255),
-        ManaBlue = Color(0, 170, 255, 255),
+        Indigo = Color(94, 92, 230, 255),
         Purple = Color(191, 90, 242, 255),
-        TrackProgressBg = Color(255, 255, 255, 40),
+        Pink = Color(255, 55, 95, 255),
+        Brown = Color(172, 142, 104, 255),
+        Gray = Color(142, 142, 147, 255),
+        TrackProgressBg = Color(120, 120, 128, 92),
         GridOverlay = Color(0, 0, 0, 95),
-        GridLine = Color(255, 255, 255, 18),
-        GridAxis = Color(52, 199, 89, 140),
-        GridHighlight = Color(52, 199, 89, 220),
+        GridAxis = Color(48, 209, 88, 140),
+        GridHighlight = Color(48, 209, 88, 220),
         PMenuIslandBorder = Color(255, 255, 255, 65),
-
-        ChipActive = Color(255, 255, 255, 52),
-        ChipActiveBorder = Color(255, 255, 255, 225),
-        ChipInactive = Color(255, 255, 255, 10),
-        ChipInactiveBorder = Color(255, 255, 255, 24),
-
-        InspectorBg = Color(10, 12, 18, 195),
-        InspectorBorder = Color(255, 255, 255, 42),
-        BtnBg = Color(255, 255, 255, 14),
-        BtnBgActive = Color(255, 255, 255, 55),
-        BtnBorder = Color(255, 255, 255, 28),
-        BtnBorderActive = Color(255, 255, 255, 220),
-
-        HintBg = Color(8, 10, 14, 180),
-        HintBorder = Color(255, 255, 255, 25),
-
-        SegTrack = Color(255, 255, 255, 20),
-        SegThumb = Color(255, 255, 255, 58),
-        SegThumbBorder = Color(255, 255, 255, 90),
-        Grabber = Color(255, 255, 255, 60),
-        TextInverse = Color(18, 18, 24, 255)
+        ChipActiveBorder = Color(255, 255, 255, 255),
+        ChipInactive = Color(118, 118, 128, 61),
+        ChipInactiveBorder = Color(255, 255, 255, 0),
+        HintBg = Color(28, 28, 30, 220),
+        HintBorder = Color(255, 255, 255, 20),
+        SegTrack = Color(118, 118, 128, 61),
+        SegThumb = Color(99, 99, 102, 255),
+        Grabber = Color(235, 235, 245, 77)
     },
+
     Dimensions = {
         CompactW = 120,
         CompactH = 34,
         CompactRadius = 17,
 
         CompactMediaW = 205,
+        CompactMediaBareW = 124,
         CompactMediaH = 34,
         CompactMediaRadius = 17,
 
@@ -1252,9 +1270,9 @@ local Config = {
         CompactFightH = 34,
         CompactFightRadius = 17,
 
-        NotificationW = 250,
-        NotificationH = 36,
-        NotificationRadius = 18,
+        NotificationW = 260,
+        NotificationH = 44,
+        NotificationRadius = 22,
 
         ExpandedW = 335,
         ExpandedH = 88,
@@ -1292,6 +1310,11 @@ local Config = {
     }
 }
 
+local function TF(role, scale)
+    local t = Config.Type[role]
+    return Config.Fonts[t[1]], t[2] * (scale or 1)
+end
+
 local StateMachine = {
     States = {
         COMPACT_IDLE = 1,
@@ -1323,11 +1346,13 @@ local StateMachine = {
         Active = false,
         FromState = 1,
         ToState = 1,
-        FromAlphaScale = 1.0,
         Progress = 1.0,
-        Duration = 0.32,
+        Reveal = 1.0,
+        Dist0 = nil,
+        SharedPair = nil,
         StartTime = 0
     },
+    Ghosts = {},
 
     Spring = {
         W = { value = 120, vel = 0, target = 120 },
@@ -1477,8 +1502,21 @@ local PerformanceData = {
     FPS = 60,
     Ping = 30,
     LastFPSUpdate = 0,
-    FrameCount = 0
+    FrameCount = 0,
+    FpsEma = nil,
+    FpsShown = false,
+    PingShown = false,
+    Warn = {}
 }
+
+function PerformanceData.Level(kind)
+    if kind == "fps" then
+        local v = PerformanceData.FPS
+        return v < 30 and 2 or (v < 60 and 1 or 0)
+    end
+    local v = PerformanceData.Ping
+    return v > 200 and 2 or (v > 100 and 1 or 0)
+end
 
 local MediaData = {
     IsPlaying = false,
@@ -1498,7 +1536,7 @@ local MediaData = {
     CoverPath = "",
     CoverJpg = "",
     CoverBase64 = "",
-    CoverColor = Color(255, 45, 85, 255),
+    CoverColor = Color(255, 55, 95, 255),
     CoverVersion = -1,
     CoverImageHandle = nil,
     CoverHandleSetAt = 0,
@@ -1592,7 +1630,7 @@ local Reminders = { Fired = {} }
 local Satellite = { S = {}, Right = { kind = nil, notif = nil } }
 local Rampage = { Count = 0, LastKill = -100, Left = 0, SuccessAt = -10, Target = nil, Active = false }
 local Success = { Fired = {} }
-local Odometer = { States = {}, Widths = {}, WidthCount = 0 }
+local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts = {}, LayoutCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
 local SCRIPT_VERSION = "2.0.0"
@@ -1621,52 +1659,52 @@ local MouseInput = {
 }
 
 local KeyItemColors = {
-    ["item_blink"] = { name = "Blink Dagger", col = Color(70, 225, 255, 255) },
-    ["item_black_king_bar"] = { name = "BKB", col = Color(255, 210, 30, 255) },
-    ["item_sheepstick"] = { name = "Scythe of Vyse", col = Color(140, 230, 255, 255) },
-    ["item_orchid"] = { name = "Orchid", col = Color(255, 50, 90, 255) },
-    ["item_bloodthorn"] = { name = "Bloodthorn", col = Color(255, 30, 70, 255) },
-    ["item_rapier"] = { name = "Divine Rapier", col = Color(255, 215, 0, 255) },
-    ["item_ultimate_scepter"] = { name = "Aghanim Scepter", col = Color(120, 160, 255, 255) },
-    ["item_refresher"] = { name = "Refresher Orb", col = Color(75, 245, 135, 255) },
-    ["item_radiance"] = { name = "Radiance", col = Color(255, 175, 20, 255) },
-    ["item_heart"] = { name = "Heart of Tarrasque", col = Color(255, 45, 65, 255) },
-    ["item_assault"] = { name = "Assault Cuirass", col = Color(255, 130, 35, 255) },
-    ["item_butterfly"] = { name = "Butterfly", col = Color(105, 240, 110, 255) },
-    ["item_nullifier"] = { name = "Nullifier", col = Color(255, 195, 45, 255) },
-    ["item_satanic"] = { name = "Satanic", col = Color(235, 30, 50, 255) },
-    ["item_aeon_disk"] = { name = "Aeon Disk", col = Color(120, 235, 255, 255) },
-    ["item_silver_edge"] = { name = "Silver Edge", col = Color(195, 95, 255, 255) },
-    ["item_invis_sword"] = { name = "Shadow Blade", col = Color(170, 85, 255, 255) },
-    ["item_monkey_king_bar"] = { name = "MKB", col = Color(255, 160, 30, 255) },
-    ["item_abyssal_blade"] = { name = "Abyssal Blade", col = Color(185, 75, 75, 255) },
-    ["item_manta"] = { name = "Manta Style", col = Color(85, 185, 255, 255) },
-    ["item_greater_crit"] = { name = "Daedalus", col = Color(255, 55, 55, 255) },
-    ["item_desolator"] = { name = "Desolator", col = Color(255, 40, 40, 255) },
-    ["item_moon_shard"] = { name = "Moon Shard", col = Color(215, 155, 255, 255) }
+    ["item_blink"] = { name = "Blink Dagger", col = Color(100, 210, 255, 255) },
+    ["item_black_king_bar"] = { name = "BKB", col = Color(255, 214, 10, 255) },
+    ["item_sheepstick"] = { name = "Scythe of Vyse", col = Color(100, 210, 255, 255) },
+    ["item_orchid"] = { name = "Orchid", col = Color(255, 55, 95, 255) },
+    ["item_bloodthorn"] = { name = "Bloodthorn", col = Color(255, 55, 95, 255) },
+    ["item_rapier"] = { name = "Divine Rapier", col = Color(255, 214, 10, 255) },
+    ["item_ultimate_scepter"] = { name = "Aghanim Scepter", col = Color(94, 92, 230, 255) },
+    ["item_refresher"] = { name = "Refresher Orb", col = Color(48, 209, 88, 255) },
+    ["item_radiance"] = { name = "Radiance", col = Color(255, 159, 10, 255) },
+    ["item_heart"] = { name = "Heart of Tarrasque", col = Color(255, 69, 58, 255) },
+    ["item_assault"] = { name = "Assault Cuirass", col = Color(255, 159, 10, 255) },
+    ["item_butterfly"] = { name = "Butterfly", col = Color(48, 209, 88, 255) },
+    ["item_nullifier"] = { name = "Nullifier", col = Color(255, 214, 10, 255) },
+    ["item_satanic"] = { name = "Satanic", col = Color(255, 69, 58, 255) },
+    ["item_aeon_disk"] = { name = "Aeon Disk", col = Color(100, 210, 255, 255) },
+    ["item_silver_edge"] = { name = "Silver Edge", col = Color(191, 90, 242, 255) },
+    ["item_invis_sword"] = { name = "Shadow Blade", col = Color(191, 90, 242, 255) },
+    ["item_monkey_king_bar"] = { name = "MKB", col = Color(255, 159, 10, 255) },
+    ["item_abyssal_blade"] = { name = "Abyssal Blade", col = Color(255, 69, 58, 255) },
+    ["item_manta"] = { name = "Manta Style", col = Color(100, 210, 255, 255) },
+    ["item_greater_crit"] = { name = "Daedalus", col = Color(255, 69, 58, 255) },
+    ["item_desolator"] = { name = "Desolator", col = Color(255, 69, 58, 255) },
+    ["item_moon_shard"] = { name = "Moon Shard", col = Color(191, 90, 242, 255) }
 }
 
 local StrictInvisModifiers = {
-    ["modifier_item_invisibility_edge_windwalk"] = { name = "Shadow Blade", icon = "panorama/images/items/invis_sword_png.vtex_c", col = Color(160, 90, 255, 255) },
-    ["modifier_item_silver_edge_windwalk"] = { name = "Silver Edge", icon = "panorama/images/items/silver_edge_png.vtex_c", col = Color(220, 100, 255, 255) },
-    ["modifier_item_smoke_of_deceit"] = { name = "Smoke of Deceit", icon = "panorama/images/items/smoke_of_deceit_png.vtex_c", col = Color(255, 140, 40, 255) },
-    ["modifier_clinkz_skeleton_walk"] = { name = "Skeleton Walk", icon = "panorama/images/spellicons/clinkz_skeleton_walk_png.vtex_c", col = Color(255, 100, 40, 255) },
-    ["modifier_clinkz_strafe_invis"] = { name = "Skeleton Walk", icon = "panorama/images/spellicons/clinkz_skeleton_walk_png.vtex_c", col = Color(255, 100, 40, 255) },
-    ["modifier_nyx_assassin_vendetta"] = { name = "Vendetta", icon = "panorama/images/spellicons/nyx_assassin_vendetta_png.vtex_c", col = Color(230, 60, 60, 255) },
-    ["modifier_mirana_moonlight_shadow"] = { name = "Moonlight Shadow", icon = "panorama/images/spellicons/mirana_moonlight_shadow_png.vtex_c", col = Color(100, 200, 255, 255) }
+    ["modifier_item_invisibility_edge_windwalk"] = { name = "Shadow Blade", icon = "panorama/images/items/invis_sword_png.vtex_c", col = Color(191, 90, 242, 255) },
+    ["modifier_item_silver_edge_windwalk"] = { name = "Silver Edge", icon = "panorama/images/items/silver_edge_png.vtex_c", col = Color(191, 90, 242, 255) },
+    ["modifier_item_smoke_of_deceit"] = { name = "Smoke of Deceit", icon = "panorama/images/items/smoke_of_deceit_png.vtex_c", col = Color(255, 159, 10, 255) },
+    ["modifier_clinkz_skeleton_walk"] = { name = "Skeleton Walk", icon = "panorama/images/spellicons/clinkz_skeleton_walk_png.vtex_c", col = Color(255, 159, 10, 255) },
+    ["modifier_clinkz_strafe_invis"] = { name = "Skeleton Walk", icon = "panorama/images/spellicons/clinkz_skeleton_walk_png.vtex_c", col = Color(255, 159, 10, 255) },
+    ["modifier_nyx_assassin_vendetta"] = { name = "Vendetta", icon = "panorama/images/spellicons/nyx_assassin_vendetta_png.vtex_c", col = Color(255, 69, 58, 255) },
+    ["modifier_mirana_moonlight_shadow"] = { name = "Moonlight Shadow", icon = "panorama/images/spellicons/mirana_moonlight_shadow_png.vtex_c", col = Color(100, 210, 255, 255) }
 }
 
 local RuneInfoList = {
-    [Enum.RuneType.DOTA_RUNE_DOUBLEDAMAGE] = { name = "di_rune_names_double_damage", col = Color(65, 140, 255, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" },
-    [Enum.RuneType.DOTA_RUNE_HASTE] = { name = "di_rune_names_haste", col = Color(255, 65, 65, 255), path = "panorama/images/spellicons/rune_haste_png.vtex_c", svg = "rune_haste" },
-    [Enum.RuneType.DOTA_RUNE_ILLUSION] = { name = "di_rune_names_illusion", col = Color(255, 205, 45, 255), path = "panorama/images/spellicons/rune_illusion_png.vtex_c", svg = "rune_dd" },
-    [Enum.RuneType.DOTA_RUNE_INVISIBILITY] = { name = "di_rune_names_invisibility", col = Color(170, 85, 255, 255), path = "panorama/images/spellicons/rune_invis_png.vtex_c", svg = "rune_invis" },
-    [Enum.RuneType.DOTA_RUNE_REGENERATION] = { name = "di_rune_names_regeneration", col = Color(85, 255, 125, 255), path = "panorama/images/spellicons/rune_regen_png.vtex_c", svg = "rune_regen" },
-    [Enum.RuneType.DOTA_RUNE_BOUNTY] = { name = "di_rune_names_bounty", col = Color(255, 175, 10, 255), path = "panorama/images/items/courier_gold_png.vtex_c", svg = "bounty" },
-    [Enum.RuneType.DOTA_RUNE_ARCANE] = { name = "di_rune_names_arcane", col = Color(235, 85, 255, 255), path = "panorama/images/spellicons/rune_arcane_png.vtex_c", svg = "rune_arcane" },
-    [Enum.RuneType.DOTA_RUNE_WATER] = { name = "di_rune_names_water", col = Color(0, 215, 255, 255), path = "panorama/images/items/bottle_water_png.vtex_c", svg = "rune_water" },
-    [Enum.RuneType.DOTA_RUNE_XP] = { name = "di_rune_names_wisdom", col = Color(185, 105, 255, 255), path = "panorama/images/spellicons/rune_xp_png.vtex_c", svg = "rune_wisdom" },
-    [Enum.RuneType.DOTA_RUNE_SHIELD] = { name = "di_rune_names_shield", col = Color(255, 225, 105, 255), path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield" }
+    [Enum.RuneType.DOTA_RUNE_DOUBLEDAMAGE] = { name = "di_rune_names_double_damage", col = Color(10, 132, 255, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" },
+    [Enum.RuneType.DOTA_RUNE_HASTE] = { name = "di_rune_names_haste", col = Color(255, 69, 58, 255), path = "panorama/images/spellicons/rune_haste_png.vtex_c", svg = "rune_haste" },
+    [Enum.RuneType.DOTA_RUNE_ILLUSION] = { name = "di_rune_names_illusion", col = Color(255, 214, 10, 255), path = "panorama/images/spellicons/rune_illusion_png.vtex_c", svg = "rune_dd" },
+    [Enum.RuneType.DOTA_RUNE_INVISIBILITY] = { name = "di_rune_names_invisibility", col = Color(94, 92, 230, 255), path = "panorama/images/spellicons/rune_invis_png.vtex_c", svg = "rune_invis" },
+    [Enum.RuneType.DOTA_RUNE_REGENERATION] = { name = "di_rune_names_regeneration", col = Color(48, 209, 88, 255), path = "panorama/images/spellicons/rune_regen_png.vtex_c", svg = "rune_regen" },
+    [Enum.RuneType.DOTA_RUNE_BOUNTY] = { name = "di_rune_names_bounty", col = Color(255, 214, 10, 255), path = "panorama/images/items/courier_gold_png.vtex_c", svg = "bounty" },
+    [Enum.RuneType.DOTA_RUNE_ARCANE] = { name = "di_rune_names_arcane", col = Color(255, 55, 95, 255), path = "panorama/images/spellicons/rune_arcane_png.vtex_c", svg = "rune_arcane" },
+    [Enum.RuneType.DOTA_RUNE_WATER] = { name = "di_rune_names_water", col = Color(100, 210, 255, 255), path = "panorama/images/items/bottle_water_png.vtex_c", svg = "rune_water" },
+    [Enum.RuneType.DOTA_RUNE_XP] = { name = "di_rune_names_wisdom", col = Color(191, 90, 242, 255), path = "panorama/images/spellicons/rune_xp_png.vtex_c", svg = "rune_wisdom" },
+    [Enum.RuneType.DOTA_RUNE_SHIELD] = { name = "di_rune_names_shield", col = Color(255, 214, 10, 255), path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield" }
 }
 
 local RuneModifierMap = {
@@ -1721,47 +1759,48 @@ local VectorIcons = {
     ["rune_arcane"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#E91E63"/><path fill="#FFF" d="M13.5 2s.7 2.3.7 4.2c0 1.8-1.2 3.3-3 3.3-1.8 0-3.2-1.5-3.2-3.3l.03-.3C5.5 7.8 4.5 10.5 4.5 13.5c0 3.9 3.1 7 7 7s7-3.1 7-7c0-4.7-2.3-8.9-5-11.5z"/></svg>',
     ["rune_shield"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10" fill="#FFC107"/><path fill="#FFF" d="M12 3L4.5 6.5v5.3c0 4.9 3.4 9.5 7.5 10.7 4.1-1.2 7.5-5.8 7.5-10.7V6.5L12 3z"/></svg>',
     ["buyback"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD700" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>',
-    ["swords"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M21 3a1 1 0 0 0-1.4 0L14 8.6l-1.3-1.3a1 1 0 0 0-1.4 1.4l1.3 1.3-7.2 7.2a1 1 0 0 0 0 1.4l1.4 1.4-3.5 3.5a1 1 0 1 0 1.4 1.4l3.5-3.5 1.4 1.4a1 1 0 0 0 1.4 0l7.2-7.2 1.3 1.3a1 1 0 0 0 1.4-1.4l-1.3-1.3 5.6-5.6A1 1 0 0 0 21 3zM3 3a1 1 0 0 0 0 1.4l5.6 5.6-1.3 1.3a1 1 0 0 0 1.4 1.4l1.3-1.3 7.2 7.2a1 1 0 0 0 1.4 0l1.4-1.4 3.5 3.5a1 1 0 0 0 1.4-1.4l-3.5-3.5 1.4-1.4a1 1 0 0 0 0-1.4l-7.2-7.2 1.3-1.3a1 1 0 0 0-1.4-1.4l-1.3 1.3L4.4 3A1 1 0 0 0 3 3z"/></svg>',
+    ["swords"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4.5 4.5 14 14" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 16.5l5-5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 15.5l4 4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 4.5 10 14" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 16.5l-5-5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 15.5l-4 4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["flame"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M12 2C9.5 5.5 8 8.5 8 11.5c0 1.2.3 2.3.8 3.3-.5-.4-.9-.9-1.2-1.5-.4-.9-.6-1.9-.6-2.9C5.3 12.2 4 14.5 4 17c0 4.4 3.6 8 8 8s8-3.6 8-8c0-4.5-3.5-8.5-8-15zm1 18.5c-2.5 0-4.5-2-4.5-4.5 0-1.5.8-2.9 2-3.7.3.8.8 1.5 1.5 2 .7.5 1.5.8 2.4.8.4 0 .7-.1 1.1-.2-.4 3.2-2.3 5.6-2.5 5.6z"/></svg>',
-    ["media_prev"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M11 17.5V6.5c0-.8-.9-1.2-1.5-.7L2.4 11.3c-.5.4-.5 1.1 0 1.5l7.1 5.5c.6.5 1.5.1 1.5-.8zm10.5 0V6.5c0-.8-.9-1.2-1.5-.7L12.9 11.3c-.5.4-.5 1.1 0 1.5l7.1 5.5c.6.5 1.5.1 1.5-.8z"/></svg>',
-    ["media_next"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M13 6.5v11c0 .8.9 1.2 1.5.7l7.1-5.5c.5-.4.5-1.1 0-1.5l-7.1-5.5c-.6-.5-1.5-.1-1.5.8zM2.5 6.5v11c0 .8.9 1.2 1.5.7l7.1-5.5c.5-.4.5-1.1 0-1.5L4 5.7c-.6-.5-1.5-.1-1.5.8z"/></svg>',
-    ["media_play"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M6.5 5.2c0-.9 1-1.5 1.8-1l12.4 6.8c.8.4.8 1.6 0 2.1L8.3 19.8c-.8.5-1.8-.1-1.8-1V5.2z"/></svg>',
-    ["media_pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="5" y="4" width="4.5" height="16" rx="2" fill="#FFFFFF"/><rect x="14.5" y="4" width="4.5" height="16" rx="2" fill="#FFFFFF"/></svg>',
+    ["media_prev"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M11.5 7.3v9.4c0 .8-.9 1.3-1.6.9L2.8 13c-.7-.4-.7-1.5 0-1.9l7.1-4.6c.7-.5 1.6 0 1.6.8z" fill="#FFF"/><path d="M21.5 7.3v9.4c0 .8-.9 1.3-1.6.9L12.8 13c-.7-.4-.7-1.5 0-1.9l7.1-4.6c.7-.5 1.6 0 1.6.8z" fill="#FFF"/></svg>',
+    ["media_next"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12.5 7.3v9.4c0 .8.9 1.3 1.6.9l7.1-4.6c.7-.4.7-1.5 0-1.9l-7.1-4.6c-.7-.5-1.6 0-1.6.8z" fill="#FFF"/><path d="M2.5 7.3v9.4c0 .8.9 1.3 1.6.9l7.1-4.6c.7-.4.7-1.5 0-1.9L4.1 6.5c-.7-.5-1.6 0-1.6.8z" fill="#FFF"/></svg>',
+    ["media_play"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M7 4.9c0-1 1.1-1.6 2-1.1l11.4 7.1c.8.5.8 1.7 0 2.2L9 20.2c-.9.5-2-.1-2-1.1z" fill="#FFF"/></svg>',
+    ["media_pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="5.5" y="4" width="4.6" height="16" rx="1.4" fill="#FFF"/><rect x="13.9" y="4" width="4.6" height="16" rx="1.4" fill="#FFF"/></svg>',
 
-    ["heart_outline"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["heart_fill"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FFF"/></svg>',
-    ["shuffle"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M16 3h5v5M4 20l7.5-7.5M21 3l-7.5 7.5M4 4l16 16M21 16v5h-5" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["repeat"] = '<svg viewBox="0 0 24 24" width="24" height="24"><polyline points="17 1 21 5 17 9" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 13v2a4 4 0 0 1-4 4H3" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["heart_outline"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 20.3 10.7 19.1C6 14.9 3 12.2 3 8.9 3 6.2 5.1 4.2 7.7 4.2c1.6 0 3.2.8 4.3 2 1.1-1.2 2.7-2 4.3-2 2.6 0 4.7 2 4.7 4.7 0 3.3-3 6-7.7 10.2z" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linejoin="round"/></svg>',
+    ["heart_fill"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 20.3 10.7 19.1C6 14.9 3 12.2 3 8.9 3 6.2 5.1 4.2 7.7 4.2c1.6 0 3.2.8 4.3 2 1.1-1.2 2.7-2 4.3-2 2.6 0 4.7 2 4.7 4.7 0 3.3-3 6-7.7 10.2z" fill="#FFF"/></svg>',
+    ["shuffle"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 17h2.4c1.9 0 3.1-.8 4.1-2.4l4.8-7.2C15.3 5.8 16.5 5 18.4 5H21" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5 21 5l-2.5 2.5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 7h2.4c1.5 0 2.6.5 3.5 1.5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.1 15.5c.9 1 2 1.5 3.3 1.5H21" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 14.5 21 17l-2.5 2.5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["repeat"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 11.5V10a4 4 0 0 1 4-4h12" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 3l3 3-3 3" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12.5V14a4 4 0 0 1-4 4H4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 21l-3-3 3-3" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 
-    ["clock"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="#FFF" stroke-width="1.8"/><polyline points="12,7 12,12 15.5,14" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["kda"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="8" fill="none" stroke="#FFF" stroke-width="1.8"/><line x1="12" y1="1" x2="12" y2="5" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><line x1="1" y1="12" x2="5" y2="12" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><line x1="19" y1="12" x2="23" y2="12" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="#FFF"/></svg>',
-    ["gold"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="#FFF" stroke-width="1.8"/><path d="M12 6.5v11M14.5 9.2a2.2 2.2 0 0 0-2.2-2.2H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-1.3a2.2 2.2 0 0 1-2.2-2.2" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    ["networth"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 4.5v15a1 1 0 0 0 1 1h15" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><path d="M7 14.5l4-4.5 3.5 3.5 5.5-6.5M16.5 7H20v3.5" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["lasthits"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M14.5 4l5.5 5.5-9 9-4 1 1-4 9-9zM13 5.5l5.5 5.5" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["heroname"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 18.5h17M4.5 15.5l2.5-8 5 4 5-4 2.5 8H4.5z" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["fps"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 4a9 9 0 0 0-9 9c0 3.2 1.7 6 4.3 7.6M16.7 20.6A9 9 0 0 0 21 13a9 9 0 0 0-9-9" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="13" x2="16.5" y2="8.5" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="13" r="1.8" fill="#FFF"/></svg>',
-    ["ping"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 8.5a11.5 11.5 0 0 1 16 0" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><path d="M7.5 12.5a6.5 6.5 0 0 1 9 0" fill="none" stroke="#FFF" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.8" fill="#FFF"/></svg>',
-    ["home"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="#FFF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["search"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#FFF" stroke-width="2.2"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="#FFF" stroke-width="2.2" stroke-linecap="round"/></svg>',
-    ["check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><polyline points="4,12 9,17 20,6" fill="none" stroke="#34C759" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
+    ["clock"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="#FFF" stroke-width="2.2"/><path d="M12 7v5l3.5 2" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["kda"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="#FFF" stroke-width="2.2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="2" fill="#FFF"/></svg>',
+    ["gold"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="#FFF" stroke-width="2.2"/><path d="M12 6.5v11M14.6 9.3a2.3 2.3 0 0 0-2.3-2H11.2a2.1 2.1 0 0 0 0 4.2h1.6a2.1 2.1 0 0 1 0 4.2h-1.4a2.3 2.3 0 0 1-2.3-2" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["networth"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 4v14.5a1.5 1.5 0 0 0 1.5 1.5h15" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 14.5l3.5-4 3 3 5-6M15.5 7.5H19v3.5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["lasthits"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M14.5 4.5l5 5L10 19l-5.5 1 1-5.5z" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 6.5l5 5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["heroname"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 18.5h16M4.5 15.5 3.5 7.5l4.8 3.6L12 5l3.7 6.1 4.8-3.6-1 8z" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["fps"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5.6 18.4A9 9 0 1 1 18.4 18.4" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 13l4-4.5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="1.9" fill="#FFF"/></svg>',
+    ["ping"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M2.45 9.45a13.5 13.5 0 0 1 19.1 0" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.64 12.64a9 9 0 0 1 12.72 0" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.82 15.82a4.5 4.5 0 0 1 6.36 0" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="19.2" r="1.7" fill="#FFF"/></svg>',
+    ["home"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 10.8 12 3.5l8.5 7.3V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["search"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="#FFF" stroke-width="2.2"/><path d="M15.5 15.5 21 21" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#FFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["close"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="#FFF" stroke-width="2.6" stroke-linecap="round"/></svg>',
+    ["bolt"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M13.6 2.2 4.8 13.1a.8.8 0 0 0 .6 1.3h5.4l-1.2 7.1c-.1.7.8 1.1 1.2.5l8.7-10.9a.8.8 0 0 0-.6-1.3h-5.4l1.2-7.1c.1-.7-.8-1.1-1.1-.5z" fill="#FFF"/></svg>',
     ["moon"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3A6.364 6.364 0 0 0 21 12A9 9 0 1 1 12 3Z" fill="#FFFFFF"/></svg>',
     ["bell"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3a6 6 0 0 0-6 6v4.3L4.4 16v1.2h15.2V16L18 13.3V9a6 6 0 0 0-6-6z" fill="#FFFFFF"/><path d="M9.7 18.6a2.4 2.4 0 0 0 4.6 0z" fill="#FFFFFF"/></svg>',
     ["courier"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFD60A" d="M19.38 6.81l-6.5-3.61a1.76 1.76 0 0 0-1.76 0l-6.5 3.61A1.76 1.76 0 0 0 3.75 8.35v7.3a1.76 1.76 0 0 0 .87 1.54l6.5 3.61a1.76 1.76 0 0 0 1.76 0l6.5-3.61a1.76 1.76 0 0 0 .87-1.54v-7.3a1.76 1.76 0 0 0-.87-1.54zm-7.38-2.1l6.12 3.4-2.6 1.45-6.13-3.41 2.61-1.44zm-7 4.19l6.13 3.41v6.86L5 15.76V8.9zm8 10.27v-6.86l6.13-3.41v6.86l-6.13 3.41z"/></svg>',
-    ["pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="11" fill="#FF9500"/><rect x="7.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/><rect x="13.5" y="6.5" width="3" height="11" rx="1.5" fill="#FFFFFF"/></svg>',
-    ["volume"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>',
-    ["mute"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#FFFFFF" d="M3 9v6h4l5 5V4L7 9H3z"/><line x1="15.2" y1="9.2" x2="21.2" y2="15.2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/><line x1="21.2" y1="9.2" x2="15.2" y2="15.2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg>',
+    ["pause"] = '<svg viewBox="0 0 24 24" width="24" height="24"><rect x="5.5" y="4" width="4.6" height="16" rx="1.4" fill="#FFF"/><rect x="13.9" y="4" width="4.6" height="16" rx="1.4" fill="#FFF"/></svg>',
+    ["volume"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 9.8A1.3 1.3 0 0 1 4.8 8.5h2.6l4.3-3.7c.7-.6 1.8-.1 1.8.8v12.8c0 .9-1.1 1.4-1.8.8l-4.3-3.7H4.8a1.3 1.3 0 0 1-1.3-1.3z" fill="#FFF"/><path d="M16.3 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6.5a7.8 7.8 0 0 1 0 11" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    ["mute"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M3.5 9.8A1.3 1.3 0 0 1 4.8 8.5h2.6l4.3-3.7c.7-.6 1.8-.1 1.8.8v12.8c0 .9-1.1 1.4-1.8.8l-4.3-3.7H4.8a1.3 1.3 0 0 1-1.3-1.3z" fill="#FFF"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="#FFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ["apple_check"] = '<svg viewBox="0 0 24 24" width="24" height="24"><path fill="#34C759" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.2 15.2l-4.5-4.5 1.41-1.41 3.09 3.08 7.09-7.09 1.41 1.41-8.5 8.51z"/></svg>',
     ["stack"] = '<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="10.5" fill="#30B350"/><path d="M12 5.8l5.6 2.8-5.6 2.8-5.6-2.8z" fill="#FFF"/><path d="M6.4 12l5.6 2.8 5.6-2.8M6.4 15.2l5.6 2.8 5.6-2.8" fill="none" stroke="#FFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 }
 
 local PowerRunesCycleList = {
-    { path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd", col = Color(60, 140, 255, 255) },
-    { path = "panorama/images/spellicons/rune_haste_png.vtex_c", svg = "rune_haste", col = Color(255, 65, 65, 255) },
-    { path = "panorama/images/spellicons/rune_invis_png.vtex_c", svg = "rune_invis", col = Color(170, 85, 255, 255) },
-    { path = "panorama/images/spellicons/rune_arcane_png.vtex_c", svg = "rune_arcane", col = Color(235, 85, 255, 255) },
-    { path = "panorama/images/spellicons/rune_regen_png.vtex_c", svg = "rune_regen", col = Color(85, 255, 125, 255) },
-    { path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield", col = Color(255, 215, 60, 255) }
+    { path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd", col = Color(10, 132, 255, 255) },
+    { path = "panorama/images/spellicons/rune_haste_png.vtex_c", svg = "rune_haste", col = Color(255, 69, 58, 255) },
+    { path = "panorama/images/spellicons/rune_invis_png.vtex_c", svg = "rune_invis", col = Color(94, 92, 230, 255) },
+    { path = "panorama/images/spellicons/rune_arcane_png.vtex_c", svg = "rune_arcane", col = Color(255, 55, 95, 255) },
+    { path = "panorama/images/spellicons/rune_regen_png.vtex_c", svg = "rune_regen", col = Color(48, 209, 88, 255) },
+    { path = "panorama/images/spellicons/rune_shield_png.vtex_c", svg = "rune_shield", col = Color(255, 214, 10, 255) }
 }
 
 local UI = nil
@@ -1803,16 +1842,16 @@ local function HexToColor(hex)
 end
 
 local function GetDefaultWidgetColor(chipId)
-    if chipId == "gold" then return Color(255, 215, 30, 255), "FFD71E"
-    elseif chipId == "kda" then return Color(52, 199, 89, 255), "34C759"
-    elseif chipId == "clock" then return Color(255, 180, 40, 255), "FFB428"
-    elseif chipId == "networth" then return Color(70, 225, 255, 255), "46E1FF"
-    elseif chipId == "lasthits" then return Color(255, 150, 50, 255), "FF9632"
-    elseif chipId == "heroname" then return Color(195, 110, 255, 255), "C36EFF"
+    if chipId == "gold" then return Color(255, 214, 10, 255), "FFD60A"
+    elseif chipId == "kda" then return Color(48, 209, 88, 255), "30D158"
+    elseif chipId == "clock" then return Color(255, 159, 10, 255), "FF9F0A"
+    elseif chipId == "networth" then return Color(100, 210, 255, 255), "64D2FF"
+    elseif chipId == "lasthits" then return Color(255, 159, 10, 255), "FF9F0A"
+    elseif chipId == "heroname" then return Color(191, 90, 242, 255), "BF5AF2"
     elseif chipId == "fps" then return Color(48, 209, 88, 255), "30D158"
     elseif chipId == "ping" then return Color(10, 132, 255, 255), "0A84FF"
     end
-    return Color(0, 195, 255, 255), "00C3FF"
+    return Color(100, 210, 255, 255), "64D2FF"
 end
 
 local function HSVtoRGB(h, s, v)
@@ -2121,6 +2160,17 @@ local function LoadAllConfig()
     f:close()
 end
 
+local function MediaTint()
+    if UI and UI.Media and UI.Media.ArtworkTint and not UI.Media.ArtworkTint:Get() then
+        return UI.Media.AccentColor:Get() or Config.Colors.Accent
+    end
+    return MediaData.CoverColor or Config.Colors.Accent
+end
+
+local function CompactMediaTitle()
+    return not (UI and UI.Media and UI.Media.CompactTitle) or UI.Media.CompactTitle:Get()
+end
+
 local function GetPrimaryThemeColor()
     if Menu.Style then
         local ok, col = pcall(Menu.Style, "primary")
@@ -2144,10 +2194,10 @@ end
 
 local function GetVectorIcon(name)
     if not name or not VectorIcons[name] then return nil end
-    local cacheKey = "svg_apple_v35_" .. name
+    local cacheKey = "svg_apple_v37_" .. name
     local h = ImageCache[cacheKey]
     if h ~= nil then return h or nil end
-    local ok, handle = pcall(Render.LoadSvgString, VectorIcons[name], Vec2(48, 48), "vec_sym_apple_v35_" .. name)
+    local ok, handle = pcall(Render.LoadSvgString, VectorIcons[name], Vec2(48, 48), "vec_sym_apple_v37_" .. name)
     if ok and handle and handle ~= 0 then
         ImageCache[cacheKey] = handle
         return handle
@@ -2179,8 +2229,13 @@ local function GetCachedImage(path, fallbackSvgKey)
 end
 
 local function LoadScriptFonts()
-    Config.Fonts.Main = Render.LoadFont("SF Pro Display", Enum.FontCreate.FONTFLAG_ANTIALIAS, 400)
-    Config.Fonts.Bold = Render.LoadFont("SF Pro Display", Enum.FontCreate.FONTFLAG_ANTIALIAS, 700)
+    local aa = Enum.FontCreate.FONTFLAG_ANTIALIAS
+    Config.Fonts.Regular = Render.LoadFont("SF Pro Text", aa, 400)
+    Config.Fonts.Medium = Render.LoadFont("SF Pro Text", aa, 500)
+    Config.Fonts.Semibold = Render.LoadFont("SF Pro Text", aa, 600)
+    Config.Fonts.Display = Render.LoadFont("SF Pro Display", aa, 500)
+    Config.Fonts.Main = Config.Fonts.Regular
+    Config.Fonts.Bold = Config.Fonts.Semibold
 end
 
 local Haptic = {
@@ -2344,14 +2399,14 @@ function Haptic.Trigger(hType, p1, p2)
             Haptic.State.VelScaleX = Haptic.State.VelScaleX - 0.12 * intensity
             Haptic.State.VelScaleY = Haptic.State.VelScaleY + 0.08 * intensity
             Haptic.State.GlowAlpha = 40 * intensity
-            Haptic.State.GlowColor = Color(255, 59, 48, 240)
+            Haptic.State.GlowColor = Color(255, 69, 58, 240)
         end
     elseif hType == Haptic.Types.SUCCESS_APPLE_PAY then
         if visualOn then
             Haptic.State.VelScaleX = Haptic.State.VelScaleX + 1.4 * intensity
             Haptic.State.VelScaleY = Haptic.State.VelScaleY + 1.4 * intensity
             Haptic.State.GlowAlpha = 140 * intensity
-            Haptic.State.GlowColor = Color(52, 199, 89, 255)
+            Haptic.State.GlowColor = Color(48, 209, 88, 255)
         end
         HapticPlaySound("courier_delivered", 0.65)
         Haptic.Pattern.Active = true
@@ -2363,7 +2418,7 @@ function Haptic.Trigger(hType, p1, p2)
             Haptic.State.VelScaleY = Haptic.State.VelScaleY + 0.65 * intensity
             Haptic.State.VelScaleX = Haptic.State.VelScaleX + 0.45 * intensity
             Haptic.State.GlowAlpha = 80 * intensity
-            Haptic.State.GlowColor = Color(255, 45, 85, 255)
+            Haptic.State.GlowColor = Color(255, 55, 95, 255)
         end
         if p1 then
             HapticPlaySound("low_hp_heartbeat", 0.35)
@@ -2608,6 +2663,7 @@ local function InitMenu()
     Md.Shadow = gLookGear:Switch("di_media_shadow", true, "\u{f0c8}")
     M.IslandBgColor = gLookGear:ColorPicker("di_main_bg_color", Color(0, 0, 0, 245), "\u{f53f}")
     Md.AccentColor = gLookGear:ColorPicker("di_media_accent_color", Config.Colors.Accent, "\u{f53f}")
+    Md.ArtworkTint = gLookGear:Switch("di_media_artwork_tint", true, "\u{f1fc}")
     M.BorderThickness = gLookGear:Slider("di_main_border_thickness", 0.0, 3.0, 1.0, "%.1f px")
     M.BorderThickness:Icon("\u{f065}")
 
@@ -2723,6 +2779,7 @@ local function InitMenu()
     P.Media = gPlayer:Slider("di_alert_priority", 1, 5, 5, "%d")
     P.Media:Icon("\u{f160}")
     P.Media:ToolTip("di_media_priority_tip")
+    Md.CompactTitle = gPlayer:Switch("di_media_compact_title", true, "\u{f031}")
     Md.MarqueeSpeed = gPlayer:Slider("di_media_marquee_speed", 20, 100, 45, "%d px/s")
     Md.MarqueeSpeed:Icon("\u{f337}")
     Md.SpotifyLike = gMedia:Switch("di_media_spotify_like", true, "\u{f004}")
@@ -2805,70 +2862,102 @@ local function InitMenu()
     end, true)
 end
 
+function StateMachine.SharedKind(a, b)
+    local S = StateMachine.States
+    if (a == S.COMPACT_MEDIA and b == S.LARGE_MEDIA) or (a == S.LARGE_MEDIA and b == S.COMPACT_MEDIA) then return "media" end
+    if (a == S.COMPACT_IDLE and b == S.LARGE_IDLE) or (a == S.LARGE_IDLE and b == S.COMPACT_IDLE) then return "idle" end
+    return nil
+end
+
+function StateMachine.FrameFor(layout, w, h, r)
+    local s = layout.scale
+    local W = math.floor(w * s + 0.5)
+    local H = math.floor(h * s + 0.5)
+    if W % 2 ~= 0 then W = W + 1 end
+    if H % 2 ~= 0 then H = H + 1 end
+    return { x = math.floor(layout.x + layout.w / 2 - W / 2 + 0.5), y = layout.y, w = W, h = H, r = math.floor(math.min(H / 2, (r or h / 2) * s) + 0.5), scale = s }
+end
+
+function StateMachine.SharedM(kind)
+    local D = Config.Dimensions
+    local lo, hi = D.CompactH, D.LargeH
+    if kind == "media" then lo, hi = D.CompactMediaH, D.LargeMediaH end
+    local m = (StateMachine.Spring.H.value - lo) / math.max(1, hi - lo)
+    if m < 0.004 then return 0 end
+    if m > 0.996 then return 1 end
+    return m
+end
+
 local function TriggerStateTransition(nextState)
     if StateMachine.TargetState == nextState then return end
 
     local fromLarge = (StateMachine.TargetState == StateMachine.States.LARGE_IDLE or StateMachine.TargetState == StateMachine.States.LARGE_MEDIA or StateMachine.TargetState == StateMachine.States.LARGE_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_LARGE)
     local toLarge = (nextState == StateMachine.States.LARGE_IDLE or nextState == StateMachine.States.LARGE_MEDIA or nextState == StateMachine.States.LARGE_FIGHT or nextState == StateMachine.States.COURIER_LARGE)
 
-    local fromState = StateMachine.TargetState
-    local fromScale = 1.0
     local tr = StateMachine.Transition
-    if tr.Active and tr.Progress < 1.0 then
-        local t = tr.Progress
-        local smoothT = t * t * (3.0 - 2.0 * t)
-        local visFrom = math.max(0.0, 1.0 - (smoothT / 0.65)) * (tr.FromAlphaScale or 1.0)
-        local visTo = math.max(0.0, math.min(1.0, (smoothT - 0.20) / 0.80))
-        if visFrom > visTo then
-            fromState, fromScale = tr.FromState, visFrom
-        else
-            fromState, fromScale = tr.ToState, visTo
+    local prev = StateMachine.TargetState
+    local shared = StateMachine.SharedKind(prev, nextState)
+    local ghosts = StateMachine.Ghosts
+    local quick = tr.Active and not tr.SharedPair and not shared and (os.clock() - tr.StartTime) < 0.25 * AnimScale() and (tr.Reveal or 0) < 0.6
+    if quick then
+        StateMachine.PreviousState = prev
+        StateMachine.TargetState = nextState
+        StateMachine.StateStartTime = os.clock()
+        tr.ToState = nextState
+        tr.Dist0 = nil
+        tr.Shrink = nil
+        return
+    end
+    if tr.Active and tr.SharedPair then
+        if shared ~= tr.SharedPair then
+            table.insert(ghosts, { shared = tr.SharedPair, m = StateMachine.SharedM(tr.SharedPair), a = 1 })
         end
-        if fromState == nextState then
-            StateMachine.PreviousState = StateMachine.TargetState
-            StateMachine.TargetState = nextState
-            StateMachine.StateStartTime = os.clock()
-            tr.Active = false
-            tr.FromAlphaScale = 1.0
-            StateMachine.Current = nextState
-            return
+    elseif not shared then
+        local a = tr.Active and (tr.Reveal or 0) or 1
+        if a > 0.02 then
+            local D = Config.Dimensions
+            table.insert(ghosts, { state = prev, a = a, w = D.CompactTargetW or D.CompactW, h = D.CompactTargetH or D.CompactH, r = D.CompactTargetR or D.CompactRadius })
         end
     end
+    while #ghosts > 4 do table.remove(ghosts, 1) end
 
-    StateMachine.PreviousState = StateMachine.TargetState
+    StateMachine.PreviousState = prev
     StateMachine.TargetState = nextState
     StateMachine.StateStartTime = os.clock()
 
-    StateMachine.Transition.Active = true
-    StateMachine.Transition.FromState = fromState
-    StateMachine.Transition.FromAlphaScale = fromScale
-    StateMachine.Transition.ToState = nextState
-    StateMachine.Transition.StartTime = os.clock()
-    StateMachine.Transition.Progress = 0.0
+    tr.Active = true
+    tr.FromState = prev
+    tr.ToState = nextState
+    tr.StartTime = os.clock()
+    tr.Progress = 0.0
+    tr.Reveal = 0.0
+    tr.Dist0 = nil
+    tr.Shrink = nil
+    tr.SharedPair = shared
 
     if toLarge and not fromLarge then
-        MotionEngine.CurrentProfile = "EXPAND"
+        MotionEngine.CurrentProfile = "BOUNCY"
         StateMachine.Spring.Squish.value = 0.3
         StateMachine.Spring.Squish.vel = 1.8
         if Haptic and Haptic.Trigger then
             Haptic.Trigger(Haptic.Types.SNAP_EXPAND)
         end
     elseif fromLarge and not toLarge then
-        MotionEngine.CurrentProfile = "COLLAPSE"
+        MotionEngine.CurrentProfile = "SMOOTH"
         StateMachine.Spring.Squish.value = -0.2
         StateMachine.Spring.Squish.vel = -1.2
         if Haptic and Haptic.Trigger then
             Haptic.Trigger(Haptic.Types.SNAP_COLLAPSE)
         end
     elseif nextState == StateMachine.States.NOTIFICATION then
-        MotionEngine.CurrentProfile = "POP"
+        MotionEngine.CurrentProfile = "BOUNCY"
         StateMachine.Spring.Squish.value = 0.2
         StateMachine.Spring.Squish.vel = 1.2
         if Haptic and Haptic.Trigger then
             Haptic.Trigger(Haptic.Types.TAP_MEDIUM)
         end
     else
-        MotionEngine.CurrentProfile = "SUBTLE"
+        MotionEngine.CurrentProfile = "SMOOTH"
         StateMachine.Spring.Squish.value = 0.0
         StateMachine.Spring.Squish.vel = 0.0
         if Haptic and Haptic.Trigger then
@@ -3355,7 +3444,7 @@ local function IsMediaActive()
 end
 
 local function AdvancePosition(dt)
-    SeekDrag.Grow, SeekDrag.GrowVel = SolveDampedSpring(SeekDrag.Grow, SeekDrag.GrowVel, SeekDrag.Active and 1 or 0, dt, 30.0, 0.80)
+    SeekDrag.Grow, SeekDrag.GrowVel = MotionEngine.Step(SeekDrag.Grow, SeekDrag.GrowVel, SeekDrag.Active and 1 or 0, dt, "SNAPPY")
     if MediaData.IsPlaying then
         MediaData.PosSmooth = MediaData.PosSmooth + dt
         MediaData.PosTarget = MediaData.PosTarget + dt
@@ -3872,7 +3961,12 @@ local function ProcessGameEvents()
 
         local okPing, latency = pcall(NetChannel.GetAvgLatency)
         if okPing and latency then
-            PerformanceData.Ping = math.floor(latency * 1000)
+            local rawPing = math.floor(latency * 1000)
+            local shownPing = PerformanceData.Ping
+            if not PerformanceData.PingShown or math.abs(rawPing - shownPing) >= math.max(5, shownPing * 0.1) then
+                PerformanceData.Ping = rawPing
+                PerformanceData.PingShown = true
+            end
         end
     end
 
@@ -4037,7 +4131,7 @@ local function ProcessGameEvents()
                         GameTracker.Runes.KnownWorldRunes[idx] = true
                         local rType = Rune.GetRuneType(r)
                         local rPos = Entity.GetAbsOrigin(r)
-                        local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 220, 0, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
+                        local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 214, 10, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
                         local locText = L("di_ui_spawned_in_river")
                         if rPos then
                             if rType == Enum.RuneType.DOTA_RUNE_XP then
@@ -4090,7 +4184,7 @@ local function ProcessGameEvents()
                         Tag = L("di_ui_stack"),
                         Title = string.format(L("di_ui_stack_in_n_s"), stackLead),
                         Subtitle = string.format(L("di_ui_pull_the_camp_at_n_53"), nm - 1),
-                        AccentColor = Color(48, 179, 80, 255),
+                        AccentColor = Color(48, 209, 88, 255),
                         IconType = "svg",
                         FallbackSvg = "stack",
                         MaxDuration = stackLead
@@ -4107,7 +4201,7 @@ local function ProcessGameEvents()
                         Tag = L("di_ui_wisdom_rune"),
                         Title = string.format(L("di_ui_wisdom_runes_in_n_s"), wisdomLead),
                         Subtitle = L("di_ui_side_lane_shrines"),
-                        AccentColor = Color(165, 75, 255, 255),
+                        AccentColor = Color(191, 90, 242, 255),
                         IconType = "rune",
                         Icon = "panorama/images/spellicons/rune_xp_png.vtex_c",
                         FallbackSvg = "rune_wisdom",
@@ -4125,7 +4219,7 @@ local function ProcessGameEvents()
                         Tag = L("di_ui_water_rune"),
                         Title = string.format(L("di_ui_water_runes_in_n_s"), waterLead),
                         Subtitle = L("di_ui_river_spawn_points"),
-                        AccentColor = Color(0, 215, 255, 255),
+                        AccentColor = Color(100, 210, 255, 255),
                         IconType = "rune",
                         FallbackSvg = "rune_water",
                         Duration = 3.5
@@ -4142,7 +4236,7 @@ local function ProcessGameEvents()
                         Tag = L("di_ui_power_rune"),
                         Title = string.format(L("di_ui_power_runes_in_n_s"), powerLead),
                         Subtitle = L("di_ui_river_spawn_points"),
-                        AccentColor = Color(60, 140, 255, 255),
+                        AccentColor = Color(10, 132, 255, 255),
                         Duration = 4.0
                     })
                 end
@@ -4157,7 +4251,7 @@ local function ProcessGameEvents()
                         Tag = L("di_ui_bounty_rune"),
                         Title = string.format(L("di_ui_bounty_runes_in_n_s"), bountyLead),
                         Subtitle = L("di_ui_bounty_spawn_spots"),
-                        AccentColor = Color(255, 200, 20, 255),
+                        AccentColor = Color(255, 214, 10, 255),
                         IconType = "rune",
                         Icon = "panorama/images/items/courier_gold_png.vtex_c",
                         FallbackSvg = "bounty",
@@ -4174,7 +4268,7 @@ local function ProcessGameEvents()
                     Tag = L("di_ui_objective"),
                     Title = string.format(L("di_ui_tormentor_soon_s"), minStr),
                     Subtitle = L("di_ui_spawns_at_20_00"),
-                    AccentColor = Color(0, 210, 255, 255),
+                    AccentColor = Color(64, 200, 224, 255),
                     IconType = "item",
                     Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
                     Duration = 4.5
@@ -4186,7 +4280,7 @@ local function ProcessGameEvents()
                     Tag = L("di_ui_objective"),
                     Title = string.format(L("di_ui_tormentor_in_n_s"), tLead2),
                     Subtitle = L("di_ui_spawns_at_20_00_2"),
-                    AccentColor = Color(0, 210, 255, 255),
+                    AccentColor = Color(64, 200, 224, 255),
                     IconType = "item",
                     Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
                     Duration = 4.5
@@ -4199,7 +4293,7 @@ local function ProcessGameEvents()
                 Tag = L("di_ui_bounty_rune"),
                 Title = string.format(L("di_ui_bounty_runes_in_n_s"), bountyLead),
                 Subtitle = L("di_ui_initial_bounty_spawns"),
-                AccentColor = Color(255, 200, 20, 255),
+                AccentColor = Color(255, 214, 10, 255),
                 IconType = "rune",
                 Icon = "panorama/images/items/courier_gold_png.vtex_c",
                 FallbackSvg = "bounty",
@@ -4216,7 +4310,7 @@ local function ProcessGameEvents()
             Tag = L("di_ui_neutrals_unlocked"),
             Title = L("di_ui_tier_1_neutrals_ready"),
             Subtitle = L("di_ui_n_7_00_match_time_reached"),
-            AccentColor = Color(160, 210, 80, 255),
+            AccentColor = Color(48, 209, 88, 255),
             Duration = 4.0
         })
     elseif sec >= 1020 and not GameTracker.Neutrals.Tier2 then
@@ -4226,7 +4320,7 @@ local function ProcessGameEvents()
             Tag = L("di_ui_neutrals_unlocked"),
             Title = L("di_ui_tier_2_neutrals_ready"),
             Subtitle = L("di_ui_n_17_00_match_time_reached"),
-            AccentColor = Color(75, 185, 255, 255),
+            AccentColor = Color(10, 132, 255, 255),
             Duration = 4.0
         })
     elseif sec >= 1620 and not GameTracker.Neutrals.Tier3 then
@@ -4236,7 +4330,7 @@ local function ProcessGameEvents()
             Tag = L("di_ui_neutrals_unlocked"),
             Title = L("di_ui_tier_3_neutrals_ready"),
             Subtitle = L("di_ui_n_27_00_match_time_reached"),
-            AccentColor = Color(175, 90, 255, 255),
+            AccentColor = Color(191, 90, 242, 255),
             Duration = 4.0
         })
     elseif sec >= 2220 and not GameTracker.Neutrals.Tier4 then
@@ -4246,7 +4340,7 @@ local function ProcessGameEvents()
             Tag = L("di_ui_neutrals_unlocked"),
             Title = L("di_ui_tier_4_neutrals_ready"),
             Subtitle = L("di_ui_n_37_00_match_time_reached"),
-            AccentColor = Color(255, 170, 30, 255),
+            AccentColor = Color(255, 159, 10, 255),
             Duration = 4.0
         })
     elseif sec >= 3600 and not GameTracker.Neutrals.Tier5 then
@@ -4256,7 +4350,7 @@ local function ProcessGameEvents()
             Tag = L("di_ui_neutrals_unlocked"),
             Title = L("di_ui_tier_5_neutrals_ready"),
             Subtitle = L("di_ui_n_60_00_match_time_reached"),
-            AccentColor = Color(255, 45, 65, 255),
+            AccentColor = Color(255, 69, 58, 255),
             Duration = 5.0
         })
     end
@@ -4270,7 +4364,7 @@ local function ProcessGameEvents()
                 Tag = L("di_ui_lotus_pool"),
                 Title = string.format(L("di_ui_lotus_fruit_in_n_s"), lotusLead),
                 Subtitle = L("di_ui_side_lane_pools"),
-                AccentColor = Color(255, 120, 180, 255),
+                AccentColor = Color(255, 55, 95, 255),
                 IconType = "rune",
                 Icon = "panorama/images/items/great_famango_png.vtex_c",
                 FallbackSvg = "lotus",
@@ -4415,7 +4509,7 @@ function DynamicIsland.OnModifierCreate(ent, mod)
     if isHero and UI.Runes.RunePickups:Get() then
         local rType = RuneModifierMap[mn]
         if rType then
-            local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 220, 0, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
+            local rInfo = RuneInfoList[rType] or { name = "di_rune_names_rune", col = Color(255, 214, 10, 255), path = "panorama/images/spellicons/rune_doubledamage_png.vtex_c", svg = "rune_dd" }
             local hName = GetPlayerDisplayName(ent)
             DynamicIsland.PushNotification({
                 Type = "rune_pickup",
@@ -4460,7 +4554,7 @@ function DynamicIsland.OnModifierCreate(ent, mod)
             Tag = L("di_ui_teleport_warning"),
             Title = heroName .. L("di_ui_teleporting"),
             Subtitle = L("di_ui_teleporting_to") .. landmark,
-            AccentColor = Color(100, 200, 255, 255),
+            AccentColor = Color(100, 210, 255, 255),
             IconType = "item",
             Icon = "panorama/images/items/tpscroll_png.vtex_c",
             Duration = 3.8
@@ -4537,7 +4631,7 @@ function DynamicIsland.OnFireEventClient(data)
             Tag = L("di_ui_buyback_alert"),
             Title = pName .. L("di_ui_bought_back"),
             Subtitle = L("di_ui_hero_returned_to_match"),
-            AccentColor = Color(255, 215, 0, 255),
+            AccentColor = Color(255, 214, 10, 255),
             IconType = "svg",
             FallbackSvg = "buyback",
             Duration = 4.0
@@ -4552,7 +4646,7 @@ function DynamicIsland.OnFireEventClient(data)
             Tag = L("di_ui_roshan_slain"),
             Title = L("di_ui_roshan_killed"),
             Subtitle = L("di_ui_aegis_dropped_in_pit"),
-            AccentColor = Color(255, 60, 60, 255),
+            AccentColor = Color(255, 69, 58, 255),
             IconType = "item",
             Icon = "panorama/images/items/aegis_png.vtex_c",
             Duration = 4.5
@@ -4569,7 +4663,7 @@ function DynamicIsland.OnEntityCreate(ent)
             Tag = L("di_ui_tormentor_spawn"),
             Title = L("di_ui_tormentor_spawned"),
             Subtitle = L("di_ui_objective_available"),
-            AccentColor = Color(0, 210, 255, 255),
+            AccentColor = Color(64, 200, 224, 255),
             IconType = "item",
             Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
             Duration = 4.5
@@ -4586,7 +4680,7 @@ function DynamicIsland.OnEntityDestroy(ent)
             Tag = L("di_ui_tormentor_defeated"),
             Title = L("di_ui_tormentor_defeated_2"),
             Subtitle = L("di_ui_shard_granted_to_team"),
-            AccentColor = Color(75, 245, 135, 255),
+            AccentColor = Color(48, 209, 88, 255),
             IconType = "item",
             Icon = "panorama/images/items/aghanims_shard_png.vtex_c",
             Duration = 4.0
@@ -4649,6 +4743,23 @@ local function GetIslandLayout()
     return res
 end
 
+local function PerfTint(kind, base)
+    local st = PerformanceData.Warn[kind]
+    local now = os.clock()
+    if not st then
+        st = { a = 0, clk = now, col = Config.Colors.Orange }
+        PerformanceData.Warn[kind] = st
+    end
+    local lvl = PerformanceData.Level(kind)
+    local dtw = math.min(0.1, math.max(0, now - st.clk))
+    st.clk = now
+    if lvl > 0 then st.col = (lvl == 2) and Config.Colors.Red or Config.Colors.Orange end
+    st.a = st.a + ((lvl > 0 and 1 or 0) - st.a) * math.min(1, dtw * 6)
+    if st.a < 0.01 then return base end
+    local c = LerpColor(base, st.col, st.a)
+    return Color(c.r, c.g, c.b, math.floor((base.a or 255) + (255 - (base.a or 255)) * st.a))
+end
+
 local function GetChipContent(chipId)
     local cfg = HUDCustomizer.WidgetConfigs[chipId] or { bold = false, colorMode = 1, format = 1, showIcon = true }
     local font = cfg.bold and Config.Fonts.Bold or Config.Fonts.Main
@@ -4701,11 +4812,11 @@ local function GetChipContent(chipId)
     elseif chipId == "fps" then
         local txt = string.format("%d FPS", PerformanceData.FPS)
         if cfg.format == 2 then txt = string.format("%d", PerformanceData.FPS) end
-        return { isClock = false, svgKey = svgKey, text = txt, font = font, color = col }
+        return { isClock = false, svgKey = svgKey, text = txt, font = font, color = PerfTint("fps", col) }
     elseif chipId == "ping" then
         local txt = string.format("%d ms", PerformanceData.Ping)
         if cfg.format == 2 then txt = string.format("%d", PerformanceData.Ping) end
-        return { isClock = false, svgKey = svgKey, text = txt, font = font, color = col }
+        return { isClock = false, svgKey = svgKey, text = txt, font = font, color = PerfTint("ping", col) }
     end
     return { isClock = false, svgKey = nil, text = "Chip", font = font, color = col }
 end
@@ -4777,11 +4888,11 @@ function Journey.HiddenPhase()
 end
 
 function Journey.LineWidth(scale, label, right, hasIcon)
-    local fontBold = Config.Fonts.Bold
-    local w = Render.TextSize(fontBold, 11 * scale, label).x
-    if hasIcon then w = w + 17 * scale end
+    local f, s = TF("Headline", scale)
+    local w = Render.TextSize(f, s, label).x
+    if hasIcon then w = w + 20 * scale end
     if right and right ~= "" then
-        w = w + 26 * scale + Render.TextSize(fontBold, 11 * scale, right).x
+        w = w + 24 * scale + Odometer.Width(f, s, right)
     end
     return w
 end
@@ -4797,10 +4908,10 @@ end
 
 local function GetChipStandardWidth(chipId, scale)
     local cfg = HUDCustomizer.WidgetConfigs[chipId] or { showIcon = true }
-    local iconW = (cfg.showIcon ~= false) and (18 * scale) or 0
+    local iconW = (cfg.showIcon ~= false) and (20 * scale) or 0
     local c = GetChipContent(chipId)
-    local tSize = Render.TextSize(c.font, 11 * scale, c.text)
-    return math.ceil(iconW + tSize.x)
+    local _, s = TF("Headline", scale)
+    return math.ceil(iconW + Odometer.Width(c.font, s, c.text))
 end
 
 local function CalculateIdleContentWidth(scale)
@@ -5975,11 +6086,14 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA then
-        Config.Dimensions.CompactTargetW = Config.Dimensions.CompactMediaW
+        Config.Dimensions.CompactTargetW = CompactMediaTitle() and Config.Dimensions.CompactMediaW or Config.Dimensions.CompactMediaBareW
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactMediaH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactMediaRadius
     elseif StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT then
-        Config.Dimensions.CompactTargetW = Config.Dimensions.CompactFightW
+        local fH, sH = TF("Headline", layout.scale)
+        local lm = FightTracker.Landmark ~= "" and FightTracker.Landmark or "Fight"
+        local fw = Odometer.Width(fH, sH, string.format("%d vs %d \u{2022} %s", FightTracker.AllyCount, FightTracker.EnemyCount, lm)) / layout.scale
+        Config.Dimensions.CompactTargetW = math.max(Config.Dimensions.CompactFightW, math.min(320, math.ceil((fw + 48) / 4) * 4))
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactFightH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactFightRadius
     elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION then
@@ -5999,15 +6113,15 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetH = Config.Dimensions.LargeH
         Config.Dimensions.CompactTargetR = Config.Dimensions.LargeRadius
     elseif StateMachine.TargetState == StateMachine.States.GAME_PAUSED then
-        local fontBold = Config.Fonts.Bold
-        local fontMain = Config.Fonts.Main
+        local fB, sB = TF("Body", layout.scale)
+        local fH, sH = TF("Headline", layout.scale)
         local elapsed = PauseTracker.PauseStartTime > 0 and math.floor(os.clock() - PauseTracker.PauseStartTime) or 0
         local pText = L("di_island_paused")
         local timeText = string.format("%d:%02d", math.floor(elapsed / 60), elapsed % 60)
-        local tSize1 = Render.TextSize(fontMain, 11 * layout.scale, pText)
-        local tSizeDot = Render.TextSize(fontMain, 11 * layout.scale, " \u{2022} ")
-        local tSize2 = Render.TextSize(fontBold, 11.5 * layout.scale, timeText)
-        local totalContentW = 10 * layout.scale + 18 * layout.scale + 8 * layout.scale + tSize1.x + tSizeDot.x + tSize2.x + 16 * layout.scale
+        local w1 = Render.TextSize(fB, sB, pText).x
+        local wDot = Render.TextSize(fB, sB, " \u{2022} ").x
+        local w2 = Odometer.Width(fH, sH, timeText)
+        local totalContentW = 12 * layout.scale + 16 * layout.scale + 8 * layout.scale + w1 + wDot + w2 + 16 * layout.scale
         Config.Dimensions.CompactTargetW = math.max(120, math.floor(totalContentW / layout.scale))
         Config.Dimensions.CompactTargetH = Config.Dimensions.GamePausedH
         Config.Dimensions.CompactTargetR = Config.Dimensions.GamePausedRadius
@@ -6016,9 +6130,9 @@ local function HandleInteractions()
         Config.Dimensions.CompactTargetH = Config.Dimensions.CourierDeliveryH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierDeliveryRadius
     elseif StateMachine.TargetState == StateMachine.States.COURIER_DELIVERED then
-        local fontBold = Config.Fonts.Bold
+        local fH, sH = TF("Headline", layout.scale)
         local txt = L("di_courier_delivered")
-        local tSize = Render.TextSize(fontBold, 11.5 * layout.scale, txt)
+        local tSize = Render.TextSize(fH, sH, txt)
         Config.Dimensions.CompactTargetW = math.max(160, (tSize.x / layout.scale) + 60)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CourierDeliveredH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierDeliveredRadius
@@ -6095,7 +6209,7 @@ local function HandleInteractions()
     end
 
     if isLeftClicked and isHover and not isCtrlOnly and mediaActive
-        and StateMachine.TargetState == StateMachine.States.LARGE_MEDIA and not StateMachine.Transition.Active then
+        and StateMachine.TargetState == StateMachine.States.LARGE_MEDIA and (not StateMachine.Transition.Active or StateMachine.Transition.Progress > 0.9) then
         local h = ButtonHits.MediaSeek
         if h and cx >= h.x1 - 4 and cx <= h.x2 + 4 and cy >= h.y1 and cy <= h.y2 then
             SeekDrag.Active = true
@@ -6167,7 +6281,7 @@ local function HandleInteractions()
                     Tag = "SPOTIFY",
                     Title = isNowLiked and L("di_ui_liked_songs") or L("di_ui_removed_from_favorites"),
                     Subtitle = isNowLiked and L("di_ui_saved_to_library") or L("di_ui_removed_from_spotify"),
-                    AccentColor = Color(255, 255, 255, 255),
+                    AccentColor = Color(255, 55, 95, 255),
                     IconType = "svg",
                     FallbackSvg = isNowLiked and "heart_fill" or "heart_outline",
                     Duration = 2.5
@@ -6186,7 +6300,7 @@ local function DrawAppleWaveform(x, y, maxH, count, isPlaying, scale, customColo
     local now = os.clock()
     local barW = math.max(1, math.floor(2.4 * scale))
     local barGap = math.max(1, math.floor(1.8 * scale))
-    local baseCol = customColor or MediaData.CoverColor or GetPrimaryThemeColor()
+    local baseCol = customColor or MediaTint()
     local baseFreqs = { 3.2, 4.8, 6.1, 4.9, 7.4 }
     local phaseOffsets = { 0.41, 1.93, 3.52, 5.18, 1.15 }
     local harmonicMults = { 1.618, 1.414, 1.732, 1.528, 1.667 }
@@ -6232,6 +6346,13 @@ local function DrawAppleWaveform(x, y, maxH, count, isPlaying, scale, customColo
     end
 end
 
+local function Glyph(name, cx, cy, sz, col)
+    local h = GetVectorIcon(name)
+    if h and sz > 0 then
+        Render.Image(h, Vec2(math.floor(cx - sz / 2 + 0.5), math.floor(cy - sz / 2 + 0.5)), Vec2(sz, sz), col, 0)
+    end
+end
+
 local function RenderMarqueeText(font, size, text, boxX, boxY, boxW, color, scale, rightFadeOnly)
     local fullSize = Render.TextSize(font, size, text)
     local ix = math.floor(boxX)
@@ -6251,7 +6372,7 @@ local function RenderMarqueeText(font, size, text, boxX, boxY, boxW, color, scal
     local now = os.clock()
     local offset = math.floor((now * speed) % totalCycle)
 
-    Render.PushClip(Vec2(ix, iy - 2), Vec2(ix + iw, iy + size + 4))
+    Render.PushClip(Vec2(ix, iy - 2), Vec2(ix + iw, iy + fullSize.y + 4))
 
     local x1 = ix - offset
     Render.Text(font, size, text, Vec2(x1, iy), color)
@@ -6296,25 +6417,25 @@ end
 
 function Journey.DrawLine(layout, aMul, yOff, drawIcon, label, labelCol, right, rightCol, rightId)
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
+    local f, s = TF("Headline", scale)
     local padX = math.floor(16 * scale)
     local midY = math.floor(layout.y + layout.h / 2 + yOff)
-    local iconSz = math.floor(12 * scale)
+    local iconSz = math.floor(14 * scale)
     local x = math.floor(layout.x + padX)
     drawIcon(x, midY, iconSz)
-    x = x + iconSz + math.floor(5 * scale)
-    local sL = Render.TextSize(fontBold, 11 * scale, label)
+    x = x + iconSz + math.floor(6 * scale)
+    local sL = Render.TextSize(f, s, label)
     local ty = math.floor(midY - sL.y / 2 + MenuTextOffsetY * scale)
-    Render.Text(fontBold, 11 * scale, label, Vec2(x, ty), FadeColor(labelCol, aMul))
+    Render.Text(f, s, label, Vec2(x, ty), FadeColor(labelCol, aMul))
     if right and right ~= "" then
-        local sR = Render.TextSize(fontBold, 11 * scale, right)
-        Odometer.Text(rightId, fontBold, 11 * scale, right, Vec2(math.floor(layout.x + layout.w - padX - sR.x), ty), FadeColor(rightCol, aMul))
+        local rw = Odometer.Width(f, s, right)
+        Odometer.Text(rightId, f, s, right, Vec2(math.floor(layout.x + layout.w - padX - rw), ty), FadeColor(rightCol, aMul))
     end
 end
 
 function Journey.Spinner(cx, cy, r, col, aMul)
     local t = math.max(1.5, r * 0.28)
-    Render.Circle(Vec2(cx, cy), r, FadeColor(Color(255, 255, 255, 36), aMul), t, 0, 1.0, false, 28)
+    Render.Circle(Vec2(cx, cy), r, FadeColor(Config.Colors.FillTertiary, aMul), t, 0, 1.0, false, 28)
     local start = (os.clock() * 320) % 360
     Render.Circle(Vec2(cx, cy), r, FadeColor(col, aMul), t, start, 0.28, true, 28)
 end
@@ -6325,7 +6446,7 @@ function Journey.RenderIdle(layout, alphaMul, yOffset)
     Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
         local h = GetVectorIcon("home")
         if h then
-            Render.Image(h, Vec2(x, math.floor(midY - sz / 2 + MenuIconOffsetY * layout.scale)), Vec2(sz, sz), FadeColor(Color(255, 255, 255, 150), aMul), 0)
+            Render.Image(h, Vec2(x, math.floor(midY - sz / 2 + MenuIconOffsetY * layout.scale)), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, aMul), 0)
         end
     end, label, Config.Colors.TextSecondary, right, Config.Colors.TextPrimary, "journey_clock")
 end
@@ -6335,7 +6456,7 @@ function Journey.RenderSearching(layout, alphaMul, yOffset)
     local label, right = Journey.SearchTexts()
     Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
         Journey.Spinner(x + sz / 2, midY, sz * 0.42, Config.Colors.Blue, aMul)
-    end, label, Config.Colors.TextPrimary, right, Color(100, 170, 255, 255), "journey_search")
+    end, label, Config.Colors.TextPrimary, right, Config.Colors.Blue, "journey_search")
 end
 
 function Journey.RenderMatchFound(layout, alphaMul, yOffset)
@@ -6350,7 +6471,7 @@ function Journey.RenderMatchFound(layout, alphaMul, yOffset)
             Success.Draw("accept" .. tostring(Journey.AcceptedAt), c, r, sucT, aMul, scale)
             return
         end
-        Render.FilledCircle(c, r, FadeColor(Color(52, 199, 89, 255), aMul), 0, 1.0, 32)
+        Render.FilledCircle(c, r, FadeColor(Config.Colors.Green, aMul), 0, 1.0, 32)
         local h = GetVectorIcon("check")
         local isz = math.floor(r * 1.3)
         if h then
@@ -6363,13 +6484,13 @@ local function RenderModularIdlePill(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
+    local _, s = TF("Headline", scale)
     local renderedChips = {}
 
     for idx, id in ipairs(HUDCustomizer.ActiveChips) do
         local c = GetChipContent(id)
         local chipW = GetChipStandardWidth(id, scale)
-        local iconExtra = c.svgKey and ((13 + 5) * scale) or 0
-        table.insert(renderedChips, { id = id, isClock = c.isClock, svgKey = c.svgKey, text = c.text, font = c.font, color = FadeColor(c.color, aMul), width = chipW, iconExtra = iconExtra })
+        table.insert(renderedChips, { id = id, isClock = c.isClock, svgKey = c.svgKey, text = c.text, font = c.font, color = FadeColor(c.color, aMul), width = chipW })
     end
 
     local totalContentW = 0
@@ -6400,25 +6521,22 @@ local function RenderModularIdlePill(layout, alphaMul, yOffset)
 
         local drawX = isBeingDragged and math.floor(HUDCustomizer.DragCurrentX - chip.width / 2) or chipStartX
 
-        local refSize = Render.TextSize(chip.font, 11 * scale, "0123456789")
+        local refSize = Render.TextSize(chip.font, s, "0123456789")
         local ty = math.floor(midY - refSize.y / 2 + MenuTextOffsetY * scale)
+        local odoId = "chip_" .. chip.id
+        local soft = chip.id == "fps" or chip.id == "ping"
         if chip.svgKey then
             local iconHandle = GetVectorIcon(chip.svgKey)
-            local iconSz = math.floor(13 * scale)
-            local iconX = drawX
+            local iconSz = math.floor(14 * scale)
             local iconY = math.floor(midY - iconSz / 2 + MenuIconOffsetY * scale)
             if iconHandle then
-                Render.Image(iconHandle, Vec2(iconX, iconY), Vec2(iconSz, iconSz), chip.color, 0)
+                Render.Image(iconHandle, Vec2(drawX, iconY), Vec2(iconSz, iconSz), chip.color, 0)
             end
-
-            local tx = drawX + iconSz + math.floor(5 * scale)
-            Odometer.Text((chip.id ~= "fps" and chip.id ~= "ping") and ("chip_" .. chip.id) or nil, chip.font, 11 * scale, chip.text, Vec2(tx, ty), chip.color)
-            curX = curX + chip.width
+            Odometer.Text(odoId, chip.font, s, chip.text, Vec2(drawX + math.floor(20 * scale), ty), chip.color, soft)
         else
-            local tx = drawX
-            Odometer.Text((chip.id ~= "fps" and chip.id ~= "ping") and ("chip_" .. chip.id) or nil, chip.font, 11 * scale, chip.text, Vec2(tx, ty), chip.color)
-            curX = curX + chip.width
+            Odometer.Text(odoId, chip.font, s, chip.text, Vec2(drawX, ty), chip.color, soft)
         end
+        curX = curX + chip.width
 
         if idx < #renderedChips then
             local dotR = 1.6 * scale
@@ -6444,7 +6562,8 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
     local curBorder = borderCol
     if StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
         local p = Journey.Accepted and 0.45 or (0.45 + 0.30 * math.sin(os.clock() * 4.0))
-        curBorder = Color(52, 199, 89, math.floor(255 * p))
+        local g = Config.Colors.Green
+        curBorder = Color(g.r, g.g, g.b, math.floor(255 * p))
     end
     Render.Rect(p1, p2, FadeColor(curBorder, a), radius, Enum.DrawFlags.None, thickness or 1.0)
 end
@@ -6465,7 +6584,7 @@ local function EaseOutBack(x)
     return 1 + 2.05 * u * u * u + 1.05 * u * u
 end
 
-function Odometer.Width(font, size, str)
+function Odometer.Natural(font, size, str)
     local key = str .. "|" .. size .. "|" .. tostring(font)
     local w = Odometer.Widths[key]
     if not w then
@@ -6479,6 +6598,19 @@ function Odometer.Width(font, size, str)
     return w
 end
 
+function Odometer.DigitW(font, size)
+    local key = size .. "|" .. tostring(font)
+    local w = Odometer.Digit[key]
+    if not w then
+        w = 0
+        for d = 0, 9 do
+            w = math.max(w, Render.TextSize(font, size, tostring(d)).x)
+        end
+        Odometer.Digit[key] = w
+    end
+    return w
+end
+
 function Odometer.Chars(str)
     local t = {}
     for ch in string.gmatch(str, "[\0-\x7F\xC2-\xF4][\x80-\xBF]*") do
@@ -6487,63 +6619,121 @@ function Odometer.Chars(str)
     return t
 end
 
-function Odometer.Text(id, font, size, text, pos, col)
-    if not id then
+function Odometer.Layout(font, size, text)
+    local key = text .. "|" .. size .. "|" .. tostring(font)
+    local lay = Odometer.Layouts[key]
+    if lay then return lay end
+    if Odometer.LayoutCount > 2000 then
+        Odometer.Layouts, Odometer.LayoutCount = {}, 0
+    end
+    local cells, runs = {}, {}
+    local x, runStart, run = 0, 0, ""
+    local dw = Odometer.DigitW(font, size)
+    local tab = Odometer.Tabular(text)
+    local function flush()
+        if run ~= "" then
+            runs[#runs + 1] = { text = run, x = runStart }
+            x = runStart + Odometer.Natural(font, size, run)
+            run = ""
+        end
+    end
+    for _, ch in ipairs(Odometer.Chars(text)) do
+        if tab and ch:match("^%d$") then
+            flush()
+            local off = (dw - Odometer.Natural(font, size, ch)) / 2
+            cells[#cells + 1] = { ch = ch, x = x, off = off }
+            runs[#runs + 1] = { text = ch, x = x + off }
+            x = x + dw
+        else
+            if run == "" then runStart = x end
+            cells[#cells + 1] = { ch = ch, x = runStart + Odometer.Natural(font, size, run), off = 0 }
+            run = run .. ch
+        end
+    end
+    flush()
+    lay = { cells = cells, runs = runs, w = x }
+    Odometer.Layouts[key] = lay
+    Odometer.LayoutCount = Odometer.LayoutCount + 1
+    return lay
+end
+
+function Odometer.Tabular(text)
+    return text:find("%d") ~= nil and text:find("/") == nil
+end
+
+function Odometer.Width(font, size, text)
+    if not Odometer.Tabular(text) then return Odometer.Natural(font, size, text) end
+    return Odometer.Layout(font, size, text).w
+end
+
+function Odometer.Draw(font, size, text, pos, col)
+    if not Odometer.Tabular(text) then
         Render.Text(font, size, text, pos, col)
+        return
+    end
+    for _, r in ipairs(Odometer.Layout(font, size, text).runs) do
+        Render.Text(font, size, r.text, Vec2(math.floor(pos.x + r.x + 0.5), pos.y), col)
+    end
+end
+
+function Odometer.Text(id, font, size, text, pos, col, soft)
+    if not id then
+        Odometer.Draw(font, size, text, pos, col)
         return
     end
     local now = os.clock()
     local st = Odometer.States[id]
     if not st then
-        st = { cur = text, prev = nil, t0 = 0, dir = 1 }
+        st = { cur = text, prev = nil, t0 = 0, dir = 1, seen = now }
         Odometer.States[id] = st
+    elseif now - (st.seen or now) > 0.15 then
+        st.cur, st.prev = text, nil
     elseif st.cur ~= text then
         local a = tonumber((st.cur:gsub("%D", "")))
         local b = tonumber((text:gsub("%D", "")))
         st.dir = (a and b and b < a) and -1 or 1
         st.prev, st.cur, st.t0 = st.cur, text, now
     end
-    local p = (now - st.t0) / 0.42
+    st.seen = now
+    local p = (now - st.t0) / (soft and 0.2 or 0.42)
     if not st.prev or p >= 1 then
         st.prev = nil
-        Render.Text(font, size, text, pos, col)
+        Odometer.Draw(font, size, text, pos, col)
         return
     end
     local e = EaseOutCubic(p)
     local lh = Render.TextSize(font, size, "0").y
-    local shift = lh * 0.95
+    local shift = soft and 0 or lh * 0.95
     local alpha = col.a or 255
     local oldCol = Color(col.r, col.g, col.b, math.floor(alpha * (1 - e)))
     local newCol = Color(col.r, col.g, col.b, math.floor(alpha * e))
-    local newC, oldC = Odometer.Chars(text), Odometer.Chars(st.prev)
-    local wMax = math.max(Odometer.Width(font, size, text), Odometer.Width(font, size, st.prev))
+    local newL, oldL = Odometer.Layout(font, size, text), Odometer.Layout(font, size, st.prev)
+    local wMax = math.max(newL.w, oldL.w)
     Render.PushClip(Vec2(pos.x - 2, pos.y), Vec2(pos.x + wMax + 2, pos.y + lh), true)
-    if #newC == #oldC then
-        local prefix = ""
-        for i = 1, #newC do
-            local x = pos.x + (i > 1 and Odometer.Width(font, size, prefix) or 0)
-            if newC[i] == oldC[i] then
-                Render.Text(font, size, newC[i], Vec2(x, pos.y), col)
+    if #newL.cells == #oldL.cells then
+        for i, cN in ipairs(newL.cells) do
+            local cO = oldL.cells[i]
+            if cN.ch == cO.ch then
+                Render.Text(font, size, cN.ch, Vec2(math.floor(pos.x + cN.x + cN.off + 0.5), pos.y), col)
             else
-                Render.Text(font, size, oldC[i], Vec2(x, pos.y - st.dir * shift * e), oldCol)
-                Render.Text(font, size, newC[i], Vec2(x, pos.y + st.dir * shift * (1 - e)), newCol)
+                Render.Text(font, size, cO.ch, Vec2(math.floor(pos.x + cO.x + cO.off + 0.5), pos.y - st.dir * shift * e), oldCol)
+                Render.Text(font, size, cN.ch, Vec2(math.floor(pos.x + cN.x + cN.off + 0.5), pos.y + st.dir * shift * (1 - e)), newCol)
             end
-            prefix = prefix .. newC[i]
         end
     else
-        Render.Text(font, size, st.prev, Vec2(pos.x, pos.y - st.dir * shift * e), oldCol)
-        Render.Text(font, size, text, Vec2(pos.x, pos.y + st.dir * shift * (1 - e)), newCol)
+        Odometer.Draw(font, size, st.prev, Vec2(pos.x, pos.y - st.dir * shift * e), oldCol)
+        Odometer.Draw(font, size, text, Vec2(pos.x, pos.y + st.dir * shift * (1 - e)), newCol)
     end
     Render.PopClip()
 end
 
 function Success.Draw(id, c, r, t, a, scale)
-    local green = Color(52, 199, 89, 255)
+    local green = Config.Colors.Green
     local thick = math.max(1.5, 2 * scale)
     if t < 0.35 then
         local k = t / 0.35
         local e = (k < 0.5) and (4 * k * k * k) or (1 - ((-2 * k + 2) ^ 3) / 2)
-        Render.Circle(c, r, FadeColor(Color(255, 255, 255, 30), a), thick, 0, 1.0, false, 48)
+        Render.Circle(c, r, FadeColor(Config.Colors.FillTertiary, a), thick, 0, 1.0, false, 48)
         if e > 0.002 then
             Render.Circle(c, r, FadeColor(green, a), thick, 270, e, true, 48)
         end
@@ -6552,7 +6742,7 @@ function Success.Draw(id, c, r, t, a, scale)
     if t > 0.72 then
         local bk = math.min(1, (t - 0.72) / 0.4)
         if bk < 1 then
-            Render.FilledCircle(c, r * (1 + 0.7 * bk), FadeColor(Color(52, 199, 89, math.floor(90 * (1 - bk))), a), 0, 1.0, 48)
+            Render.FilledCircle(c, r * (1 + 0.7 * bk), FadeColor(Color(green.r, green.g, green.b, math.floor(90 * (1 - bk))), a), 0, 1.0, 48)
         end
     end
     local fk = math.min(1, (t - 0.35) / 0.18)
@@ -6701,7 +6891,7 @@ function Focus.RenderBubble(layout)
             local frac = math.max(0, math.min(1, (Focus.Until - now) / (Focus.Until - Focus.StartedAt)))
             local rr = d / 2 - 2.5 * scale
             local rt = math.max(1.2, 1.5 * scale)
-            Render.Circle(c, rr, FadeColor(Color(255, 255, 255, 22), ca), rt, 0, 1.0, false, 48)
+            Render.Circle(c, rr, FadeColor(Config.Colors.FillTertiary, ca), rt, 0, 1.0, false, 48)
             if frac > 0.002 then
                 Render.Circle(c, rr, FadeColor(Focus.Accent, ca), rt, 270, frac, true, 48)
             end
@@ -6720,7 +6910,7 @@ function Focus.RenderBanner(layout, alphaMul, yOffset)
             local a = math.min(1, t / 0.25)
             local s2 = math.floor(sz * (0.55 + 0.45 * e))
             local dy = math.floor((1 - e) * 5 * layout.scale)
-            Render.Image(h, Vec2(math.floor(x + (sz - s2) / 2), math.floor(midY - s2 / 2 + dy)), Vec2(s2, s2), FadeColor(on and Focus.Accent or Color(255, 255, 255, 150), aMul * a), 0)
+            Render.Image(h, Vec2(math.floor(x + (sz - s2) / 2), math.floor(midY - s2 / 2 + dy)), Vec2(s2, s2), FadeColor(on and Focus.Accent or Config.Colors.TextSecondary, aMul * a), 0)
         end
     end, L("di_focus_name"), Config.Colors.TextPrimary, on and L("di_focus_on") or L("di_focus_off"), on and Focus.Accent or Config.Colors.TextMuted)
 end
@@ -6742,24 +6932,24 @@ function Focus.RenderTile(layout, x1, x2, y1, aMul)
     local hh = tileH * press
     local q1 = Vec2(math.floor(cxT - w / 2), math.floor(cyT - hh / 2))
     local q2 = Vec2(math.floor(cxT + w / 2), math.floor(cyT + hh / 2))
-    Render.FilledRect(q1, q2, FadeColor(LerpColor(Color(255, 255, 255, 22), Color(255, 255, 255, 235), tv), aMul), math.floor(hh / 2))
+    Render.FilledRect(q1, q2, FadeColor(LerpColor(Config.Colors.FillSecondary, Config.Colors.TextPrimary, tv), aMul), math.floor(hh / 2))
     local cr = math.floor(hh / 2 - 3 * scale)
     local cc = Vec2(math.floor(q1.x + hh / 2), math.floor(cyT))
-    Render.FilledCircle(cc, cr, FadeColor(LerpColor(Color(255, 255, 255, 40), Focus.Accent, tv), aMul), 0, 1.0, 24)
+    Render.FilledCircle(cc, cr, FadeColor(LerpColor(Config.Colors.Fill, Focus.Accent, tv), aMul), 0, 1.0, 24)
     local isz = math.floor(cr * 1.15)
     local moon = GetVectorIcon("moon")
     if moon then
         Render.Image(moon, Vec2(math.floor(cc.x - isz / 2), math.floor(cc.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul), 0)
     end
-    local fontBold = Config.Fonts.Bold
+    local f, s = TF("FootnoteEm", scale)
     local label = L("di_focus_name")
-    local ls = Render.TextSize(fontBold, 10.5 * scale, label)
-    local textCol = LerpColor(Config.Colors.TextPrimary, Color(22, 22, 26, 255), tv)
-    Render.Text(fontBold, 10.5 * scale, label, Vec2(math.floor(cc.x + cr + 7 * scale), math.floor(cyT - ls.y / 2)), FadeColor(textCol, aMul))
+    local ls = Render.TextSize(f, s, label)
+    local textCol = LerpColor(Config.Colors.TextPrimary, Config.Colors.TextInverse, tv)
+    Render.Text(f, s, label, Vec2(math.floor(cc.x + cr + 7 * scale), math.floor(cyT - ls.y / 2)), FadeColor(textCol, aMul))
     if on then
         local right = Focus.Until > 0 and FormatTime(math.max(0, Focus.Until - now)) or L("di_focus_on")
-        local rs = Render.TextSize(fontBold, 10.5 * scale, right)
-        Odometer.Text("focus_tile", fontBold, 10.5 * scale, right, Vec2(math.floor(q2.x - 10 * scale - rs.x), math.floor(cyT - rs.y / 2)), FadeColor(Focus.Accent, aMul * tv))
+        local rw = Odometer.Width(f, s, right)
+        Odometer.Text("focus_tile", f, s, right, Vec2(math.floor(q2.x - 10 * scale - rw), math.floor(cyT - ls.y / 2)), FadeColor(Focus.Accent, aMul * tv))
     end
     Focus.Button = { x1 = x1, y1 = y1, x2 = x2, y2 = y1 + tileH }
     Focus.ButtonAt = now
@@ -6767,17 +6957,17 @@ end
 
 local function RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, action)
     local n = #items
-    spring.v, spring.vel = SolveDampedSpring(spring.v, spring.vel, sel - 1, dt, 26.0, 0.80)
+    spring.v, spring.vel = MotionEngine.Step(spring.v, spring.vel, sel - 1, dt, "SNAPPY")
     Render.FilledRect(Vec2(x, y), Vec2(x + w, y + h), FadeColor(Config.Colors.SegTrack, aMul), h / 2)
     local segW = w / n
     local tx = x + 2 + spring.v * segW
     Render.FilledRect(Vec2(tx, y + 2), Vec2(tx + segW - 4, y + h - 2), FadeColor(Config.Colors.SegThumb, aMul), (h - 4) / 2)
-    Render.Rect(Vec2(tx, y + 2), Vec2(tx + segW - 4, y + h - 2), FadeColor(Config.Colors.SegThumbBorder, aMul), (h - 4) / 2, Enum.DrawFlags.None, 1.0)
     for i, it in ipairs(items) do
         local act = (i == sel)
-        local f = act and Config.Fonts.Bold or Config.Fonts.Main
-        local ts = Render.TextSize(f, 9 * scale, L(it.label))
-        Render.Text(f, 9 * scale, L(it.label), Vec2(x + (i - 1) * segW + (segW - ts.x) / 2, y + (h - ts.y) / 2 - 1), FadeColor(act and Config.Colors.TextPrimary or Config.Colors.TextMuted, aMul))
+        local f, s = TF("Caption", scale)
+        if act then f = Config.Fonts.Semibold end
+        local ts = Render.TextSize(f, s, L(it.label))
+        Render.Text(f, s, L(it.label), Vec2(math.floor(x + (i - 1) * segW + (segW - ts.x) / 2), math.floor(y + (h - ts.y) / 2)), FadeColor(act and Config.Colors.TextPrimary or Config.Colors.TextSecondary, aMul))
         if aMul > 0.6 then
             table.insert(HUDCustomizer.InspectorBounds, { x1 = x + (i - 1) * segW, y1 = y, x2 = x + i * segW, y2 = y + h, action = action, val = it.val })
         end
@@ -6785,9 +6975,9 @@ local function RenderSegmented(x, y, w, h, items, sel, spring, dt, scale, aMul, 
 end
 
 local function RenderSwitch(x, y, w, h, on, spring, dt, aMul)
-    spring.v, spring.vel = SolveDampedSpring(spring.v, spring.vel, on and 1 or 0, dt, 26.0, 0.82)
+    spring.v, spring.vel = MotionEngine.Step(spring.v, spring.vel, on and 1 or 0, dt, "SNAPPY")
     local t = math.min(1, math.max(0, spring.v))
-    Render.FilledRect(Vec2(x, y), Vec2(x + w, y + h), FadeColor(LerpColor(Config.Colors.SegTrack, Config.Colors.Accent, t), aMul), h / 2)
+    Render.FilledRect(Vec2(x, y), Vec2(x + w, y + h), FadeColor(LerpColor(Config.Colors.Fill, Config.Colors.Green, t), aMul), h / 2)
     local kr = h / 2 - 2
     Render.FilledCircle(Vec2(x + 2 + kr + (w - 4 - kr * 2) * t, y + h / 2), kr, FadeColor(Color(255, 255, 255, 255), aMul), 0, 1.0, 24)
 end
@@ -6797,8 +6987,9 @@ local SEG_COLOR = { { label = "di_drawer_white", val = 1 }, { label = "di_drawer
 local SEG_FORMAT = { { label = "di_drawer_standard", val = 1 }, { label = "di_drawer_minimal", val = 2 }, { label = "di_drawer_detailed", val = 3 } }
 
 local function RenderSettingsLabel(x, y, rowH, label, scale, aMul)
-    local ts = Render.TextSize(Config.Fonts.Main, 10 * scale, label)
-    Render.Text(Config.Fonts.Main, 10 * scale, label, Vec2(x, y + (rowH - ts.y) / 2 - 1), FadeColor(Config.Colors.TextSecondary, aMul))
+    local f, s = TF("Footnote", scale)
+    local ts = Render.TextSize(f, s, label)
+    Render.Text(f, s, label, Vec2(x, math.floor(y + (rowH - ts.y) / 2)), FadeColor(Config.Colors.TextPrimary, aMul))
 end
 
 local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
@@ -6815,14 +7006,14 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
     end
 
     local hdrY = cy + 11 * scale
-    Render.Text(Config.Fonts.Bold, 10 * scale, label, Vec2(cx + padX, hdrY), FadeColor(Config.Colors.TextPrimary, aMul))
+    local fH, sH = TF("FootnoteEm", scale)
+    Render.Text(fH, sH, label, Vec2(cx + padX, hdrY), FadeColor(Config.Colors.TextPrimary, aMul))
 
     local closeR = 9 * scale
     local closeX = cx + cw - padX - closeR
     local closeY = hdrY + 5 * scale
     Render.FilledCircle(Vec2(closeX, closeY), closeR, FadeColor(Config.Colors.SegTrack, aMul), 0, 1.0, 20)
-    local xs = Render.TextSize(Config.Fonts.Bold, 9 * scale, "\u{2715}")
-    Render.Text(Config.Fonts.Bold, 9 * scale, "\u{2715}", Vec2(closeX - xs.x / 2, closeY - xs.y / 2), FadeColor(Config.Colors.TextSecondary, aMul))
+    Glyph("close", closeX, closeY, math.floor(closeR * 1.05), FadeColor(Config.Colors.TextSecondary, aMul))
     if aMul > 0.6 then
         table.insert(HUDCustomizer.InspectorBounds, { x1 = closeX - closeR, y1 = closeY - closeR, x2 = closeX + closeR, y2 = closeY + closeR, action = "close_inspector" })
     end
@@ -6846,14 +7037,15 @@ local function RenderWidgetSettings(cx, cw, cy, scale, aMul, dt)
         local curHex = cfg.customHex or select(2, GetDefaultWidgetColor(id))
 
         RenderSettingsLabel(cx + padX, rowY, rowH, L("di_ui_palette"), scale, aMul)
-        local lblSize = Render.TextSize(Config.Fonts.Main, 10 * scale, L("di_ui_palette"))
+        local fL, sL = TF("Footnote", scale)
+        local lblSize = Render.TextSize(fL, sL, L("di_ui_palette"))
 
         local prevR = 8 * scale
         local prevX = cx + padX + lblSize.x + 14 * scale
         local prevY = rowY + rowH / 2
         Render.Shadow(Vec2(prevX - prevR, prevY - prevR), Vec2(prevX + prevR, prevY + prevR), Color(0, 0, 0, math.floor(110 * aMul)), 6, prevR, Enum.DrawFlags.ShadowCutOutShapeBackground, Vec2(0, 1))
         Render.FilledCircle(Vec2(prevX, prevY), prevR, FadeColor(curCol, aMul), 0, 1.0, 22)
-        local ringCol = HUDCustomizer.ColorPickerOpen and Config.Colors.Accent or Color(255, 255, 255, 170)
+        local ringCol = HUDCustomizer.ColorPickerOpen and Config.Colors.Blue or Config.Colors.TextSecondary
         Render.Circle(Vec2(prevX, prevY), prevR + 1.5 * scale, FadeColor(ringCol, aMul), 1.8 * scale)
         if aMul > 0.6 then
             table.insert(HUDCustomizer.InspectorBounds, {
@@ -6962,23 +7154,24 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
 
     local pad = 12 * scale
     local hdrY = popY + 11 * scale
-    Render.Text(Config.Fonts.Bold, 10 * scale, L("di_ui_color_picker"), Vec2(popX + pad, hdrY), FadeColor(Config.Colors.TextPrimary, popA))
+    local fH, sH = TF("FootnoteEm", scale)
+    Render.Text(fH, sH, L("di_ui_color_picker"), Vec2(popX + pad, hdrY), FadeColor(Config.Colors.TextPrimary, popA))
 
     local hexLabel = "#" .. string.upper(curHex)
-    local hexSz = Render.TextSize(Config.Fonts.Bold, 8.5 * scale, hexLabel)
+    local fC, sC = TF("Caption", scale)
+    local hexSz = Render.TextSize(fC, sC, hexLabel)
     local hexPillW = hexSz.x + 8 * scale
     local hexPillH = 15 * scale
-    local hexPillX = popX + pad + 82 * scale
+    local hexPillX = popX + pad + Render.TextSize(fH, sH, L("di_ui_color_picker")).x + 8 * scale
     local hexPillY = hdrY - 1 * scale
     Render.FilledRect(Vec2(hexPillX, hexPillY), Vec2(hexPillX + hexPillW, hexPillY + hexPillH), FadeColor(Config.Colors.SegTrack, popA), 4 * scale)
-    Render.Text(Config.Fonts.Bold, 8.5 * scale, hexLabel, Vec2(hexPillX + 4 * scale, hexPillY + 1 * scale), FadeColor(Config.Colors.TextSecondary, popA))
+    Render.Text(fC, sC, hexLabel, Vec2(math.floor(hexPillX + 4 * scale), math.floor(hexPillY + (hexPillH - hexSz.y) / 2)), FadeColor(Config.Colors.TextSecondary, popA))
 
     local closeR = 8 * scale
     local closeX = popX + popW - pad - closeR
     local closeY = hdrY + 6 * scale
     Render.FilledCircle(Vec2(closeX, closeY), closeR, FadeColor(Config.Colors.SegTrack, popA), 0, 1.0, 18)
-    local xs = Render.TextSize(Config.Fonts.Bold, 8 * scale, "\u{2715}")
-    Render.Text(Config.Fonts.Bold, 8 * scale, "\u{2715}", Vec2(closeX - xs.x / 2, closeY - xs.y / 2), FadeColor(Config.Colors.TextSecondary, popA))
+    Glyph("close", closeX, closeY, math.floor(closeR * 1.05), FadeColor(Config.Colors.TextSecondary, popA))
 
     if popA > 0.6 then
         table.insert(HUDCustomizer.InspectorBounds, {
@@ -7132,13 +7325,13 @@ local function RenderColorPickerPopover(cx, cy, cardW, scale, dt)
     end
 
     local rstText = L("di_ui_reset")
-    local rstS = Render.TextSize(Config.Fonts.Main, 8.5 * scale, rstText)
+    local rstS = Render.TextSize(fC, sC, rstText)
     local rstW = rstS.x + 12 * scale
     local rstH = 18 * scale
     local rstX = popX + popW - pad - rstW
     local rstY = btmY + previewR - rstH / 2
     Render.FilledRect(Vec2(rstX, rstY), Vec2(rstX + rstW, rstY + rstH), FadeColor(Config.Colors.SegTrack, popA), rstH / 2)
-    Render.Text(Config.Fonts.Main, 8.5 * scale, rstText, Vec2(rstX + (rstW - rstS.x) / 2, rstY + (rstH - rstS.y) / 2 - 1), FadeColor(Config.Colors.TextSecondary, popA))
+    Render.Text(fC, sC, rstText, Vec2(math.floor(rstX + (rstW - rstS.x) / 2), math.floor(rstY + (rstH - rstS.y) / 2)), FadeColor(Config.Colors.TextPrimary, popA))
 
     if popA > 0.6 then
         table.insert(HUDCustomizer.InspectorBounds, {
@@ -7197,7 +7390,7 @@ local function RenderHUDDrawer(layout, dt)
     if anim.h <= 0 then
         anim.h, anim.hVel = targetH, 0
     else
-        anim.h, anim.hVel = SolveDampedSpring(anim.h, anim.hVel, targetH, dt, 18.0, 0.84)
+        anim.h, anim.hVel = MotionEngine.Step(anim.h, anim.hVel, targetH, dt, "SMOOTH")
     end
 
     local panelW = layout.w + (cardW - layout.w) * widen
@@ -7225,7 +7418,8 @@ local function RenderHUDDrawer(layout, dt)
     local cx = math.floor(layout.x + (layout.w - cardW) / 2)
     local grabW = 34 * scale
     Render.FilledRect(Vec2(cx + (cardW - grabW) / 2, py + 8 * scale), Vec2(cx + (cardW + grabW) / 2, py + 12 * scale), FadeColor(Config.Colors.Grabber, contentA), 2 * scale)
-    Render.Text(Config.Fonts.Bold, 10 * scale, L("di_ui_widgets"), Vec2(cx + padX, py + 19 * scale), FadeColor(Config.Colors.TextSecondary, contentA))
+    local fW, sW = TF("Footnote", scale)
+    Render.Text(fW, sW, L("di_ui_widgets"), Vec2(cx + padX, py + 18 * scale), FadeColor(Config.Colors.TextSecondary, contentA))
 
     local chipY = py + chipsTop
     for i, chip in ipairs(HUDCustomizer.AvailableChips) do
@@ -7234,8 +7428,8 @@ local function RenderHUDDrawer(layout, dt)
         local active = IsChipInActiveList(chip.id)
 
         local ca = ChipAnim(chip.id)
-        ca.fill, ca.fillVel = SolveDampedSpring(ca.fill, ca.fillVel, active and 1 or 0, dt, 20.0, 0.86)
-        ca.scale, ca.scaleVel = SolveDampedSpring(ca.scale, ca.scaleVel, 1.0, dt, 30.0, 0.52)
+        ca.fill, ca.fillVel = MotionEngine.Step(ca.fill, ca.fillVel, active and 1 or 0, dt, "SMOOTH")
+        ca.scale, ca.scaleVel = MotionEngine.Step(ca.scale, ca.scaleVel, 1.0, dt, "SNAPPY")
         local insetX = chipW * (1 - ca.scale) / 2
         local insetY = chipH * (1 - ca.scale) / 2
         local q1 = Vec2(bx + insetX, by + insetY)
@@ -7245,12 +7439,13 @@ local function RenderHUDDrawer(layout, dt)
         Render.FilledRect(q1, q2, FadeColor(LerpColor(Config.Colors.ChipInactive, Config.Colors.ChipActiveBorder, ca.fill), contentA), qr)
         Render.Rect(q1, q2, FadeColor(Config.Colors.ChipInactiveBorder, contentA * (1 - ca.fill)), qr, Enum.DrawFlags.None, 1.0)
         if HUDCustomizer.InspectedChip == chip.id then
-            Render.Rect(Vec2(q1.x - 2 * scale, q1.y - 2 * scale), Vec2(q2.x + 2 * scale, q2.y + 2 * scale), FadeColor(Config.Colors.Accent, contentA), qr + 2 * scale, Enum.DrawFlags.None, 1.5)
+            Render.Rect(Vec2(q1.x - 2 * scale, q1.y - 2 * scale), Vec2(q2.x + 2 * scale, q2.y + 2 * scale), FadeColor(Config.Colors.Blue, contentA), qr + 2 * scale, Enum.DrawFlags.None, 1.5)
         end
 
-        local f = ca.fill > 0.5 and Config.Fonts.Bold or Config.Fonts.Main
-        local ls = Render.TextSize(f, 9.5 * scale, L(chip.label))
-        Render.Text(f, 9.5 * scale, L(chip.label), Vec2(math.floor(bx + (chipW - ls.x) / 2), math.floor(by + (chipH - ls.y) / 2 - 1)), FadeColor(LerpColor(Config.Colors.TextSecondary, Config.Colors.TextInverse, ca.fill), contentA))
+        local f, s = TF("Footnote", scale)
+        if ca.fill > 0.5 then f = Config.Fonts.Semibold end
+        local ls = Render.TextSize(f, s, L(chip.label))
+        Render.Text(f, s, L(chip.label), Vec2(math.floor(bx + (chipW - ls.x) / 2), math.floor(by + (chipH - ls.y) / 2)), FadeColor(LerpColor(Config.Colors.TextPrimary, Config.Colors.TextInverse, ca.fill), contentA))
 
         if contentA > 0.6 then
             table.insert(HUDCustomizer.DrawerBounds, { x1 = bx, y1 = by, x2 = bx + chipW, y2 = by + chipH, id = chip.id, action = "toggle" })
@@ -7263,8 +7458,9 @@ local function RenderHUDDrawer(layout, dt)
 
     if hintsOn then
         local hint = L("di_ui_drawer_hint")
-        local hs = Render.TextSize(Config.Fonts.Main, 8.5 * scale, hint)
-        Render.Text(Config.Fonts.Main, 8.5 * scale, hint, Vec2(math.floor(cx + (cardW - hs.x) / 2), math.floor(py + anim.h - 17 * scale)), FadeColor(Config.Colors.TextMuted, contentA))
+        local fh, sh = TF("Caption", scale)
+        local hs = Render.TextSize(fh, sh, hint)
+        Render.Text(fh, sh, hint, Vec2(math.floor(cx + (cardW - hs.x) / 2), math.floor(py + anim.h - 18 * scale)), FadeColor(Config.Colors.TextSecondary, contentA))
     end
 
     Render.PopClip()
@@ -7301,7 +7497,7 @@ end
 local function RenderSecondarySatelliteBubble(layout)
     local R = Satellite.Right
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
+    local fontBold, headSize = TF("Headline", scale)
     local now = os.clock()
     local ts = StateMachine.TargetState
     local active = NotificationQueue.Active
@@ -7348,7 +7544,7 @@ local function RenderSecondarySatelliteBubble(layout)
 
     if kind == "notif" and R.notif then
         local n = R.notif
-        local titleSize = 10.5 * scale
+        local titleSize = headSize
         local title = TruncateToWidth(fontBold, titleSize, n.Title or n.Tag or "", math.floor(170 * scale))
         local tsz = Render.TextSize(fontBold, titleSize, title)
         fullW = bh + math.floor(5 * scale) + tsz.x + math.floor(bh * 0.38)
@@ -7362,7 +7558,7 @@ local function RenderSecondarySatelliteBubble(layout)
             local isz = math.floor(ringR * 1.25)
             local accent = n.AccentColor or Config.Colors.Accent
             local rt = math.max(1.2, 1.5 * scale)
-            Render.Circle(c, ringR, FadeColor(Color(255, 255, 255, 30), ca), rt, 0, 1.0, false, 48)
+            Render.Circle(c, ringR, FadeColor(Config.Colors.FillTertiary, ca), rt, 0, 1.0, false, 48)
             if remain > 0.01 then
                 Render.Circle(c, ringR, FadeColor(accent, ca), rt, 270, remain, true, 48)
             end
@@ -7373,14 +7569,15 @@ local function RenderSecondarySatelliteBubble(layout)
                 Render.FilledCircle(c, isz * 0.4, FadeColor(accent, ca), 0, 1.0, 16)
             end
             if ta > 0.01 then
-                Render.Text(fontBold, titleSize, title, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(Config.Colors.TextPrimary, ta))
+                Render.Text(fontBold, titleSize, title, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2)), FadeColor(Config.Colors.TextPrimary, ta))
             end
         end
     elseif kind == "rampage" then
         local left = math.max(0, Rampage.Left or 0)
         local secs = tostring(math.ceil(left))
-        local fontSize = 12 * scale
-        local tsz = Render.TextSize(fontBold, fontSize, secs)
+        local fontSize = headSize
+        local tsz = Render.TextSize(fontBold, fontSize, "0")
+        tsz = Vec2(Odometer.Width(fontBold, fontSize, secs), tsz.y)
         fullW = bh + math.floor(5 * scale) + tsz.x + math.floor(bh * 0.38)
         local sucT = now - Rampage.SuccessAt
         content = function(x1, y1, x2, y2, d, ca, ta)
@@ -7391,10 +7588,10 @@ local function RenderSecondarySatelliteBubble(layout)
                 return
             end
             local urgent = left <= 5
-            local col = urgent and Color(255, 59, 48, 255) or Color(255, 149, 0, 255)
+            local col = urgent and Config.Colors.Red or Config.Colors.Orange
             local pulse = urgent and (0.7 + 0.3 * math.sin(now * 10)) or 1
             local rt = math.max(1.4, 1.8 * scale)
-            Render.Circle(c, ringR, FadeColor(Color(255, 255, 255, 30), ca), rt, 0, 1.0, false, 48)
+            Render.Circle(c, ringR, FadeColor(Config.Colors.FillTertiary, ca), rt, 0, 1.0, false, 48)
             local frac = math.max(0, math.min(1, left / 18))
             if frac > 0.002 then
                 Render.Circle(c, ringR, FadeColor(col, ca * pulse), rt, 270, frac, true, 48)
@@ -7407,31 +7604,32 @@ local function RenderSecondarySatelliteBubble(layout)
                 end
             end
             if ta > 0.01 then
-                Odometer.Text("rampage_time", fontBold, fontSize, secs, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(urgent and col or Config.Colors.TextPrimary, ta))
+                Odometer.Text("rampage_time", fontBold, fontSize, secs, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2)), FadeColor(urgent and col or Config.Colors.TextPrimary, ta))
             end
         end
     elseif kind == "aegis" then
         local rem = math.max(0, GameTracker.Roshan.AegisExpiryTime - GameRules.GetGameTime())
         local timeStr = FormatTime(rem)
-        local fontSize = 10.5 * scale
-        local tsz = Render.TextSize(fontBold, fontSize, timeStr)
+        local fontSize = headSize
+        local tsz = Render.TextSize(fontBold, fontSize, "0")
+        tsz = Vec2(Odometer.Width(fontBold, fontSize, timeStr), tsz.y)
         fullW = bh + math.floor(5 * scale) + tsz.x + math.floor(bh * 0.38)
         content = function(x1, y1, x2, y2, d, ca, ta)
             local c = Vec2(x1 + d / 2, (y1 + y2) / 2)
             local ringR = d / 2 - 4 * scale
             local isz = math.floor(ringR * 1.25)
             local rt = math.max(1.2, 1.5 * scale)
-            Render.Circle(c, ringR, FadeColor(Color(255, 255, 255, 30), ca), rt, 0, 1.0, false, 48)
+            Render.Circle(c, ringR, FadeColor(Config.Colors.FillTertiary, ca), rt, 0, 1.0, false, 48)
             local frac = math.max(0, math.min(1, rem / 300))
             if frac > 0.002 then
-                Render.Circle(c, ringR, FadeColor(Color(255, 196, 64, 255), ca), rt, 270, frac, true, 48)
+                Render.Circle(c, ringR, FadeColor(Config.Colors.Yellow, ca), rt, 270, frac, true, 48)
             end
             local aegisH = GetCachedImage("panorama/images/items/aegis_png.vtex_c")
             if aegisH then
                 Render.Image(aegisH, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), ca), math.floor(isz / 2))
             end
             if ta > 0.01 then
-                Odometer.Text("aegis_time", fontBold, fontSize, timeStr, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2 - 1)), FadeColor(Config.Colors.TextPrimary, ta))
+                Odometer.Text("aegis_time", fontBold, fontSize, timeStr, Vec2(math.floor(x1 + d + 5 * scale), math.floor(c.y - tsz.y / 2)), FadeColor(Config.Colors.TextPrimary, ta))
             end
         end
     else
@@ -7483,23 +7681,23 @@ local function RenderMenuClosedHint(layout)
     if #lines == 0 then return end
 
     local scale = layout.scale
-    local fontMain = Config.Fonts.Main
-    local boxH = math.floor(18 * scale)
+    local f, s = TF("Footnote", scale)
+    local boxH = math.floor(22 * scale)
     local y = math.floor(layout.y + layout.h + 8 * scale)
     for _, line in ipairs(lines) do
-        local ts = Render.TextSize(fontMain, 9.5 * scale, line.text)
-        local dotW = line.dot and math.floor(11 * scale) or 0
-        local boxW = math.floor(ts.x + 18 * scale + dotW)
+        local ts = Render.TextSize(f, s, line.text)
+        local dotW = line.dot and math.floor(12 * scale) or 0
+        local boxW = math.floor(ts.x + 22 * scale + dotW)
         local x = math.floor(layout.x + (layout.w - boxW) / 2)
-        Render.FilledRect(Vec2(x, y), Vec2(x + boxW, y + boxH), Config.Colors.HintBg, 9 * scale)
-        Render.Rect(Vec2(x, y), Vec2(x + boxW, y + boxH), Config.Colors.HintBorder, 9 * scale, Enum.DrawFlags.None, 1.0)
-        local tx = x + 9 * scale
+        Render.FilledRect(Vec2(x, y), Vec2(x + boxW, y + boxH), Config.Colors.HintBg, boxH / 2)
+        Render.Rect(Vec2(x, y), Vec2(x + boxW, y + boxH), Config.Colors.HintBorder, boxH / 2, Enum.DrawFlags.None, 1.0)
+        local tx = x + 11 * scale
         if line.dot then
             Render.FilledCircle(Vec2(tx + 3 * scale, y + boxH / 2), 3 * scale, line.dot, 0, 1.0, 12)
             tx = tx + dotW
         end
-        Render.Text(fontMain, 9.5 * scale, line.text, Vec2(tx, y + (boxH - ts.y) / 2 - 1), Config.Colors.TextSecondary)
-        y = y + boxH + math.floor(5 * scale)
+        Render.Text(f, s, line.text, Vec2(math.floor(tx), math.floor(y + (boxH - ts.y) / 2)), Config.Colors.TextSecondary)
+        y = y + boxH + math.floor(6 * scale)
     end
 end
 
@@ -7507,12 +7705,12 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
+    local fontBold, headSize = TF("Headline", scale)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
-    local waveCol = MediaData.CoverColor or GetPrimaryThemeColor()
+    local waveCol = MediaTint()
 
     local thumbSize = math.floor(20 * scale)
-    local thumbX = math.floor(layout.x + 8 * scale)
+    local thumbX = math.floor(layout.x + (layout.h - thumbSize) / 2)
     local thumbY = math.floor(layout.y + (layout.h - thumbSize) / 2 + yOff)
 
     local waveCount = 5
@@ -7528,8 +7726,8 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
         displayStr = MediaData.Title .. " • " .. MediaData.Artist
     end
 
-    local tH = 12 * scale
-    local textY = math.floor(layout.y + (layout.h - tH) / 2 - 1 + yOff)
+    local tH = Render.TextSize(fontBold, headSize, "Ag").y
+    local textY = math.floor(layout.y + (layout.h - tH) / 2 + yOff)
 
     local nowClk = os.clock()
     if TrackTransition.Active then
@@ -7540,20 +7738,21 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
         local inOffset = dir * ((1.0 - t) * 18 * scale)
         local inAlpha = t * aMul
 
+        local showTitle = CompactMediaTitle()
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
             local oldStr = TrackTransition.OldTitle .. (TrackTransition.OldArtist ~= "" and (" • " .. TrackTransition.OldArtist) or "")
-            RenderMarqueeText(fontBold, 12 * scale, oldStr, textStartX + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale, false)
+            if showTitle then RenderMarqueeText(fontBold, headSize, oldStr, textStartX + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale, false) end
             DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
         end
         if inAlpha > 0.02 then
-            RenderMarqueeText(fontBold, 12 * scale, displayStr, textStartX + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale, false)
+            if showTitle then RenderMarqueeText(fontBold, headSize, displayStr, textStartX + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale, false) end
             DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, inAlpha, 0.85 + t * 0.15)
         end
         if t >= 1.0 then
             TrackTransition.Active = false
         end
     else
-        RenderMarqueeText(fontBold, 12 * scale, displayStr, textStartX, textY, textAvailW, textCol, scale, false)
+        if CompactMediaTitle() then RenderMarqueeText(fontBold, headSize, displayStr, textStartX, textY, textAvailW, textCol, scale, false) end
         DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, aMul)
     end
 
@@ -7564,30 +7763,29 @@ local function RenderFightCompact(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local f, s = TF("Headline", scale)
 
     local iconSz = math.floor(16 * scale)
-    local iconX = math.floor(layout.x + 10 * scale)
+    local iconX = math.floor(layout.x + 12 * scale)
     local iconY = math.floor(layout.y + (layout.h - iconSz) / 2 + yOff)
 
     local swordsSvg = GetVectorIcon("swords")
     if swordsSvg then
-        Render.Image(swordsSvg, Vec2(iconX, iconY), Vec2(iconSz, iconSz), FadeColor(Color(255, 69, 58, 255), aMul), 0)
+        Render.Image(swordsSvg, Vec2(iconX, iconY), Vec2(iconSz, iconSz), FadeColor(Config.Colors.Red, aMul), 0)
     else
         Render.FilledCircle(Vec2(iconX + iconSz / 2, iconY + iconSz / 2), iconSz / 2, FadeColor(Config.Colors.Red, aMul), 0, 1.0, 18)
     end
 
-    local scoreStr = string.format("%d v %d", FightTracker.AllyCount, FightTracker.EnemyCount)
+    local scoreStr = string.format("%d vs %d", FightTracker.AllyCount, FightTracker.EnemyCount)
     local lmarkStr = FightTracker.Landmark ~= "" and FightTracker.Landmark or "Fight"
-    local fullText = scoreStr .. " • " .. lmarkStr
+    local fullText = scoreStr .. " \u{2022} " .. lmarkStr
 
     local textStartX = math.floor(iconX + iconSz + 8 * scale)
-    local textAvailW = math.max(10, math.floor(layout.x + layout.w - textStartX - 10 * scale))
-    local tH = 11.5 * scale
-    local textY = math.floor(layout.y + (layout.h - tH) / 2 - 1 + yOff)
+    local textAvailW = math.max(10, math.floor(layout.x + layout.w - textStartX - 12 * scale))
+    local tH = Render.TextSize(f, s, "Ag").y
+    local textY = math.floor(layout.y + (layout.h - tH) / 2 + yOff)
 
-    RenderMarqueeText(fontBold, 11.5 * scale, fullText, textStartX, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, aMul), scale, false)
+    RenderMarqueeText(f, s, fullText, textStartX, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, aMul), scale, false)
 end
 
 local CachedDotaMapHandle = nil
@@ -7627,25 +7825,38 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local fTitle, sTitle = TF("Title", scale)
+    local fSub, sSub = TF("Subhead", scale)
+    local fName, sName = TF("Headline", scale)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local subCol = FadeColor(Config.Colors.TextSecondary, aMul)
 
     local padX = math.floor(16 * scale)
     local padY = math.floor(14 * scale)
 
-    local radarAvail = math.min(120 * scale, layout.h - padY * 2)
+    local inset = math.floor(12 * scale)
+    local radarAvail = math.min(124 * scale, layout.h - inset * 2)
     local radarSz = math.max(math.floor(34 * scale), math.floor(radarAvail))
-    local radarR = math.min(18 * scale, radarSz / 2)
-    local radarX = math.floor(layout.x + layout.w - 14 * scale - radarSz)
+    local radarR = math.max(6 * scale, math.min(radarSz / 2, layout.r - inset))
+    local radarX = math.floor(layout.x + layout.w - inset - radarSz)
     local radarY = math.floor(layout.y + (layout.h - radarSz) / 2 + yOff)
 
-    local headerScore = string.format("%d x %d %s", FightTracker.AllyCount, FightTracker.EnemyCount, L("di_ui_fight"))
+    local headerScore = string.format("%d vs %d", FightTracker.AllyCount, FightTracker.EnemyCount)
     local lmark = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_map")
 
-    Render.Text(fontBold, 14 * scale, headerScore, Vec2(layout.x + padX, layout.y + padY + yOff - 2 * scale), textCol)
-    Render.Text(fontMain, 10.5 * scale, lmark, Vec2(layout.x + padX, layout.y + padY + 17 * scale + yOff), subCol)
+    local hdrSize = Render.TextSize(fTitle, sTitle, headerScore)
+    local hdrY = math.floor(layout.y + padY + yOff - 2 * scale)
+    local swords = GetVectorIcon("swords")
+    local swSz = math.floor(15 * scale)
+    local hdrX = layout.x + padX
+    if swords then
+        Render.Image(swords, Vec2(hdrX, math.floor(hdrY + hdrSize.y / 2 - swSz / 2)), Vec2(swSz, swSz), FadeColor(Config.Colors.Red, aMul), 0)
+        hdrX = hdrX + swSz + math.floor(7 * scale)
+    end
+    Odometer.Draw(fTitle, sTitle, headerScore, Vec2(hdrX, hdrY), textCol)
+    local fightW = Odometer.Width(fTitle, sTitle, headerScore)
+    Render.Text(fSub, sSub, L("di_ui_fight"), Vec2(math.floor(hdrX + fightW + 6 * scale), math.floor(hdrY + hdrSize.y - Render.TextSize(fSub, sSub, "Ag").y - 1 * scale)), subCol)
+    Render.Text(fSub, sSub, TruncateToWidth(fSub, sSub, lmark, math.floor(radarX - 12 * scale - layout.x - padX)), Vec2(layout.x + padX, math.floor(hdrY + hdrSize.y + 1 * scale)), subCol)
 
     local function PickPriorityCombatant(list)
         local best, bestPct = nil, nil
@@ -7666,7 +7877,7 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
     if priorityAlly then table.insert(combatants, { hero = priorityAlly, isAlly = true }) end
     if priorityEnemy then table.insert(combatants, { hero = priorityEnemy, isAlly = false }) end
 
-    local rowY = math.floor(layout.y + padY + 38 * scale + yOff)
+    local rowY = math.floor(layout.y + padY + 42 * scale + yOff)
     local rowPitch = math.floor(44 * scale)
 
     for idx = 1, math.min(2, #combatants) do
@@ -7690,38 +7901,40 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
 
         if idx > 1 then
             local divY = math.floor(ay - 7 * scale)
-            Render.Line(Vec2(layout.x + padX + 2 * scale, divY), Vec2(radarX - 10 * scale, divY), FadeColor(Color(255, 255, 255, 14), aMul), 1.0)
+            Render.Line(Vec2(layout.x + padX + 2 * scale, divY), Vec2(radarX - 10 * scale, divY), FadeColor(Config.Colors.Separator, aMul), 1.0)
         end
 
         local heroIconPath = "panorama/images/heroes/icons/" .. rawName .. "_png.vtex_c"
         local hHandle = GetCachedImage(heroIconPath)
         if hHandle then
-            Render.Image(hHandle, Vec2(ax, ay), Vec2(avatarSz, avatarSz), FadeColor(Color(255, 255, 255, 255), aMul), 6 * scale)
+            Render.Image(hHandle, Vec2(ax, ay), Vec2(avatarSz, avatarSz), FadeColor(Color(255, 255, 255, 255), aMul), avatarSz / 2)
         else
-            local dotCol = c.isAlly and Config.Colors.Accent or Config.Colors.Red
+            local dotCol = c.isAlly and Config.Colors.Green or Config.Colors.Red
             Render.FilledCircle(Vec2(ax + avatarSz / 2, ay + avatarSz / 2), avatarSz / 2, FadeColor(dotCol, aMul), 0, 1.0, 18)
         end
 
-        local nameX = math.floor(ax + avatarSz + 8 * scale)
-        local barW = math.floor(126 * scale)
+        local nameX = math.floor(ax + avatarSz + 10 * scale)
+        local barW = math.floor(radarX - 14 * scale - nameX)
 
-        Render.Text(fontBold, 11 * scale, hName, Vec2(nameX, ay - 1 * scale), textCol)
+        Render.Text(fName, sName, TruncateToWidth(fName, sName, hName, math.floor(radarX - 10 * scale - nameX)), Vec2(nameX, math.floor(ay - 2 * scale)), textCol)
 
-        local barY = math.floor(ay + 14 * scale)
-        local barH = math.floor(5.5 * scale)
-        local hpW = math.floor(barW * 0.50)
-        local manaW = math.floor(barW * 0.46)
-        local manaX = math.floor(nameX + hpW + 4 * scale)
+        local barY = math.floor(ay + 18 * scale)
+        local barH = math.max(3, math.floor(4 * scale))
+        local barR = barH / 2
+        local gapB = math.floor(4 * scale)
+        local hpW = math.floor((barW - gapB) * 0.62)
+        local manaW = barW - gapB - hpW
+        local manaX = nameX + hpW + gapB
 
-        Render.FilledRect(Vec2(nameX, barY), Vec2(nameX + hpW, barY + barH), FadeColor(Color(32, 34, 42, 220), aMul), 2.5 * scale)
+        Render.FilledRect(Vec2(nameX, barY), Vec2(nameX + hpW, barY + barH), FadeColor(Config.Colors.FillTertiary, aMul), barR)
         if hpPct > 0 then
-            local hpCol = c.isAlly and Color(48, 209, 88, 255) or Color(255, 69, 58, 255)
-            Render.FilledRect(Vec2(nameX, barY), Vec2(nameX + hpW * hpPct, barY + barH), FadeColor(hpCol, aMul), 2.5 * scale)
+            local hpCol = c.isAlly and Config.Colors.Green or Config.Colors.Red
+            Render.FilledRect(Vec2(nameX, barY), Vec2(nameX + math.max(barH, hpW * hpPct), barY + barH), FadeColor(hpCol, aMul), barR)
         end
 
-        Render.FilledRect(Vec2(manaX, barY), Vec2(manaX + manaW, barY + barH), FadeColor(Color(32, 34, 42, 220), aMul), 2.5 * scale)
+        Render.FilledRect(Vec2(manaX, barY), Vec2(manaX + manaW, barY + barH), FadeColor(Config.Colors.FillTertiary, aMul), barR)
         if manaPct > 0 then
-            Render.FilledRect(Vec2(manaX, barY), Vec2(manaX + manaW * manaPct, barY + barH), FadeColor(Color(74, 114, 232, 255), aMul), 2.5 * scale)
+            Render.FilledRect(Vec2(manaX, barY), Vec2(manaX + math.max(barH, manaW * manaPct), barY + barH), FadeColor(Config.Colors.Blue, aMul), barR)
         end
     end
 
@@ -7746,13 +7959,13 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
 
     local mapH = GetDotaMapTexture()
 
-    Render.FilledRect(rP1, rP2, FadeColor(Color(14, 18, 26, 235), aMul), radarR)
+    Render.FilledRect(rP1, rP2, FadeColor(Config.Colors.FillQuaternary, aMul), radarR)
 
     Render.PushClip(rP1, rP2)
 
     if mapH and mapH > 0 then
         Render.Image(mapH, rP1, Vec2(radarSz, radarSz), FadeColor(Color(255, 255, 255, 255), aMul), radarR, Enum.DrawFlags.None, uvMin, uvMax)
-        Render.FilledRect(rP1, rP2, FadeColor(Color(10, 14, 20, 35), aMul), radarR)
+        Render.FilledRect(rP1, rP2, FadeColor(Color(0, 0, 0, 70), aMul), radarR)
     else
         local riverP1 = Vec2(radarX, radarY + radarSz * 0.75)
         local riverP2 = Vec2(radarX + radarSz, radarY + radarSz * 0.25)
@@ -7777,14 +7990,14 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
             local hX = math.floor(midRx + nx)
             local hY = math.floor(midRy + ny)
 
-            hX = math.max(radarX + 10, math.min(radarX + radarSz - 10, hX))
-            hY = math.max(radarY + 10, math.min(radarY + radarSz - 10, hY))
-
             local tSz = math.floor(18 * scale)
+            local edge = tSz / 2 + 3 * scale
+            hX = math.max(radarX + edge, math.min(radarX + radarSz - edge, hX))
+            hY = math.max(radarY + edge, math.min(radarY + radarSz - edge, hY))
             local rawName = NPC.GetUnitName(h)
             local hIcon = GetCachedImage("panorama/images/heroes/icons/" .. rawName .. "_png.vtex_c")
             local isAlly = c.isAlly
-            local arrowCol = isAlly and Color(48, 209, 88, 255) or Color(255, 69, 58, 255)
+            local arrowCol = isAlly and Config.Colors.Green or Config.Colors.Red
 
             if Entity.GetRotationPYR then
                 local _, yaw, _ = Entity.GetRotationPYR(h)
@@ -7793,25 +8006,27 @@ local function RenderFightLarge(layout, alphaMul, yOffset)
                     local dirX = math.cos(rad)
                     local dirY = math.sin(rad)
 
-                    local tip = Vec2(hX + dirX * 13 * scale, hY + dirY * 13 * scale)
-                    local s1 = Vec2(hX - dirX * 5 * scale - dirY * 7 * scale, hY - dirY * 5 * scale + dirX * 7 * scale)
-                    local s2 = Vec2(hX - dirX * 5 * scale + dirY * 7 * scale, hY - dirY * 5 * scale - dirX * 7 * scale)
+                    local base = tSz / 2 + 1 * scale
+                    local tip = Vec2(hX + dirX * (base + 5 * scale), hY + dirY * (base + 5 * scale))
+                    local s1 = Vec2(hX + dirX * base - dirY * 4 * scale, hY + dirY * base + dirX * 4 * scale)
+                    local s2 = Vec2(hX + dirX * base + dirY * 4 * scale, hY + dirY * base - dirX * 4 * scale)
 
                     Render.FilledTriangle({ tip, s1, s2 }, FadeColor(arrowCol, aMul))
                 end
             end
 
+            Render.FilledCircle(Vec2(hX, hY), tSz / 2 + 2 * scale, FadeColor(arrowCol, aMul), 0, 1.0, 24)
             if hIcon then
-                Render.Image(hIcon, Vec2(hX - tSz / 2, hY - tSz / 2), Vec2(tSz, tSz), FadeColor(Color(255, 255, 255, 255), aMul), 0)
+                Render.Image(hIcon, Vec2(math.floor(hX - tSz / 2), math.floor(hY - tSz / 2)), Vec2(tSz, tSz), FadeColor(Color(255, 255, 255, 255), aMul), tSz / 2)
             else
-                Render.FilledCircle(Vec2(hX, hY), tSz / 2, FadeColor(arrowCol, aMul), 0, 1.0, 16)
+                Render.FilledCircle(Vec2(hX, hY), tSz / 2, FadeColor(Config.Colors.TextPrimary, aMul), 0, 1.0, 16)
             end
         end
     end
 
     Render.PopClip()
 
-    Render.Rect(rP1, rP2, FadeColor(Color(255, 255, 255, 38), aMul), radarR, Enum.DrawFlags.None, 1.0)
+    Render.Rect(rP1, rP2, FadeColor(Config.Colors.Border, aMul), radarR, Enum.DrawFlags.None, 1.0)
 end
 
 local function RenderNotificationState(layout, alphaMul, yOffset)
@@ -7828,13 +8043,22 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local fTag, sTag = TF("Caption", scale)
+    local fTitle, sTitle = TF("Headline", scale)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local now = os.clock()
 
+    local function TwoLines(textX, maxW, tagStr, tagCol, titleStr)
+        local tagSize = Render.TextSize(fTag, sTag, tagStr)
+        local titleSize = Render.TextSize(fTitle, sTitle, "Ag")
+        local totalH = tagSize.y + titleSize.y
+        local startY = math.floor(layout.y + (layout.h - totalH) / 2 + yOff)
+        Render.Text(fTag, sTag, TruncateToWidth(fTag, sTag, tagStr, maxW), Vec2(textX, startY), FadeColor(tagCol, aMul))
+        Render.Text(fTitle, sTitle, TruncateToWidth(fTitle, sTitle, titleStr or "", maxW), Vec2(textX, startY + tagSize.y), textCol)
+    end
+
     if notif.Type == "apple_pay" then
-        local appleGreen = Color(52, 199, 89, 255)
+        local green = Config.Colors.Green
         local elapsed = now - (NotificationQueue.StartTime or now)
         local pulseT = math.min(1.0, elapsed * 5.0)
         local checkScale = EaseOutBack(pulseT)
@@ -7843,28 +8067,17 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         local iconX = math.floor(layout.x + 12 * scale)
         local iconY = math.floor(layout.y + (layout.h - iconSz) / 2 + yOff)
 
-        Render.FilledCircle(Vec2(iconX + iconSz / 2, iconY + iconSz / 2), math.floor(iconSz / 2 * checkScale), FadeColor(appleGreen, aMul), 0, 1.0, 28)
+        Render.FilledCircle(Vec2(iconX + iconSz / 2, iconY + iconSz / 2), math.floor(iconSz / 2 * checkScale), FadeColor(green, aMul), 0, 1.0, 28)
 
-        local checkStr = "✓"
-        local chkSz = Render.TextSize(fontBold, 12 * scale * checkScale, checkStr)
-        Render.Text(fontBold, 12 * scale * checkScale, checkStr, Vec2(math.floor(iconX + (iconSz - chkSz.x) / 2), math.floor(iconY + (iconSz - chkSz.y) / 2 - 1)), FadeColor(Color(255, 255, 255, 255), aMul))
+        Glyph("check", iconX + iconSz / 2, iconY + iconSz / 2, math.floor(iconSz * 0.62 * checkScale), FadeColor(Color(255, 255, 255, 255), aMul))
 
         local textX = math.floor(iconX + iconSz + 10 * scale)
-        local tagStr = notif.Tag or "APPLE PAY"
-        local tagSize = Render.TextSize(fontBold, 8.5 * scale, tagStr)
-        local titleStr = notif.Title or L("di_ui_success")
-        local titleSize = Render.TextSize(fontBold, 12 * scale, titleStr)
-
-        local totalH = tagSize.y + titleSize.y + 1 * scale
-        local startY = math.floor(layout.y + (layout.h - totalH) / 2 + yOff)
-
-        Render.Text(fontBold, 8.5 * scale, tagStr, Vec2(textX, startY), FadeColor(appleGreen, aMul))
-        Render.Text(fontBold, 12 * scale, titleStr, Vec2(textX, startY + tagSize.y + 1 * scale), textCol)
+        TwoLines(textX, math.floor(layout.x + layout.w - textX - 14 * scale), notif.Tag or "APPLE PAY", green, notif.Title or L("di_ui_success"))
         return
     end
 
     if notif.Type == "apple_action_dial" then
-        local accent = notif.AccentColor or Color(52, 199, 89, 255)
+        local accent = notif.AccentColor or Config.Colors.Green
         local isEnabled = (notif.Subtitle == "ENABLED")
         local isTap = (notif.Subtitle == "TRIGGERED")
 
@@ -7875,53 +8088,31 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         Render.FilledCircle(Vec2(iconX + iconSz / 2, iconY + iconSz / 2), math.floor(iconSz / 2), FadeColor(accent, aMul * 0.22), 0, 1.0, 24)
         Render.Circle(Vec2(iconX + iconSz / 2, iconY + iconSz / 2), math.floor(iconSz / 2), FadeColor(accent, aMul * 0.85), 1.2 * scale)
 
-        local glyph = isTap and "\u{26A1}" or (isEnabled and "\u{2714}" or "\u{2715}")
-        local glyphSz = Render.TextSize(fontBold, 11 * scale, glyph)
-        local gw = glyphSz.x
-        local gh = glyphSz.y
-        Render.Text(fontBold, 11 * scale, glyph, Vec2(math.floor(iconX + (iconSz - gw) / 2), math.floor(iconY + (iconSz - gh) / 2 - 1)), FadeColor(accent, aMul))
+        Glyph(isTap and "bolt" or (isEnabled and "check" or "close"), iconX + iconSz / 2, iconY + iconSz / 2, math.floor(iconSz * 0.55), FadeColor(accent, aMul))
 
-        local badgeH = math.floor(18 * scale)
-        local badgeW = math.floor(38 * scale)
-        local badgeX = math.floor(layout.x + layout.w - 12 * scale - badgeW)
+        local badgeTxt = isTap and "TAP" or (isEnabled and "ON" or "OFF")
+        local fB, sB = TF("Caption", scale)
+        fB = Config.Fonts.Semibold
+        local badgeSz = Render.TextSize(fB, sB, badgeTxt)
+        local badgeH = math.floor(20 * scale)
+        local badgeW = math.floor(math.max(40 * scale, badgeSz.x + 16 * scale))
+        local badgeX = math.floor(layout.x + layout.w - 14 * scale - badgeW)
         local badgeY = math.floor(layout.y + (layout.h - badgeH) / 2 + yOff)
         local badgeR = math.floor(badgeH / 2)
 
-        local badgeBg = isTap and Color(10, 132, 255, 230) or (isEnabled and Color(52, 199, 89, 230) or Color(65, 68, 76, 170))
-        local badgeTxt = isTap and "TAP" or (isEnabled and "ON" or "OFF")
-        local badgeSz = Render.TextSize(fontBold, 9.5 * scale, badgeTxt)
-        local bw = badgeSz.x
-        local bh = badgeSz.y
-
+        local badgeBg = isTap and Config.Colors.Blue or (isEnabled and Config.Colors.Green or Config.Colors.Fill)
         Render.FilledRect(Vec2(badgeX, badgeY), Vec2(badgeX + badgeW, badgeY + badgeH), FadeColor(badgeBg, aMul), badgeR)
-        if not isEnabled and not isTap then
-            Render.Rect(Vec2(badgeX, badgeY), Vec2(badgeX + badgeW, badgeY + badgeH), FadeColor(Color(255, 255, 255, 40), aMul), badgeR, Enum.DrawFlags.None, 1.0)
-        end
-        Render.Text(fontBold, 9.5 * scale, badgeTxt, Vec2(math.floor(badgeX + (badgeW - bw) / 2), math.floor(badgeY + (badgeH - bh) / 2)), FadeColor(Color(255, 255, 255, 255), aMul))
+        Render.Text(fB, sB, badgeTxt, Vec2(math.floor(badgeX + (badgeW - badgeSz.x) / 2), math.floor(badgeY + (badgeH - badgeSz.y) / 2)), FadeColor(Color(255, 255, 255, 255), aMul))
 
         local textX = math.floor(iconX + iconSz + 10 * scale)
-        local maxTextW = math.floor(badgeX - textX - 8 * scale)
-
-        local tagStr = notif.Tag or "ACTION DIAL"
-        local tagSize = Render.TextSize(fontMain, 8.5 * scale, tagStr)
-        local titleSize = Render.TextSize(fontBold, 11.5 * scale, notif.Title)
-        local totalH = tagSize.y + titleSize.y
-        local startY = math.floor(layout.y + (layout.h - totalH) / 2 - 1 + yOff)
-
-        Render.Text(fontMain, 8.5 * scale, tagStr, Vec2(textX, startY), FadeColor(Color(255, 255, 255, 130), aMul))
-
-        local titleStr = notif.Title
-        if titleSize.x > maxTextW then
-            titleStr = string.sub(titleStr, 1, 18) .. ".."
-        end
-        Render.Text(fontBold, 11.5 * scale, titleStr, Vec2(textX, startY + tagSize.y), textCol)
+        TwoLines(textX, math.floor(badgeX - textX - 8 * scale), notif.Tag or "ACTION DIAL", Config.Colors.TextSecondary, notif.Title)
         return
     end
 
     local accent = notif.AccentColor or GetPrimaryThemeColor()
-    local iconH = math.floor(22 * scale)
-    local iconW = math.floor(22 * scale)
-    local iconRadius = math.floor(4 * scale)
+    local iconH = math.floor(24 * scale)
+    local iconW = math.floor(24 * scale)
+    local iconRadius = math.floor(math.max(5 * scale, layout.r - (layout.h - iconH) / 2))
     local iconHandle = nil
 
     local isPowerRuneRoll = (notif.Type == "power_rune_cycle")
@@ -7936,7 +8127,7 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
 
         accent = LerpColor(PowerRunesCycleList[idxA].col, PowerRunesCycleList[idxB].col, smoothFrac)
 
-        local iconX = math.floor(layout.x + 10 * scale)
+        local iconX = math.floor(layout.x + 12 * scale)
         local iconY = math.floor(layout.y + (layout.h - iconH) / 2 + yOff)
 
         Render.PushClip(Vec2(iconX - 2, iconY - 2), Vec2(iconX + iconW + 2, iconY + iconH + 2))
@@ -7946,30 +8137,28 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         local offA = -smoothFrac * 16 * scale
         local offB = (1.0 - smoothFrac) * 16 * scale
 
-        if hA then Render.Image(hA, Vec2(iconX, iconY + offA), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), (1.0 - smoothFrac) * aMul), math.floor(11 * scale)) end
-        if hB then Render.Image(hB, Vec2(iconX, iconY + offB), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), smoothFrac * aMul), math.floor(11 * scale)) end
+        if hA then Render.Image(hA, Vec2(iconX, iconY + offA), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), (1.0 - smoothFrac) * aMul), math.floor(iconW / 2)) end
+        if hB then Render.Image(hB, Vec2(iconX, iconY + offB), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), smoothFrac * aMul), math.floor(iconW / 2)) end
 
         Render.PopClip()
     else
         if notif.IconType == "rune" or notif.FallbackSvg == "bounty" or notif.FallbackSvg == "rune_wisdom" or notif.FallbackSvg == "rune_water" or notif.FallbackSvg == "lotus" then
-            iconW = math.floor(22 * scale)
-            iconH = math.floor(22 * scale)
-            iconRadius = math.floor(11 * scale)
+            iconRadius = math.floor(iconW / 2)
             iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
         elseif notif.IconType == "item" then
-            iconW = math.floor(26 * scale)
-            iconH = math.floor(19 * scale)
+            iconW = math.floor(30 * scale)
+            iconH = math.floor(22 * scale)
             iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
         elseif notif.IconType == "hero" then
-            iconW = math.floor(24 * scale)
-            iconH = math.floor(24 * scale)
-            iconRadius = math.floor(12 * scale)
+            iconW = math.floor(26 * scale)
+            iconH = math.floor(26 * scale)
+            iconRadius = math.floor(13 * scale)
             iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
         else
             iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
         end
 
-        local iconX = math.floor(layout.x + 10 * scale)
+        local iconX = math.floor(layout.x + 12 * scale)
         local iconY = math.floor(layout.y + (layout.h - iconH) / 2 + yOff)
 
         if iconHandle then
@@ -7980,34 +8169,21 @@ local function RenderNotificationState(layout, alphaMul, yOffset)
         end
     end
 
-    local textX = math.floor(layout.x + 10 * scale + iconW + 10 * scale)
-    local maxTextW = math.floor(layout.x + layout.w - textX - 12 * scale)
-
-    local tagStr = notif.Tag or L("di_ui_notification")
-    local tagSize = Render.TextSize(fontMain, 8.5 * scale, tagStr)
-    local titleSize = Render.TextSize(fontBold, 12 * scale, notif.Title)
-
-    local totalH = tagSize.y + titleSize.y
-    local startY = math.floor(layout.y + (layout.h - totalH) / 2 - 1 + yOff)
-
-    Render.Text(fontMain, 8.5 * scale, tagStr, Vec2(textX, startY), FadeColor(Color(accent.r, accent.g, accent.b, 240), aMul))
-
-    local titleStr = notif.Title
-    if titleSize.x > maxTextW then
-        titleStr = string.sub(titleStr, 1, 24) .. ".."
-    end
-    Render.Text(fontBold, 12 * scale, titleStr, Vec2(textX, startY + tagSize.y), textCol)
+    local textX = math.floor(layout.x + 12 * scale + iconW + 10 * scale)
+    TwoLines(textX, math.floor(layout.x + layout.w - textX - 16 * scale), notif.Tag or L("di_ui_notification"), accent, notif.Title)
 end
 
 local function RenderLargeMedia(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local fontBold, titleSz = TF("Title", scale)
+    local fontMain, artistSz = TF("Body", scale)
+    local fTime, sTime = TF("Footnote", scale)
+    local fontTiny, tinySz = TF("Caption2", scale)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local subCol = FadeColor(Config.Colors.TextSecondary, aMul)
-    local waveCol = MediaData.CoverColor or GetPrimaryThemeColor()
+    local waveCol = MediaTint()
 
     local pad = math.floor(16 * scale)
     local artSize = math.floor(48 * scale)
@@ -8021,11 +8197,11 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     DrawAppleWaveform(waveX, waveY, 20, waveCount, MediaData.IsPlaying, scale, waveCol, aMul)
 
     local infoX = math.floor(artX + artSize + 13 * scale)
-    local infoY = math.floor(artY + 3 * scale)
+    local infoY = math.floor(artY + 4 * scale)
     local maxInfoW = math.max(10, math.floor(waveX - infoX - 8 * scale))
 
     local titleStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_track")
-    local artistStr = MediaData.Artist ~= "" and MediaData.Artist or "Apple Music"
+    local artistStr = MediaData.Artist ~= "" and MediaData.Artist or ""
 
     local nowClk = os.clock()
     if TrackTransition.Active then
@@ -8037,29 +8213,29 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
         local inAlpha = t * aMul
 
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
-            Render.Text(fontBold, 15 * scale, TrackTransition.OldTitle, Vec2(infoX + outOffset, infoY), FadeColor(Config.Colors.TextPrimary, outAlpha))
-            Render.Text(fontMain, 12 * scale, TrackTransition.OldArtist, Vec2(infoX + outOffset, infoY + 18 * scale), FadeColor(Config.Colors.TextSecondary, outAlpha))
+            Render.Text(fontBold, titleSz, TrackTransition.OldTitle, Vec2(infoX + outOffset, infoY), FadeColor(Config.Colors.TextPrimary, outAlpha))
+            Render.Text(fontMain, artistSz, TrackTransition.OldArtist, Vec2(infoX + outOffset, infoY + 22 * scale), FadeColor(Config.Colors.TextSecondary, outAlpha))
             DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
         end
         if inAlpha > 0.02 then
-            Render.Text(fontBold, 15 * scale, titleStr, Vec2(infoX + inOffset, infoY), FadeColor(Config.Colors.TextPrimary, inAlpha))
-            Render.Text(fontMain, 12 * scale, artistStr, Vec2(infoX + inOffset, infoY + 18 * scale), FadeColor(Config.Colors.TextSecondary, inAlpha))
+            Render.Text(fontBold, titleSz, titleStr, Vec2(infoX + inOffset, infoY), FadeColor(Config.Colors.TextPrimary, inAlpha))
+            Render.Text(fontMain, artistSz, artistStr, Vec2(infoX + inOffset, infoY + 22 * scale), FadeColor(Config.Colors.TextSecondary, inAlpha))
             DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), inAlpha, 0.85 + t * 0.15)
         end
     else
-        local titleSize = Render.TextSize(fontBold, 15 * scale, titleStr)
+        local titleSize = Render.TextSize(fontBold, titleSz, titleStr)
         if titleSize.x > maxInfoW then
-            RenderMarqueeText(fontBold, 15 * scale, titleStr, infoX, infoY, maxInfoW, textCol, scale, false)
+            RenderMarqueeText(fontBold, titleSz, titleStr, infoX, infoY, maxInfoW, textCol, scale, false)
         else
-            Render.Text(fontBold, 15 * scale, titleStr, Vec2(infoX, infoY), textCol)
+            Render.Text(fontBold, titleSz, titleStr, Vec2(infoX, infoY), textCol)
         end
 
-        local artSizeText = Render.TextSize(fontMain, 12 * scale, artistStr)
-        local artYPos = math.floor(infoY + titleSize.y + 4 * scale)
+        local artSizeText = Render.TextSize(fontMain, artistSz, artistStr)
+        local artYPos = math.floor(infoY + titleSize.y + 2 * scale)
         if artSizeText.x > maxInfoW then
-            RenderMarqueeText(fontMain, 12 * scale, artistStr, infoX, artYPos, maxInfoW, subCol, scale, false)
+            RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, maxInfoW, subCol, scale, false)
         else
-            Render.Text(fontMain, 12 * scale, artistStr, Vec2(infoX, artYPos), subCol)
+            Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artYPos), subCol)
         end
 
         DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), aMul)
@@ -8093,35 +8269,19 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local remSec = math.max(0, duration - curPos)
     local remText = FormatNegativeTime(remSec)
 
-    local timeY = math.floor(progressY + 6 * scale)
-    Render.Text(fontMain, 9.5 * scale, posText, Vec2(layout.x + pad, timeY), subCol)
-    local remSize = Render.TextSize(fontMain, 9.5 * scale, remText)
-    Render.Text(fontMain, 9.5 * scale, remText, Vec2(layout.x + layout.w - pad - remSize.x, timeY), subCol)
+    local timeY = math.floor(progressY + 8 * scale)
+    Odometer.Draw(fTime, sTime, posText, Vec2(layout.x + pad, timeY), subCol)
+    local remW = Odometer.Width(fTime, sTime, remText)
+    Odometer.Draw(fTime, sTime, remText, Vec2(math.floor(layout.x + layout.w - pad - remW), timeY), subCol)
 
     local ctrlY = math.floor(timeY + 16 * scale)
     local midX = math.floor(layout.x + layout.w / 2)
 
     local playScale = ButtonSprings.MediaPlay.scale
-    local playRadius = math.floor(16 * scale * playScale)
     local playX = midX
     local playY = math.floor(ctrlY + 16 * scale)
-
-    if MediaData.IsPlaying then
-        local bw = math.floor(3.5 * scale * playScale)
-        local bh = math.floor(14 * scale * playScale)
-        local bx1 = math.floor(playX - 5 * scale * playScale)
-        local bx2 = math.floor(playX + 2 * scale * playScale)
-        local by = math.floor(playY - bh / 2)
-        Render.FilledRect(Vec2(bx1, by), Vec2(bx1 + bw, by + bh), FadeColor(Config.Colors.TextPrimary, aMul), 1.2 * scale)
-        Render.FilledRect(Vec2(bx2, by), Vec2(bx2 + bw, by + bh), FadeColor(Config.Colors.TextPrimary, aMul), 1.2 * scale)
-    else
-        local tw = math.floor(13 * scale * playScale)
-        local th = math.floor(15 * scale * playScale)
-        local p1 = Vec2(playX - tw / 3, playY - th / 2)
-        local p2 = Vec2(playX - tw / 3, playY + th / 2)
-        local p3 = Vec2(playX + tw * 2 / 3, playY)
-        Render.FilledTriangle({p1, p2, p3}, FadeColor(Config.Colors.TextPrimary, aMul))
-    end
+    local ctrlCol = FadeColor(Config.Colors.TextPrimary, aMul)
+    Glyph(MediaData.IsPlaying and "media_pause" or "media_play", playX, playY, math.floor(26 * scale * playScale), ctrlCol)
 
     ButtonHits.MediaPlay = {
         x1 = playX - 22,
@@ -8133,18 +8293,7 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local prevScale = ButtonSprings.MediaPrev.scale
     local prevX = math.floor(playX - 54 * scale)
     local prevY = playY
-    local triW = math.floor(8 * scale * prevScale)
-    local triH = math.floor(11 * scale * prevScale)
-
-    local pp1 = Vec2(prevX + triW, prevY - triH / 2)
-    local pp2 = Vec2(prevX + triW, prevY + triH / 2)
-    local pp3 = Vec2(prevX, prevY)
-    Render.FilledTriangle({pp1, pp2, pp3}, FadeColor(Config.Colors.TextPrimary, aMul))
-
-    local pp4 = Vec2(prevX, prevY - triH / 2)
-    local pp5 = Vec2(prevX, prevY + triH / 2)
-    local pp6 = Vec2(prevX - triW, prevY)
-    Render.FilledTriangle({pp4, pp5, pp6}, FadeColor(Config.Colors.TextPrimary, aMul))
+    Glyph("media_prev", prevX, prevY, math.floor(24 * scale * prevScale), ctrlCol)
 
     ButtonHits.MediaPrev = {
         x1 = prevX - 18,
@@ -8156,18 +8305,7 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local nextScale = ButtonSprings.MediaNext.scale
     local nextX = math.floor(playX + 54 * scale)
     local nextY = playY
-    local ntriW = math.floor(8 * scale * nextScale)
-    local ntriH = math.floor(11 * scale * nextScale)
-
-    local np1 = Vec2(nextX - ntriW, nextY - ntriH / 2)
-    local np2 = Vec2(nextX - ntriW, nextY + ntriH / 2)
-    local np3 = Vec2(nextX, nextY)
-    Render.FilledTriangle({np1, np2, np3}, FadeColor(Config.Colors.TextPrimary, aMul))
-
-    local np4 = Vec2(nextX, nextY - ntriH / 2)
-    local np5 = Vec2(nextX, nextY + ntriH / 2)
-    local np6 = Vec2(nextX + ntriW, nextY)
-    Render.FilledTriangle({np4, np5, np6}, FadeColor(Config.Colors.TextPrimary, aMul))
+    Glyph("media_next", nextX, nextY, math.floor(24 * scale * nextScale), ctrlCol)
 
     ButtonHits.MediaNext = {
         x1 = nextX - 18,
@@ -8181,7 +8319,7 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local shufY = playY
     local shufH = GetVectorIcon("shuffle")
     if shufH then
-        local shufCol = MediaData.Shuffle and Color(255, 255, 255, 255) or Color(255, 255, 255, 90)
+        local shufCol = MediaData.Shuffle and Config.Colors.TextPrimary or Config.Colors.TextSecondary
         local sSz = 14 * scale * shufScale
         Render.Image(shufH, Vec2(shufX - sSz / 2, shufY - sSz / 2), Vec2(sSz, sSz), FadeColor(shufCol, aMul), 0)
     end
@@ -8197,11 +8335,11 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     local repY = playY
     local repH = GetVectorIcon("repeat")
     if repH then
-        local repCol = (MediaData.RepeatMode > 0) and Color(255, 255, 255, 255) or Color(255, 255, 255, 90)
+        local repCol = (MediaData.RepeatMode > 0) and Config.Colors.TextPrimary or Config.Colors.TextSecondary
         local rSz = 14 * scale * repScale
         Render.Image(repH, Vec2(repX - rSz / 2, repY - rSz / 2), Vec2(rSz, rSz), FadeColor(repCol, aMul), 0)
         if MediaData.RepeatMode == 2 then
-            Render.Text(fontBold, 7.5 * scale, "1", Vec2(repX + 5 * scale, repY - 7 * scale), FadeColor(Color(255, 255, 255, 255), aMul))
+            Render.Text(fontTiny, tinySz, "1", Vec2(repX + 5 * scale, repY - 8 * scale), FadeColor(Config.Colors.TextPrimary, aMul))
         end
     end
     ButtonHits.MediaRepeat = {
@@ -8218,7 +8356,7 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
         local likeY = playY
         local heartH = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
         if heartH then
-            local heartCol = isLiked and Color(255, 69, 58, 255) or Color(255, 255, 255, 255)
+            local heartCol = isLiked and Config.Colors.Red or Config.Colors.TextSecondary
             local lSz = 16 * scale * likeScale
             Render.Image(heartH, Vec2(likeX - lSz / 2, likeY - lSz / 2), Vec2(lSz, lSz), FadeColor(heartCol, aMul), 0)
         end
@@ -8233,137 +8371,129 @@ local function RenderLargeMedia(layout, alphaMul, yOffset)
     end
 end
 
+local function IdleGeo(layout, yOff)
+    local scale = layout.scale
+    local oy = yOff or 0
+    local g = {}
+    g.pad = math.floor(16 * scale)
+    g.leftX = math.floor(layout.x + g.pad)
+    g.leftY = math.floor(layout.y + g.pad + oy)
+    g.divX = math.floor(layout.x + 140 * scale)
+    g.rightX = math.floor(g.divX + 14 * scale)
+    g.col2X = math.floor(g.rightX + 92 * scale)
+    g.row1Y = math.floor(layout.y + 16 * scale + oy)
+    g.row2Y = math.floor(layout.y + 42 * scale + oy)
+    g.icon = math.floor(13 * scale)
+    g.textDX = math.floor(18 * scale)
+    return g
+end
+
 local function RenderLargeIdle(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local g = IdleGeo(layout, yOff)
+    local fNum, sNum = TF("LargeNum", scale)
+    local fSec, sSec = TF("Subhead", scale)
+    local fFoot, sFoot = TF("Footnote", scale)
+    local fHead, sHead = TF("Headline", scale)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local subCol = FadeColor(Config.Colors.TextSecondary, aMul)
 
-    local pad = math.floor(16 * scale)
-    local leftX = math.floor(layout.x + pad)
-    local leftY = math.floor(layout.y + pad + yOff)
-
     local timeHM = os.date("%H:%M")
     local timeSec = os.date(":%S")
-
-    local hmSize = Render.TextSize(fontBold, 26 * scale, timeHM)
-    Odometer.Text("large_hm", fontBold, 26 * scale, timeHM, Vec2(leftX, leftY + 2 * scale), textCol)
-
-    local secX = math.floor(leftX + hmSize.x + 3 * scale)
-    local secY = math.floor(leftY + 11 * scale)
-    Odometer.Text("large_sec", fontMain, 13 * scale, timeSec, Vec2(secX, secY), subCol)
+    local hmH = Render.TextSize(fNum, sNum, "0").y
+    local hmW = Odometer.Width(fNum, sNum, timeHM)
+    Odometer.Text("large_hm", fNum, sNum, timeHM, Vec2(g.leftX, g.leftY), textCol)
+    local secH = Render.TextSize(fSec, sSec, "0").y
+    Odometer.Text("large_sec", fSec, sSec, timeSec, Vec2(math.floor(g.leftX + hmW + 2 * scale), math.floor(g.leftY + (hmH - secH) * 0.8)), subCol)
 
     local matchTime = GetActualMatchTime()
-    local subInfo = ""
-    if matchTime and matchTime > 0 then
-        subInfo = L("di_ui_match") .. FormatTime(matchTime)
-    else
-        subInfo = L("di_ui_main_menu")
+    local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
+    Odometer.Draw(fFoot, sFoot, subInfo, Vec2(g.leftX, math.floor(g.leftY + hmH + 2 * scale)), subCol)
+
+    Render.Line(Vec2(g.divX, layout.y + 14 * scale + yOff), Vec2(g.divX, layout.y + layout.h - 14 * scale + yOff), FadeColor(Config.Colors.Separator, aMul), 1.0)
+
+    local function Row(id, svg, txt, x, y, f, s, col, soft)
+        local h = GetVectorIcon(svg)
+        if h then Render.Image(h, Vec2(x, y), Vec2(g.icon, g.icon), subCol, 0) end
+        local th = Render.TextSize(f, s, "0").y
+        Odometer.Text(id, f, s, txt, Vec2(x + g.textDX, math.floor(y + g.icon / 2 - th / 2)), col, soft)
     end
-    Render.Text(fontMain, 10.5 * scale, subInfo, Vec2(leftX, leftY + hmSize.y + 7 * scale), FadeColor(Config.Colors.TextMuted, aMul))
+    Row("large_kda", "kda", string.format("%d/%d/%d", HeroData.Kills, HeroData.Deaths, HeroData.Assists), g.rightX, g.row1Y, fHead, sHead, textCol)
+    Row("large_gold", "gold", string.format("%d G", HeroData.Gold), g.col2X, g.row1Y, fHead, sHead, textCol)
+    Row("large_fps", "fps", string.format("%d FPS", PerformanceData.FPS), g.rightX, g.row2Y, fSec, sSec, FadeColor(PerfTint("fps", Config.Colors.TextSecondary), aMul), true)
+    Row("large_ping", "ping", string.format("%d ms", PerformanceData.Ping), g.col2X, g.row2Y, fSec, sSec, FadeColor(PerfTint("ping", Config.Colors.TextSecondary), aMul), true)
 
-    local divX = math.floor(layout.x + 140 * scale)
-    Render.Line(Vec2(divX, layout.y + 14 * scale + yOff), Vec2(divX, layout.y + layout.h - 14 * scale + yOff), FadeColor(Config.Colors.Border, aMul), 1.0)
-
-    local rightX = math.floor(divX + 14 * scale)
-    local row1Y = math.floor(layout.y + 16 * scale + yOff)
-    local row2Y = math.floor(layout.y + 44 * scale + yOff)
-
-    local kdaSvg = GetVectorIcon("kda")
-    if kdaSvg then Render.Image(kdaSvg, Vec2(rightX, row1Y), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
-    local kdaTxt = string.format("%d / %d / %d", HeroData.Kills, HeroData.Deaths, HeroData.Assists)
-    Odometer.Text("large_kda", fontBold, 11 * scale, kdaTxt, Vec2(rightX + 16 * scale, row1Y - 1 * scale), textCol)
-
-    local goldSvg = GetVectorIcon("gold")
-    local goldX = math.floor(rightX + 85 * scale)
-    if goldSvg then Render.Image(goldSvg, Vec2(goldX, row1Y), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
-    local goldTxt = string.format("%d G", HeroData.Gold)
-    Odometer.Text("large_gold", fontBold, 11 * scale, goldTxt, Vec2(goldX + 16 * scale, row1Y - 1 * scale), textCol)
-
-    local fpsSvg = GetVectorIcon("fps")
-    if fpsSvg then Render.Image(fpsSvg, Vec2(rightX, row2Y + 4 * scale), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
-    local fpsTxt = string.format("%d FPS", PerformanceData.FPS)
-    Render.Text(fontMain, 10.5 * scale, fpsTxt, Vec2(rightX + 16 * scale, row2Y + 3 * scale), FadeColor(Color(255, 255, 255, 240), aMul))
-
-    local pingSvg = GetVectorIcon("ping")
-    if pingSvg then Render.Image(pingSvg, Vec2(goldX, row2Y + 4 * scale), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), aMul), 0) end
-    local pingTxt = string.format("%d ms", PerformanceData.Ping)
-    Render.Text(fontMain, 10.5 * scale, pingTxt, Vec2(goldX + 16 * scale, row2Y + 3 * scale), FadeColor(Color(255, 255, 255, 240), aMul))
-
-    Focus.RenderTile(layout, rightX, math.floor(layout.x + layout.w - 14 * scale), math.floor(layout.y + layout.h - 12 * scale - 26 * scale + yOff), aMul)
+    Focus.RenderTile(layout, g.rightX, math.floor(layout.x + layout.w - 14 * scale), math.floor(layout.y + layout.h - 12 * scale - 26 * scale + yOff), aMul)
 end
 
 local function RenderGamePausedPill(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local centerY = math.floor(layout.y + layout.h / 2 + yOff)
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local fB, sB = TF("Body", scale)
+    local fH, sH = TF("Headline", scale)
     local elapsed = PauseTracker.PauseStartTime > 0 and math.floor(os.clock() - PauseTracker.PauseStartTime) or 0
     local pText = L("di_island_paused")
     local timeText = string.format("%d:%02d", math.floor(elapsed / 60), elapsed % 60)
     local dotStr = " \u{2022} "
 
-    local badgeSize = math.floor(18 * scale)
-    local badgeX = math.floor(layout.x + 10 * scale)
+    local badgeSize = math.floor(16 * scale)
+    local badgeX = math.floor(layout.x + 12 * scale)
     local badgeY = math.floor(centerY - badgeSize / 2)
 
     local pauseSvg = GetVectorIcon("pause")
     if pauseSvg then
-        Render.Image(pauseSvg, Vec2(badgeX, badgeY), Vec2(badgeSize, badgeSize), FadeColor(Color(255, 255, 255, 255), alphaMul), 0)
+        Render.Image(pauseSvg, Vec2(badgeX, badgeY), Vec2(badgeSize, badgeSize), FadeColor(Config.Colors.Orange, alphaMul), 0)
     end
 
-    local tSize1 = Render.TextSize(fontMain, 11 * scale, pText)
-    local tSizeDot = Render.TextSize(fontMain, 11 * scale, dotStr)
-    local tSize2 = Render.TextSize(fontBold, 11.5 * scale, timeText)
+    local w1 = Render.TextSize(fB, sB, pText).x
+    local wDot = Render.TextSize(fB, sB, dotStr).x
+    local hB = Render.TextSize(fB, sB, "Ag").y
+    local hH = Render.TextSize(fH, sH, "Ag").y
 
     local textStartX = math.floor(badgeX + badgeSize + 8 * scale)
-    local textY1 = math.floor(centerY - tSize1.y / 2 - 1 * scale)
-    local textY2 = math.floor(centerY - tSize2.y / 2 - 1 * scale)
+    local textY1 = math.floor(centerY - hB / 2)
+    local textY2 = math.floor(centerY - hH / 2)
 
-    Render.Text(fontMain, 11 * scale, pText, Vec2(textStartX, textY1), FadeColor(Color(255, 255, 255, 210), alphaMul))
-    Render.Text(fontMain, 11 * scale, dotStr, Vec2(textStartX + tSize1.x, textY1), FadeColor(Color(255, 255, 255, 120), alphaMul))
-    Odometer.Text("pause_time", fontBold, 11.5 * scale, timeText, Vec2(textStartX + tSize1.x + tSizeDot.x, textY2), FadeColor(Color(255, 255, 255, 255), alphaMul))
+    Render.Text(fB, sB, pText, Vec2(textStartX, textY1), FadeColor(Config.Colors.TextSecondary, alphaMul))
+    Render.Text(fB, sB, dotStr, Vec2(textStartX + w1, textY1), FadeColor(Config.Colors.TextMuted, alphaMul))
+    Odometer.Text("pause_time", fH, sH, timeText, Vec2(textStartX + w1 + wDot, textY2), FadeColor(Config.Colors.TextPrimary, alphaMul))
 end
 
 local function RenderCourierDeliveryPill(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local centerY = math.floor(layout.y + layout.h / 2 + yOff)
-    local fontBold = Config.Fonts.Bold
+    local fH, sH = TF("Headline", scale)
 
     local courierSvg = GetVectorIcon("courier")
-    local iconSize = 15 * scale
+    local iconSize = math.floor(16 * scale)
     local leftX = math.floor(layout.x + 12 * scale)
     if courierSvg then
-        Render.Image(courierSvg, Vec2(leftX, centerY - math.floor(iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Color(255, 204, 0, 255), alphaMul), 0)
+        Render.Image(courierSvg, Vec2(leftX, centerY - math.floor(iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Config.Colors.Yellow, alphaMul), 0)
     end
 
     local etaStr = (CourierTracker.ETA > 0) and (L("di_courier_eta") .. " " .. FormatTime(CourierTracker.ETA)) or L("di_ui_courier_delivering_short")
-    local etaSize = Render.TextSize(fontBold, 10.5 * scale, etaStr)
-    local rightX = math.floor(layout.x + layout.w - 12 * scale - etaSize.x)
-    Odometer.Text("courier_eta", fontBold, 10.5 * scale, etaStr, Vec2(rightX, centerY - math.floor(etaSize.y / 2) - 1 * scale), FadeColor(Color(255, 255, 255, 235), alphaMul))
+    local etaW = Odometer.Width(fH, sH, etaStr)
+    local etaH = Render.TextSize(fH, sH, "Ag").y
+    local rightX = math.floor(layout.x + layout.w - 14 * scale - etaW)
+    Odometer.Text("courier_eta", fH, sH, etaStr, Vec2(rightX, math.floor(centerY - etaH / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
 
     local trackStartX = math.floor(leftX + iconSize + 10 * scale)
     local trackEndX = math.floor(rightX - 10 * scale)
     local trackW = trackEndX - trackStartX
     if trackW > 20 * scale then
-        local trackH = math.max(3, math.floor(3 * scale))
+        local trackH = math.max(3, math.floor(4 * scale))
         local trackY = math.floor(centerY - trackH / 2)
         local trackR = math.floor(trackH / 2)
-        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Color(255, 255, 255, 45), alphaMul), trackR)
+        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Config.Colors.Fill, alphaMul), trackR)
 
         local fillW = math.floor(trackW * math.max(0, math.min(1.0, CourierTracker.Progress)))
         if fillW > 0 then
-            Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackStartX + fillW, trackY + trackH), FadeColor(Color(52, 199, 89, 220), alphaMul), trackR)
+            Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackStartX + fillW, trackY + trackH), FadeColor(Config.Colors.Green, alphaMul), trackR)
         end
-
-        local dotX = math.min(trackEndX, math.max(trackStartX, trackStartX + fillW))
-        Render.Circle(Vec2(dotX, centerY), 4.5 * scale, FadeColor(Color(52, 199, 89, 100), alphaMul))
-        Render.Circle(Vec2(dotX, centerY), 2.5 * scale, FadeColor(Color(255, 255, 255, 255), alphaMul))
     end
 end
 
@@ -8371,77 +8501,75 @@ local function RenderCourierDeliveredPill(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
     local centerY = math.floor(layout.y + layout.h / 2 + yOff)
-    local fontBold = Config.Fonts.Bold
+    local fH, sH = TF("Headline", scale)
 
     local nowClk = os.clock()
     local elapsed = math.max(0, nowClk - CourierTracker.DeliveredStartTime)
     local iconSize = math.floor(18 * scale)
     local delivText = L("di_courier_delivered")
-    local tSize = Render.TextSize(fontBold, 11.5 * scale, delivText)
+    local tSize = Render.TextSize(fH, sH, delivText)
     local gap = 8 * scale
     local totalW = iconSize + gap + tSize.x
     local startX = math.floor(layout.x + (layout.w - totalW) / 2)
 
     Success.Draw("courier" .. CourierTracker.DeliveredStartTime, Vec2(startX + iconSize / 2, centerY), iconSize / 2, elapsed, alphaMul, scale)
-    Render.Text(fontBold, 11.5 * scale, delivText, Vec2(startX + iconSize + gap, centerY - math.floor(tSize.y / 2) - 1 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul))
+    Render.Text(fH, sH, delivText, Vec2(math.floor(startX + iconSize + gap), math.floor(centerY - tSize.y / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
 end
 
 local function RenderCourierLarge(layout, alphaMul, yOffset)
     local scale = layout.scale
     local yOff = (yOffset or 0) * scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
+    local fH, sH = TF("Headline", scale)
+    local fF, sF = TF("Footnote", scale)
 
     local leftX = math.floor(layout.x + 18 * scale)
     local row1Y = math.floor(layout.y + 14 * scale + yOff)
+    local iconSz = math.floor(16 * scale)
 
     local courierSvg = GetVectorIcon("courier")
     if courierSvg then
-        Render.Image(courierSvg, Vec2(leftX, row1Y), Vec2(16 * scale, 16 * scale), FadeColor(Color(255, 204, 0, 255), alphaMul), 0)
+        Render.Image(courierSvg, Vec2(leftX, row1Y), Vec2(iconSz, iconSz), FadeColor(Config.Colors.Yellow, alphaMul), 0)
     end
     local titleTxt = L("di_courier_delivering")
-    Render.Text(fontBold, 11.5 * scale, titleTxt, Vec2(leftX + 22 * scale, row1Y + 1 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul))
+    local hH = Render.TextSize(fH, sH, "Ag").y
+    Render.Text(fH, sH, titleTxt, Vec2(leftX + 22 * scale, math.floor(row1Y + iconSz / 2 - hH / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
 
-    local infoTxt = string.format("%s: %d  |  %s: %d%%", L("di_courier_speed"), math.floor(CourierTracker.Speed), L("di_courier_hp"), math.floor(CourierTracker.HpPercent * 100))
-    local infoSize = Render.TextSize(fontMain, 10.5 * scale, infoTxt)
-    local rightX = math.floor(layout.x + layout.w - 18 * scale - infoSize.x)
-    Render.Text(fontMain, 10.5 * scale, infoTxt, Vec2(rightX, row1Y + 2 * scale), FadeColor(Config.Colors.TextMuted, alphaMul))
+    local infoTxt = string.format("%s %d  \u{2022}  %s %d%%", L("di_courier_speed"), math.floor(CourierTracker.Speed), L("di_courier_hp"), math.floor(CourierTracker.HpPercent * 100))
+    local infoW = Odometer.Width(fF, sF, infoTxt)
+    local fH2 = Render.TextSize(fF, sF, "Ag").y
+    local rightX = math.floor(layout.x + layout.w - 18 * scale - infoW)
+    Odometer.Draw(fF, sF, infoTxt, Vec2(rightX, math.floor(row1Y + iconSz / 2 - fH2 / 2)), FadeColor(Config.Colors.TextSecondary, alphaMul))
 
     local trackStartX = math.floor(layout.x + 18 * scale)
     local trackEndX = math.floor(layout.x + layout.w - 18 * scale)
     local trackW = trackEndX - trackStartX
     local trackY = math.floor(layout.y + 40 * scale + yOff)
-    local trackH = math.max(3, math.floor(3 * scale))
-    Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Color(255, 255, 255, 45), alphaMul), math.floor(trackH / 2))
+    local trackH = math.max(3, math.floor(4 * scale))
+    Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Config.Colors.Fill, alphaMul), math.floor(trackH / 2))
     local fillW = math.floor(trackW * math.max(0, math.min(1.0, CourierTracker.Progress)))
     if fillW > 0 then
-        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackStartX + fillW, trackY + trackH), FadeColor(Color(52, 199, 89, 220), alphaMul), math.floor(trackH / 2))
+        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackStartX + fillW, trackY + trackH), FadeColor(Config.Colors.Green, alphaMul), math.floor(trackH / 2))
     end
-    local dotX = math.min(trackEndX, math.max(trackStartX, trackStartX + fillW))
-    Render.Circle(Vec2(dotX, trackY + math.floor(trackH / 2)), 4 * scale, FadeColor(Color(52, 199, 89, 100), alphaMul))
-    Render.Circle(Vec2(dotX, trackY + math.floor(trackH / 2)), 2.5 * scale, FadeColor(Color(255, 255, 255, 255), alphaMul))
 
     local slotW = math.floor(40 * scale)
     local slotH = math.floor(28 * scale)
     local slotGap = math.floor(8 * scale)
     local totalSlotsW = 6 * slotW + 5 * slotGap
     local slotsStartX = math.floor(layout.x + (layout.w - totalSlotsW) / 2)
-    local slotsY = math.floor(layout.y + 54 * scale + yOff)
+    local slotsY = math.floor(layout.y + 56 * scale + yOff)
 
     for i = 1, 6 do
         local sx = math.floor(slotsStartX + (i - 1) * (slotW + slotGap))
         local sy = slotsY
         local it = CourierTracker.Inventory[i]
         if it and it.icon then
-            Render.FilledRect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Color(20, 20, 25, 220), alphaMul), 4 * scale)
-            Render.Rect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Color(255, 255, 255, 50), alphaMul), 4 * scale, Enum.DrawFlags.None, 1.0)
+            Render.FilledRect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Config.Colors.FillTertiary, alphaMul), 6 * scale)
             local itHandle = GetCachedImage(it.icon)
             if itHandle and itHandle > 0 then
-                Render.Image(itHandle, Vec2(sx + 2 * scale, sy + 2 * scale), Vec2(slotW - 4 * scale, slotH - 4 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul), 3 * scale)
+                Render.Image(itHandle, Vec2(sx + 2 * scale, sy + 2 * scale), Vec2(slotW - 4 * scale, slotH - 4 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul), 4 * scale)
             end
         else
-            Render.FilledRect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Color(255, 255, 255, 12), alphaMul), 4 * scale)
-            Render.Rect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Color(255, 255, 255, 25), alphaMul), 4 * scale, Enum.DrawFlags.None, 1.0)
+            Render.FilledRect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Config.Colors.FillQuaternary, alphaMul), 6 * scale)
         end
     end
 end
@@ -8461,7 +8589,7 @@ local function RenderVolumeOverlay(layout, alphaMul)
     local hudY = math.floor(layout.y + (layout.h - hudH) * 0.5)
 
     Render.FilledRect(Vec2(hudX, hudY), Vec2(hudX + hudW, hudY + hudH), FadeColor(Color(12, 12, 16, 245), aMul), hudR)
-    Render.Rect(Vec2(hudX, hudY), Vec2(hudX + hudW, hudY + hudH), FadeColor(Color(255, 255, 255, 26), aMul), hudR, Enum.DrawFlags.None, 1.0)
+    Render.Rect(Vec2(hudX, hudY), Vec2(hudX + hudW, hudY + hudH), FadeColor(Config.Colors.Border, aMul), hudR, Enum.DrawFlags.None, 1.0)
 
     local centerY = math.floor(hudY + hudH * 0.5)
     local leftPad = math.floor(12 * scale)
@@ -8474,7 +8602,7 @@ local function RenderVolumeOverlay(layout, alphaMul)
 
     local volSvg = (vol <= 0.5) and GetVectorIcon("mute") or GetVectorIcon("volume")
     if volSvg then
-        Render.Image(volSvg, Vec2(iconX, iconY), Vec2(iconSize, iconSize), FadeColor(Color(255, 255, 255, 235), aMul), 0)
+        Render.Image(volSvg, Vec2(iconX, iconY), Vec2(iconSize, iconSize), FadeColor(Config.Colors.TextPrimary, aMul), 0)
     end
 
     local trackStartX = math.floor(iconX + iconSize + 10 * scale)
@@ -8485,7 +8613,7 @@ local function RenderVolumeOverlay(layout, alphaMul)
         local trackY = math.floor(centerY - trackH * 0.5)
         local trackR = math.floor(trackH * 0.5)
 
-        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Color(255, 255, 255, 38), aMul), trackR)
+        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Config.Colors.Fill, aMul), trackR)
 
         local overstretch = VolumeState.Overstretch or 0.0
         local pct = math.max(0.0, math.min(1.0, vol / 100.0))
@@ -8494,109 +8622,111 @@ local function RenderVolumeOverlay(layout, alphaMul)
 
         if fillW > 0 then
             local fillEnd = math.min(trackEndX + math.floor(math.max(0, overstretch * scale)), trackStartX + fillW)
-            Render.FilledRect(Vec2(trackStartX, trackY), Vec2(fillEnd, trackY + trackH), FadeColor(Color(255, 255, 255, 245), aMul), trackR)
+            Render.FilledRect(Vec2(trackStartX, trackY), Vec2(fillEnd, trackY + trackH), FadeColor(Config.Colors.TextPrimary, aMul), trackR)
         end
     end
 end
 
 local function RenderMediaSharedTransition(fromState, toState, layout, progress)
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
-    local waveCol = MediaData.CoverColor or GetPrimaryThemeColor()
+    local fontBold, titleSz = TF("Title", scale)
+    local fontMain, artistSz = TF("Body", scale)
+    local fontHead, headSz = TF("Headline", scale)
+    local fTime, sTime = TF("Footnote", scale)
+    local fontTiny, tinySz = TF("Caption2", scale)
+    local waveCol = MediaTint()
 
-    local isExpanding = (toState == StateMachine.States.LARGE_MEDIA)
-    local t = math.max(0.0, math.min(1.0, progress or 0.0))
-    local smoothT = t * t * (3.0 - 2.0 * t)
-
-    local artT = isExpanding and smoothT or (1.0 - smoothT)
-    local secAlpha = isExpanding and (smoothT * smoothT) or ((1.0 - smoothT) * (1.0 - smoothT))
+    local artT = math.max(0.0, math.min(1.0, progress or 0.0))
+    local D = Config.Dimensions
+    local cL = StateMachine.FrameFor(layout, CompactMediaTitle() and D.CompactMediaW or D.CompactMediaBareW, D.CompactMediaH, D.CompactMediaRadius)
+    local lL = StateMachine.FrameFor(layout, D.LargeMediaW, D.LargeMediaH, D.LargeMediaRadius)
+    local secAlpha = artT * artT
 
     local cThumbSize = math.floor(20 * scale)
-    local cThumbX = math.floor(layout.x + 8 * scale)
-    local cThumbY = math.floor(layout.y + (layout.h - cThumbSize) * 0.5)
+    local cThumbX = math.floor(cL.x + (Config.Dimensions.CompactMediaH * scale - cThumbSize) * 0.5)
+    local cThumbY = math.floor(cL.y + (cL.h - cThumbSize) * 0.5)
     local cThumbR = math.floor(5 * scale)
 
     local pad = math.floor(16 * scale)
     local lThumbSize = math.floor(48 * scale)
-    local lThumbX = math.floor(layout.x + pad)
-    local lThumbY = math.floor(layout.y + pad)
+    local lThumbX = math.floor(lL.x + pad)
+    local lThumbY = math.floor(lL.y + pad)
     local lThumbR = math.floor(12 * scale)
 
-    local curThumbX = math.floor(cThumbX + (lThumbX - cThumbX) * artT)
-    local curThumbY = math.floor(cThumbY + (lThumbY - cThumbY) * artT)
-    local curThumbSize = math.floor(cThumbSize + (lThumbSize - cThumbSize) * artT)
-    local curThumbR = math.floor(cThumbR + (lThumbR - cThumbR) * artT)
+    local curThumbX = math.floor(cThumbX + (lThumbX - cThumbX) * artT + 0.5)
+    local curThumbY = math.floor(cThumbY + (lThumbY - cThumbY) * artT + 0.5)
+    local curThumbSize = math.floor(cThumbSize + (lThumbSize - cThumbSize) * artT + 0.5)
+    local curThumbR = math.floor(cThumbR + (lThumbR - cThumbR) * artT + 0.5)
 
     DrawAlbumThumbnail(curThumbX, curThumbY, curThumbSize, curThumbR, 1.0)
 
     local waveCount = 5
     local waveW = math.floor(waveCount * (2.4 * scale) + (waveCount - 1) * (1.8 * scale))
-    local cWaveX = math.floor(layout.x + layout.w - waveW - 10 * scale)
-    local cWaveY = math.floor(layout.y + (layout.h - 18 * scale) * 0.5)
+    local cWaveX = math.floor(cL.x + cL.w - waveW - 10 * scale)
+    local cWaveY = math.floor(cL.y + (cL.h - 18 * scale) * 0.5)
 
-    local lWaveX = math.floor(layout.x + layout.w - pad - waveW)
+    local lWaveX = math.floor(lL.x + lL.w - pad - waveW)
     local lWaveY = math.floor(lThumbY + 4 * scale)
 
-    local curWaveX = math.floor(cWaveX + (lWaveX - cWaveX) * artT)
-    local curWaveY = math.floor(cWaveY + (lWaveY - cWaveY) * artT)
+    local curWaveX = math.floor(cWaveX + (lWaveX - cWaveX) * artT + 0.5)
+    local curWaveY = math.floor(cWaveY + (lWaveY - cWaveY) * artT + 0.5)
 
-    DrawAppleWaveform(curWaveX, curWaveY, 18, waveCount, MediaData.IsPlaying, scale, waveCol, 1.0)
+    DrawAppleWaveform(curWaveX, curWaveY, 18 + 2 * artT, waveCount, MediaData.IsPlaying, scale, waveCol, 1.0)
 
     local titleStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_music")
     local artistStr = MediaData.Artist ~= "" and MediaData.Artist or ""
 
     local curInfoX = math.floor(curThumbX + curThumbSize + math.floor((8 + 5 * artT) * scale))
     local cTextStartX = curInfoX
-    local cTextY = math.floor(layout.y + (34 * scale - 12 * scale) * 0.5 - 1)
+    local cTextY = math.floor(cL.y + (Config.Dimensions.CompactMediaH * scale - Render.TextSize(fontHead, headSz, "Ag").y) * 0.5)
     local cTextAvailW = math.max(10, math.floor((curWaveX - 4 * scale) - cTextStartX))
 
     local lInfoX = curInfoX
-    local lInfoY = math.floor(curThumbY + 3 * scale)
+    local lInfoY = math.floor(curThumbY + 4 * scale)
     local lMaxInfoW = math.max(10, math.floor(curWaveX - lInfoX - 8 * scale))
 
     local compactAlpha = math.max(0.0, 1.0 - artT * 2.5)
-    if compactAlpha > 0.01 then
+    if compactAlpha > 0.01 and CompactMediaTitle() then
         local compStr = (artistStr ~= "" and titleStr ~= "") and (titleStr .. " \u{2022} " .. artistStr) or titleStr
-        RenderMarqueeText(fontBold, 12 * scale, compStr, cTextStartX, cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale, false)
+        RenderMarqueeText(fontHead, headSz, compStr, cTextStartX, cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale, false)
     end
 
     local largeAlpha = math.max(0.0, (artT - 0.25) / 0.75)^1.5
     if largeAlpha > 0.01 then
         local slideY = math.floor((1.0 - (artT - 0.25) / 0.75) * 5 * scale)
         local curLY = lInfoY + slideY
-        local lTitleSize = Render.TextSize(fontBold, 15 * scale, titleStr)
-        RenderMarqueeText(fontBold, 15 * scale, titleStr, lInfoX, curLY, lMaxInfoW, FadeColor(Config.Colors.TextPrimary, largeAlpha), scale, false)
+        local lTitleSize = Render.TextSize(fontBold, titleSz, titleStr)
+        RenderMarqueeText(fontBold, titleSz, titleStr, lInfoX, curLY, lMaxInfoW, FadeColor(Config.Colors.TextPrimary, largeAlpha), scale, false)
         if artistStr ~= "" then
             local artY = curLY + lTitleSize.y + 2 * scale
-            RenderMarqueeText(fontMain, 12 * scale, artistStr, lInfoX, artY, lMaxInfoW, FadeColor(Config.Colors.TextSecondary, largeAlpha), scale, false)
+            RenderMarqueeText(fontMain, artistSz, artistStr, lInfoX, artY, lMaxInfoW, FadeColor(Config.Colors.TextSecondary, largeAlpha), scale, false)
         end
     end
 
     if secAlpha > 0.01 then
         local progressY = math.floor(lThumbY + lThumbSize + 14 * scale)
-        local progressW = math.floor(layout.w - pad * 2)
+        local progressW = math.floor(lL.w - pad * 2)
         local progressH = math.floor(4.5 * scale)
 
         local curPos = MediaData.PosSmooth
         local duration = math.max(1, MediaData.Duration)
         local progressPct = math.min(1.0, math.max(0.0, curPos / duration))
 
-        Render.FilledRect(Vec2(layout.x + pad, progressY), Vec2(layout.x + pad + progressW, progressY + progressH), FadeColor(Config.Colors.TrackProgressBg, secAlpha), 2.5 * scale)
+        Render.FilledRect(Vec2(lL.x + pad, progressY), Vec2(lL.x + pad + progressW, progressY + progressH), FadeColor(Config.Colors.TrackProgressBg, secAlpha), 2.5 * scale)
         if progressPct > 0 then
-            Render.FilledRect(Vec2(layout.x + pad, progressY), Vec2(layout.x + pad + progressW * progressPct, progressY + progressH), FadeColor(Config.Colors.TextPrimary, secAlpha), 2.5 * scale)
+            Render.FilledRect(Vec2(lL.x + pad, progressY), Vec2(lL.x + pad + progressW * progressPct, progressY + progressH), FadeColor(Config.Colors.TextPrimary, secAlpha), 2.5 * scale)
         end
 
         local posText = FormatTime(curPos)
         local remSec = math.max(0, duration - curPos)
         local remText = FormatNegativeTime(remSec)
-        local timeY = math.floor(progressY + 6 * scale)
-        Render.Text(fontMain, 9.5 * scale, posText, Vec2(layout.x + pad, timeY), FadeColor(Config.Colors.TextSecondary, secAlpha))
-        local remSize = Render.TextSize(fontMain, 9.5 * scale, remText)
-        Render.Text(fontMain, 9.5 * scale, remText, Vec2(layout.x + layout.w - pad - remSize.x, timeY), FadeColor(Config.Colors.TextSecondary, secAlpha))
+        local timeY = math.floor(progressY + 8 * scale)
+        Odometer.Draw(fTime, sTime, posText, Vec2(lL.x + pad, timeY), FadeColor(Config.Colors.TextSecondary, secAlpha))
+        local remW = Odometer.Width(fTime, sTime, remText)
+        Odometer.Draw(fTime, sTime, remText, Vec2(math.floor(lL.x + lL.w - pad - remW), timeY), FadeColor(Config.Colors.TextSecondary, secAlpha))
 
         local ctrlY = math.floor(timeY + 16 * scale)
-        local midX = math.floor(layout.x + layout.w / 2)
+        local midX = math.floor(lL.x + lL.w / 2)
         local playY = math.floor(ctrlY + 16 * scale)
 
         local bloomT = artT * artT * (3.0 - 2.0 * artT)
@@ -8604,57 +8734,23 @@ local function RenderMediaSharedTransition(fromState, toState, layout, progress)
 
         local playScale = ButtonSprings.MediaPlay.scale * elemScale
         local playX = midX
-        if MediaData.IsPlaying then
-            local bw = math.floor(3.5 * scale * playScale)
-            local bh = math.floor(14 * scale * playScale)
-            local bx1 = math.floor(playX - 5 * scale * playScale)
-            local bx2 = math.floor(playX + 2 * scale * playScale)
-            local by = math.floor(playY - bh / 2)
-            Render.FilledRect(Vec2(bx1, by), Vec2(bx1 + bw, by + bh), FadeColor(Config.Colors.TextPrimary, secAlpha), 1.2 * scale)
-            Render.FilledRect(Vec2(bx2, by), Vec2(bx2 + bw, by + bh), FadeColor(Config.Colors.TextPrimary, secAlpha), 1.2 * scale)
-        else
-            local tw = math.floor(13 * scale * playScale)
-            local th = math.floor(15 * scale * playScale)
-            local p1 = Vec2(playX - tw / 3, playY - th / 2)
-            local p2 = Vec2(playX - tw / 3, playY + th / 2)
-            local p3 = Vec2(playX + tw * 2 / 3, playY)
-            Render.FilledTriangle({p1, p2, p3}, FadeColor(Config.Colors.TextPrimary, secAlpha))
-        end
+        local ctrlCol = FadeColor(Config.Colors.TextPrimary, secAlpha)
+        Glyph(MediaData.IsPlaying and "media_pause" or "media_play", playX, playY, math.floor(26 * scale * playScale), ctrlCol)
 
         local prevTargetX = math.floor(playX - 54 * scale)
-        local prevScale = ButtonSprings.MediaPrev.scale * elemScale
         local curPrevX = math.floor(midX + (prevTargetX - midX) * bloomT)
-        local triW = math.floor(8 * scale * prevScale)
-        local triH = math.floor(11 * scale * prevScale)
-        local pp1 = Vec2(curPrevX + triW, playY - triH / 2)
-        local pp2 = Vec2(curPrevX + triW, playY + triH / 2)
-        local pp3 = Vec2(curPrevX, playY)
-        Render.FilledTriangle({pp1, pp2, pp3}, FadeColor(Config.Colors.TextPrimary, secAlpha))
-        local pp4 = Vec2(curPrevX, playY - triH / 2)
-        local pp5 = Vec2(curPrevX, playY + triH / 2)
-        local pp6 = Vec2(curPrevX - triW, playY)
-        Render.FilledTriangle({pp4, pp5, pp6}, FadeColor(Config.Colors.TextPrimary, secAlpha))
+        Glyph("media_prev", curPrevX, playY, math.floor(24 * scale * ButtonSprings.MediaPrev.scale * elemScale), ctrlCol)
 
         local nextTargetX = math.floor(playX + 54 * scale)
-        local nextScale = ButtonSprings.MediaNext.scale * elemScale
         local curNextX = math.floor(midX + (nextTargetX - midX) * bloomT)
-        local ntriW = math.floor(8 * scale * nextScale)
-        local ntriH = math.floor(11 * scale * nextScale)
-        local np1 = Vec2(curNextX - ntriW, playY - ntriH / 2)
-        local np2 = Vec2(curNextX - ntriW, playY + ntriH / 2)
-        local np3 = Vec2(curNextX, playY)
-        Render.FilledTriangle({np1, np2, np3}, FadeColor(Config.Colors.TextPrimary, secAlpha))
-        local np4 = Vec2(curNextX, playY - ntriH / 2)
-        local np5 = Vec2(curNextX, playY + ntriH / 2)
-        local np6 = Vec2(curNextX + ntriW, playY)
-        Render.FilledTriangle({np4, np5, np6}, FadeColor(Config.Colors.TextPrimary, secAlpha))
+        Glyph("media_next", curNextX, playY, math.floor(24 * scale * ButtonSprings.MediaNext.scale * elemScale), ctrlCol)
 
-        local shufTargetX = math.floor(layout.x + pad + 12 * scale)
+        local shufTargetX = math.floor(lL.x + pad + 12 * scale)
         local shufScale = ButtonSprings.MediaShuffle.scale * elemScale
         local curShufX = math.floor(midX + (shufTargetX - midX) * bloomT)
         local shufH = GetVectorIcon("shuffle")
         if shufH then
-            local shufCol = MediaData.Shuffle and Color(255, 255, 255, 255) or Color(255, 255, 255, 90)
+            local shufCol = MediaData.Shuffle and Config.Colors.TextPrimary or Config.Colors.TextSecondary
             local sSz = 14 * scale * shufScale
             Render.Image(shufH, Vec2(curShufX - sSz / 2, playY - sSz / 2), Vec2(sSz, sSz), FadeColor(shufCol, secAlpha), 0)
         end
@@ -8664,21 +8760,22 @@ local function RenderMediaSharedTransition(fromState, toState, layout, progress)
         local curRepX = math.floor(midX + (repTargetX - midX) * bloomT)
         local repH = GetVectorIcon("repeat")
         if repH then
-            local repCol = (MediaData.RepeatMode > 0) and Color(255, 255, 255, 255) or Color(255, 255, 255, 90)
+            local repCol = (MediaData.RepeatMode > 0) and Config.Colors.TextPrimary or Config.Colors.TextSecondary
             local rSz = 14 * scale * repScale
             Render.Image(repH, Vec2(curRepX - rSz / 2, playY - rSz / 2), Vec2(rSz, rSz), FadeColor(repCol, secAlpha), 0)
             if MediaData.RepeatMode == 2 then
-                Render.Text(fontBold, 7.5 * scale * elemScale, "1", Vec2(curRepX + 5 * scale, playY - 7 * scale), FadeColor(Color(255, 255, 255, 255), secAlpha))
+                Render.Text(fontTiny, tinySz * elemScale, "1", Vec2(curRepX + 5 * scale, playY - 8 * scale), FadeColor(Config.Colors.TextPrimary, secAlpha))
             end
         end
 
-        local likeTargetX = math.floor(layout.x + layout.w - pad - 12 * scale)
+        local likeTargetX = math.floor(lL.x + lL.w - pad - 12 * scale)
         local likeScale = ButtonSprings.MediaLike.scale * elemScale
         local curLikeX = math.floor(midX + (likeTargetX - midX) * bloomT)
-        local likeSvg = MediaData.IsLiked and GetVectorIcon("heart_fill") or GetVectorIcon("heart_outline")
-        if likeSvg then
-            local lSz = 14 * scale * likeScale
-            local lCol = MediaData.IsLiked and Color(255, 45, 85, 255) or Color(255, 255, 255, 120)
+        local isLiked = (MediaData.IsLiked == true) or (MediaData.LikedTracks[MediaData.LastTrackKey] == true)
+        local likeSvg = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
+        if likeSvg and UI.Media.SpotifyLike:Get() then
+            local lSz = 16 * scale * likeScale
+            local lCol = isLiked and Config.Colors.Red or Config.Colors.TextSecondary
             Render.Image(likeSvg, Vec2(curLikeX - lSz / 2, playY - lSz / 2), Vec2(lSz, lSz), FadeColor(lCol, secAlpha), 0)
         end
     end
@@ -8686,12 +8783,17 @@ end
 
 local function RenderIdleSharedTransition(fromState, toState, layout, progress)
     local scale = layout.scale
-    local fontBold = Config.Fonts.Bold
-    local fontMain = Config.Fonts.Main
-    local isExpanding = (toState == StateMachine.States.LARGE_IDLE)
-    local t = math.max(0.0, math.min(1.0, progress or 0.0))
-    local smoothT = t * t * (3.0 - 2.0 * t)
-    local elemT = isExpanding and smoothT or (1.0 - smoothT)
+    local elemT = math.max(0.0, math.min(1.0, progress or 0.0))
+    local D = Config.Dimensions
+    local cL = StateMachine.FrameFor(layout, math.max(80, CalculateIdleContentWidth(scale) / scale + 26), D.CompactH, D.CompactRadius)
+    local lL = StateMachine.FrameFor(layout, D.LargeW, D.LargeH, D.LargeRadius)
+    local g = IdleGeo(lL, 0)
+    local _, sChip = TF("Headline", scale)
+    local fNum, sNum = TF("LargeNum", scale)
+    local fSec, sSec = TF("Subhead", scale)
+    local fFoot, sFoot = TF("Footnote", scale)
+    local fHead, sHead = TF("Headline", scale)
+    local function Q(v) return math.floor(v * 2 + 0.5) / 2 end
 
     local renderedChips = {}
     local compactMap = {}
@@ -8708,177 +8810,128 @@ local function RenderIdleSharedTransition(fromState, toState, layout, progress)
         end
     end
 
-    local compactStartX = math.floor(layout.x + (layout.w - totalCompactW) / 2)
-    local midY = math.floor(layout.y + layout.h / 2)
+    local compactStartX = math.floor(cL.x + (cL.w - totalCompactW) / 2)
+    local midY = math.floor(cL.y + cL.h / 2)
 
-    for idx, chip in ipairs(renderedChips) do
-        compactMap[chip.id] = {
-            startX = compactStartX + chip.offset,
-            midY = midY,
-            chip = chip
-        }
+    for _, chip in ipairs(renderedChips) do
+        compactMap[chip.id] = { startX = compactStartX + chip.offset, chip = chip }
     end
 
-    local pad = math.floor(16 * scale)
-    local lClockX = math.floor(layout.x + pad)
-    local lClockY = math.floor(layout.y + pad + 2 * scale)
-    local lFontSize = 26 * scale
-    local cFontSize = 11.5 * scale
-
-    local cClockX = compactMap["clock"] and (compactMap["clock"].startX + (compactMap["clock"].chip.svgKey and (18 * scale) or 0)) or math.floor(layout.x + layout.w * 0.5 - 20 * scale)
-    local cClockY = math.floor(midY - 5.5 * scale + MenuTextOffsetY * scale)
-
-    local curClockX = math.floor(cClockX + (lClockX - cClockX) * elemT)
-    local curClockY = math.floor(cClockY + (lClockY - cClockY) * elemT)
-    local curFontSize = cFontSize + (lFontSize - cFontSize) * elemT
-
+    local clockChip = compactMap["clock"]
+    local cFont = clockChip and clockChip.chip.font or fHead
+    local cClockX = clockChip and (clockChip.startX + (clockChip.chip.svgKey and (20 * scale) or 0)) or math.floor(cL.x + cL.w * 0.5 - 20 * scale)
+    local cClockY = math.floor(midY - Render.TextSize(cFont, sChip, "0").y / 2 + MenuTextOffsetY * scale)
+    local curClockX = math.floor(cClockX + (g.leftX - cClockX) * elemT + 0.5)
+    local curClockY = math.floor(cClockY + (g.leftY - cClockY) * elemT + 0.5)
+    local curSize = Q(sChip + (sNum - sChip) * elemT)
+    local fontMix = math.max(0, math.min(1, (elemT - 0.25) / 0.5))
+    local curFont = fontMix > 0.5 and fNum or cFont
     local timeHM = os.date("%H:%M")
-    Render.Text(fontBold, curFontSize, timeHM, Vec2(curClockX, curClockY), Config.Colors.TextPrimary)
-
-    local divX = math.floor(layout.x + 140 * scale)
-    local rightX = math.floor(divX + 14 * scale)
-    local goldX = math.floor(rightX + 85 * scale)
-    local row1Y = math.floor(layout.y + 16 * scale)
-    local row2Y = math.floor(layout.y + 44 * scale)
+    local clockCol = clockChip and LerpColor(clockChip.chip.color, Config.Colors.TextPrimary, elemT) or Config.Colors.TextPrimary
+    if fontMix < 1 then
+        local txt = clockChip and clockChip.chip.text or timeHM
+        Odometer.Draw(cFont, curSize, txt, Vec2(curClockX, curClockY), FadeColor(clockCol, 1 - fontMix))
+    end
+    if fontMix > 0 then
+        Odometer.Draw(fNum, curSize, timeHM, Vec2(curClockX, curClockY), FadeColor(clockCol, fontMix))
+    end
+    if clockChip and clockChip.chip.svgKey then
+        local ca = math.max(0, 1 - elemT * 2.5)
+        local iconHandle = GetVectorIcon("clock")
+        if iconHandle and ca > 0.01 then
+            local iconSz = math.floor(14 * scale)
+            Render.Image(iconHandle, Vec2(math.floor(clockChip.startX + (curClockX - cClockX)), math.floor(midY - iconSz / 2 + MenuIconOffsetY * scale + (curClockY - cClockY))), Vec2(iconSz, iconSz), FadeColor(clockChip.chip.color, ca), 0)
+        end
+    end
 
     local compactAlpha = math.max(0.0, 1.0 - elemT * 1.5)
     if compactAlpha > 0.01 then
         local curX = compactStartX
         for idx, chip in ipairs(renderedChips) do
             if chip.id ~= "clock" and chip.id ~= "fps" and chip.id ~= "ping" and chip.id ~= "gold" and chip.id ~= "kda" then
-                local refSize = Render.TextSize(chip.font, 11 * scale, "0123456789")
+                local refSize = Render.TextSize(chip.font, sChip, "0123456789")
                 local ty = math.floor(midY - refSize.y / 2 + MenuTextOffsetY * scale)
+                local tx = curX
                 if chip.svgKey then
                     local iconHandle = GetVectorIcon(chip.svgKey)
-                    local iconSz = math.floor(13 * scale)
-                    local iconX = curX
+                    local iconSz = math.floor(14 * scale)
                     local iconY = math.floor(midY - iconSz / 2 + MenuIconOffsetY * scale)
                     if iconHandle then
-                        Render.Image(iconHandle, Vec2(iconX, iconY), Vec2(iconSz, iconSz), FadeColor(chip.color, compactAlpha), 0)
+                        Render.Image(iconHandle, Vec2(curX, iconY), Vec2(iconSz, iconSz), FadeColor(chip.color, compactAlpha), 0)
                     end
-                    local tx = curX + iconSz + math.floor(5 * scale)
-                    Render.Text(chip.font, 11 * scale, chip.text, Vec2(tx, ty), FadeColor(chip.color, compactAlpha))
-                else
-                    Render.Text(chip.font, 11 * scale, chip.text, Vec2(curX, ty), FadeColor(chip.color, compactAlpha))
+                    tx = curX + math.floor(20 * scale)
                 end
+                Odometer.Draw(chip.font, sChip, chip.text, Vec2(tx, ty), FadeColor(chip.color, compactAlpha))
             end
             curX = curX + chip.width
             if idx < #renderedChips then
-                local dotR = 1.6 * scale
                 local dotX = curX + 6 * scale
-                Render.FilledCircle(Vec2(dotX, midY), dotR, FadeColor(Config.Colors.TextMuted, compactAlpha), 0, 1.0, 12)
+                Render.FilledCircle(Vec2(dotX, midY), 1.6 * scale, FadeColor(Config.Colors.TextMuted, compactAlpha), 0, 1.0, 12)
                 curX = dotX + 6 * scale
             end
         end
     end
 
     if elemT > 0.01 then
-        local divStartY = math.floor(layout.y + 14 * scale)
-        local divTotalH = math.max(10, math.floor(layout.h - 28 * scale))
-        local divCurH = math.floor(divTotalH * elemT)
-        Render.Line(Vec2(divX, divStartY), Vec2(divX, divStartY + divCurH), FadeColor(Config.Colors.Border, elemT), 1.0)
+        local divStartY = math.floor(lL.y + 14 * scale)
+        local divTotalH = math.max(10, math.floor(lL.h - 28 * scale))
+        Render.Line(Vec2(g.divX, divStartY), Vec2(g.divX, divStartY + math.floor(divTotalH * elemT)), FadeColor(Config.Colors.Separator, elemT), 1.0)
+    end
 
-        local hmSize = Render.TextSize(fontBold, curFontSize, timeHM)
-        local timeSec = os.date(":%S")
-        local secX = math.floor(curClockX + hmSize.x + 3 * scale)
-        local secY = math.floor(curClockY + curFontSize * 0.35)
-        local secAlpha = math.max(0.0, (elemT - 0.20) / 0.80)^1.5
-        if secAlpha > 0.01 then
-            Render.Text(fontMain, 13 * scale, timeSec, Vec2(secX, secY), FadeColor(Config.Colors.TextSecondary, secAlpha))
-            local matchTime = GetActualMatchTime()
-            local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
-            Render.Text(fontMain, 10.5 * scale, subInfo, Vec2(lClockX, curClockY + hmSize.y + 5 * scale), FadeColor(Config.Colors.TextMuted, secAlpha))
-        end
+    local lateAlpha = math.max(0.0, (elemT - 0.20) / 0.80) ^ 1.5
+    if lateAlpha > 0.01 then
+        local hmH = Render.TextSize(fNum, sNum, "0").y
+        local hmW = Odometer.Width(curFont, curSize, timeHM)
+        local secH = Render.TextSize(fSec, sSec, "0").y
+        Odometer.Draw(fSec, sSec, os.date(":%S"), Vec2(math.floor(curClockX + hmW + 2 * scale), math.floor(curClockY + (hmH - secH) * 0.8)), FadeColor(Config.Colors.TextSecondary, lateAlpha))
+        local matchTime = GetActualMatchTime()
+        local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
+        Odometer.Draw(fFoot, sFoot, subInfo, Vec2(g.leftX, math.floor(curClockY + hmH + 2 * scale)), FadeColor(Config.Colors.TextSecondary, lateAlpha))
+    end
 
-        local unfoldAlpha = math.max(0.0, (elemT - 0.20) / 0.80)^1.5
-        local unfoldShiftX = math.floor((1.0 - elemT) * -16 * scale)
-
-        if compactMap["fps"] then
-            local startX = compactMap["fps"].startX
-            local startY = compactMap["fps"].midY - math.floor(6.5 * scale)
-            local targetIconX = rightX
-            local targetIconY = row2Y + 4 * scale
-            local curIconX = math.floor(startX + (targetIconX - startX) * elemT)
-            local curIconY = math.floor(startY + (targetIconY - startY) * elemT)
-            local fpsSvg = GetVectorIcon("fps")
-            local curFpsCol = LerpColor(compactMap["fps"].chip.color or Color(52, 199, 89, 255), Color(255, 255, 255, 255), elemT)
-            if fpsSvg then Render.Image(fpsSvg, Vec2(curIconX, curIconY), Vec2(12 * scale, 12 * scale), FadeColor(curFpsCol, 0.86), 0) end
-            local fpsTxt = string.format("%d%s", PerformanceData.FPS, elemT > 0.4 and " FPS" or "")
-            Render.Text(elemT > 0.4 and fontMain or fontBold, (11 - 0.5 * elemT) * scale, fpsTxt, Vec2(curIconX + 16 * scale, curIconY - 1 * scale), curFpsCol)
-        else
-            if unfoldAlpha > 0.01 then
-                local uX = rightX + unfoldShiftX
-                local fpsSvg = GetVectorIcon("fps")
-                if fpsSvg then Render.Image(fpsSvg, Vec2(uX, row2Y + 4 * scale), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), unfoldAlpha), 0) end
-                local fpsTxt = string.format("%d FPS", PerformanceData.FPS)
-                Render.Text(fontMain, 10.5 * scale, fpsTxt, Vec2(uX + 16 * scale, row2Y + 3 * scale), FadeColor(Color(255, 255, 255, 240), unfoldAlpha))
+    local unfoldShiftX = math.floor((1.0 - elemT) * -16 * scale)
+    local function Row(id, svg, txt, tx, ty, bigFont, bigSize, bigCol)
+        local cm = compactMap[id]
+        local iconCol = Config.Colors.TextSecondary
+        if cm then
+            local sx = cm.startX
+            local iconSz = math.floor(14 * scale + (g.icon - 14 * scale) * elemT + 0.5)
+            local sy = math.floor(midY - 7 * scale + MenuIconOffsetY * scale)
+            local ix = math.floor(sx + (tx - sx) * elemT + 0.5)
+            local iy = math.floor(sy + (ty - sy) * elemT + 0.5)
+            local h = GetVectorIcon(svg)
+            local iconA = cm.chip.svgKey and 1 or elemT
+            if h and iconA > 0.01 then Render.Image(h, Vec2(ix, iy), Vec2(iconSz, iconSz), FadeColor(LerpColor(cm.chip.color, iconCol, elemT), iconA), 0) end
+            local sz = Q(sChip + (bigSize - sChip) * elemT)
+            local dx0 = cm.chip.svgKey and 20 * scale or 0
+            local dx = math.floor(dx0 + (g.textDX - dx0) * elemT + 0.5)
+            local col = LerpColor(cm.chip.color, bigCol, elemT)
+            local mix = (bigFont == cm.chip.font) and 1 or math.max(0, math.min(1, (elemT - 0.25) / 0.5))
+            local midT = iy + iconSz / 2
+            if mix < 1 then
+                local th = Render.TextSize(cm.chip.font, sz, "0").y
+                Odometer.Draw(cm.chip.font, sz, (elemT < 0.5) and cm.chip.text or txt, Vec2(ix + dx, math.floor(midT - th / 2)), FadeColor(col, 1 - mix))
             end
-        end
-
-        if compactMap["ping"] then
-            local startX = compactMap["ping"].startX
-            local startY = compactMap["ping"].midY - math.floor(6.5 * scale)
-            local targetIconX = goldX
-            local targetIconY = row2Y + 4 * scale
-            local curIconX = math.floor(startX + (targetIconX - startX) * elemT)
-            local curIconY = math.floor(startY + (targetIconY - startY) * elemT)
-            local pingSvg = GetVectorIcon("ping")
-            local curPingCol = LerpColor(compactMap["ping"].chip.color or Color(10, 132, 255, 255), Color(255, 255, 255, 255), elemT)
-            if pingSvg then Render.Image(pingSvg, Vec2(curIconX, curIconY), Vec2(12 * scale, 12 * scale), FadeColor(curPingCol, 0.86), 0) end
-            local pingTxt = string.format("%d ms", PerformanceData.Ping)
-            Render.Text(elemT > 0.4 and fontMain or fontBold, (11 - 0.5 * elemT) * scale, pingTxt, Vec2(curIconX + 16 * scale, curIconY - 1 * scale), curPingCol)
-        else
-            if unfoldAlpha > 0.01 then
-                local uX = goldX + unfoldShiftX
-                local pingSvg = GetVectorIcon("ping")
-                if pingSvg then Render.Image(pingSvg, Vec2(uX, row2Y + 4 * scale), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), unfoldAlpha), 0) end
-                local pingTxt = string.format("%d ms", PerformanceData.Ping)
-                Render.Text(fontMain, 10.5 * scale, pingTxt, Vec2(uX + 16 * scale, row2Y + 3 * scale), FadeColor(Color(255, 255, 255, 240), unfoldAlpha))
+            if mix > 0 then
+                local th = Render.TextSize(bigFont, sz, "0").y
+                Odometer.Draw(bigFont, sz, txt, Vec2(ix + dx, math.floor(midT - th / 2)), FadeColor(col, mix))
             end
+        elseif lateAlpha > 0.01 then
+            local ux = tx + unfoldShiftX
+            local h = GetVectorIcon(svg)
+            if h then Render.Image(h, Vec2(ux, ty), Vec2(g.icon, g.icon), FadeColor(iconCol, lateAlpha), 0) end
+            local th = Render.TextSize(bigFont, bigSize, "0").y
+            Odometer.Draw(bigFont, bigSize, txt, Vec2(ux + g.textDX, math.floor(ty + g.icon / 2 - th / 2)), FadeColor(bigCol, lateAlpha))
         end
+    end
+    Row("kda", "kda", string.format("%d/%d/%d", HeroData.Kills, HeroData.Deaths, HeroData.Assists), g.rightX, g.row1Y, fHead, sHead, Config.Colors.TextPrimary)
+    Row("gold", "gold", string.format("%d G", HeroData.Gold), g.col2X, g.row1Y, fHead, sHead, Config.Colors.TextPrimary)
+    Row("fps", "fps", string.format("%d FPS", PerformanceData.FPS), g.rightX, g.row2Y, fSec, sSec, PerfTint("fps", Config.Colors.TextSecondary))
+    Row("ping", "ping", string.format("%d ms", PerformanceData.Ping), g.col2X, g.row2Y, fSec, sSec, PerfTint("ping", Config.Colors.TextSecondary))
 
-        if compactMap["kda"] then
-            local startX = compactMap["kda"].startX
-            local startY = compactMap["kda"].midY - math.floor(6.5 * scale)
-            local targetIconX = rightX
-            local targetIconY = row1Y
-            local curIconX = math.floor(startX + (targetIconX - startX) * elemT)
-            local curIconY = math.floor(startY + (targetIconY - startY) * elemT)
-            local kdaSvg = GetVectorIcon("kda")
-            if kdaSvg then Render.Image(kdaSvg, Vec2(curIconX, curIconY), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), 1.0), 0) end
-            local kdaTxt = string.format("%d / %d / %d", HeroData.Kills, HeroData.Deaths, HeroData.Assists)
-            Render.Text(fontBold, 11 * scale, kdaTxt, Vec2(curIconX + 16 * scale, curIconY - 1 * scale), Config.Colors.TextPrimary)
-        else
-            if unfoldAlpha > 0.01 then
-                local uX = rightX + unfoldShiftX
-                local kdaSvg = GetVectorIcon("kda")
-                if kdaSvg then Render.Image(kdaSvg, Vec2(uX, row1Y), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), unfoldAlpha), 0) end
-                local kdaTxt = string.format("%d / %d / %d", HeroData.Kills, HeroData.Deaths, HeroData.Assists)
-                Render.Text(fontBold, 11 * scale, kdaTxt, Vec2(uX + 16 * scale, row1Y - 1 * scale), FadeColor(Config.Colors.TextPrimary, unfoldAlpha))
-            end
-        end
-
-        if compactMap["gold"] then
-            local startX = compactMap["gold"].startX
-            local startY = compactMap["gold"].midY - math.floor(6.5 * scale)
-            local targetIconX = goldX
-            local targetIconY = row1Y
-            local curIconX = math.floor(startX + (targetIconX - startX) * elemT)
-            local curIconY = math.floor(startY + (targetIconY - startY) * elemT)
-            local goldSvg = GetVectorIcon("gold")
-            local curGoldCol = LerpColor(compactMap["gold"].chip.color or Color(255, 215, 30, 255), Color(255, 255, 255, 255), elemT)
-            if goldSvg then Render.Image(goldSvg, Vec2(curIconX, curIconY), Vec2(12 * scale, 12 * scale), FadeColor(curGoldCol, 0.86), 0) end
-            local goldTxt = string.format("%d G", HeroData.Gold)
-            Render.Text(fontBold, 11 * scale, goldTxt, Vec2(curIconX + 16 * scale, curIconY - 1 * scale), curGoldCol)
-        else
-            if unfoldAlpha > 0.01 then
-                local uX = goldX + unfoldShiftX
-                local goldSvg = GetVectorIcon("gold")
-                if goldSvg then Render.Image(goldSvg, Vec2(uX, row1Y), Vec2(12 * scale, 12 * scale), FadeColor(Color(255, 255, 255, 220), unfoldAlpha), 0) end
-                local goldTxt = string.format("%d G", HeroData.Gold)
-                Render.Text(fontBold, 11 * scale, goldTxt, Vec2(uX + 16 * scale, row1Y - 1 * scale), FadeColor(Config.Colors.TextPrimary, unfoldAlpha))
-            end
-        end
+    local tileA = math.max(0, (elemT - 0.5) / 0.5) ^ 1.5
+    if tileA > 0.01 then
+        Focus.RenderTile(lL, g.rightX, math.floor(lL.x + lL.w - 14 * scale), math.floor(lL.y + lL.h - 12 * scale - 26 * scale), tileA)
     end
 end
 
@@ -8937,6 +8990,153 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
     end
 end
 
+local ContentFx = { k = 1, alpha = 1, cx = 0, cy = 0, top = 0, h = 1, stagger = 0, reveal = nil, Installed = false }
+local FxBase = getmetatable(Render).__index
+
+function ContentFx.Alpha(col, y)
+    if not col then return col end
+    local a = ContentFx.alpha
+    if ContentFx.reveal then
+        local rel = math.max(0, math.min(1, (y - ContentFx.top) / math.max(1, ContentFx.h)))
+        local e = math.max(0, math.min(1, (ContentFx.reveal - ContentFx.stagger * rel) / (1 - ContentFx.stagger)))
+        a = a * (1 - (1 - e) * (1 - e))
+    end
+    if a >= 0.999 then return col end
+    return Color(col.r, col.g, col.b, math.floor((col.a or 255) * a))
+end
+
+function ContentFx.P(v)
+    local k = ContentFx.k
+    return Vec2(ContentFx.cx + (v.x - ContentFx.cx) * k, ContentFx.cy + (v.y - ContentFx.cy) * k)
+end
+
+ContentFx.Wrap = {
+    Text = function(a)
+        a[2] = a[2] * ContentFx.k
+        a[5] = ContentFx.Alpha(a[5], a[4].y)
+        a[4] = ContentFx.P(a[4])
+    end,
+    Image = function(a)
+        local p, s = a[2], a[3]
+        a[4] = ContentFx.Alpha(a[4], p.y + s.y / 2)
+        a[2] = ContentFx.P(p)
+        a[3] = Vec2(s.x * ContentFx.k, s.y * ContentFx.k)
+        if a.n >= 5 and a[5] then a[5] = a[5] * ContentFx.k end
+    end,
+    FilledRect = function(a)
+        a[3] = ContentFx.Alpha(a[3], (a[1].y + a[2].y) / 2)
+        a[1], a[2] = ContentFx.P(a[1]), ContentFx.P(a[2])
+        if a.n >= 4 and a[4] then a[4] = a[4] * ContentFx.k end
+    end,
+    FilledCircle = function(a)
+        a[3] = ContentFx.Alpha(a[3], a[1].y)
+        a[1] = ContentFx.P(a[1])
+        a[2] = a[2] * ContentFx.k
+    end,
+    Line = function(a)
+        a[3] = ContentFx.Alpha(a[3], (a[1].y + a[2].y) / 2)
+        a[1], a[2] = ContentFx.P(a[1]), ContentFx.P(a[2])
+    end,
+    FilledTriangle = function(a)
+        local pts = {}
+        for i, pt in ipairs(a[1]) do pts[i] = ContentFx.P(pt) end
+        a[2] = ContentFx.Alpha(a[2], a[1][1].y)
+        a[1] = pts
+    end,
+    PushClip = function(a)
+        a[1], a[2] = ContentFx.P(a[1]), ContentFx.P(a[2])
+    end
+}
+ContentFx.Wrap.Rect = ContentFx.Wrap.FilledRect
+ContentFx.Wrap.Circle = ContentFx.Wrap.FilledCircle
+ContentFx.Wrap.Shadow = ContentFx.Wrap.FilledRect
+ContentFx.Fns = {}
+for name, fn in pairs(ContentFx.Wrap) do
+    ContentFx.Fns[name] = function(...)
+        local a = table.pack(...)
+        fn(a)
+        return FxBase[name](table.unpack(a, 1, a.n))
+    end
+end
+
+function ContentFx.Begin(layout, alpha, k, reveal, stagger)
+    ContentFx.alpha = alpha
+    ContentFx.k = k or 1
+    ContentFx.reveal = reveal
+    ContentFx.stagger = stagger or 0
+    ContentFx.cx = layout.x + layout.w / 2
+    ContentFx.cy = layout.y + layout.h / 2
+    ContentFx.top = layout.y
+    ContentFx.h = layout.h
+    if not ContentFx.Installed then
+        for name, f in pairs(ContentFx.Fns) do Render[name] = f end
+        ContentFx.Installed = true
+    end
+end
+
+function ContentFx.End()
+    if ContentFx.Installed then
+        for name in pairs(ContentFx.Fns) do Render[name] = nil end
+        ContentFx.Installed = false
+    end
+end
+
+local function RenderShared(kind, layout, m)
+    local S = StateMachine.States
+    if kind == "media" then
+        RenderMediaSharedTransition(S.COMPACT_MEDIA, S.LARGE_MEDIA, layout, m)
+    else
+        RenderIdleSharedTransition(S.COMPACT_IDLE, S.LARGE_IDLE, layout, m)
+    end
+end
+
+local function RenderContent(layout, dt)
+    local tr = StateMachine.Transition
+    local ghosts = StateMachine.Ghosts
+    for i = #ghosts, 1, -1 do
+        local g = ghosts[i]
+        g.a = g.a - dt / 0.16
+        if g.a <= 0.01 then
+            table.remove(ghosts, i)
+            if g.state == StateMachine.States.NOTIFICATION and not tr.Active and StateMachine.TargetState ~= StateMachine.States.NOTIFICATION then
+                NotificationQueue.LastDismissed = nil
+            end
+        end
+    end
+    for _, g in ipairs(ghosts) do
+        local ok, err = pcall(function()
+            ContentFx.Begin(layout, g.a ^ 1.5, 1 - 0.06 * (1 - g.a))
+            if g.shared then
+                RenderShared(g.shared, layout, g.m)
+            else
+                RenderStateLayer(g.state, g.w and StateMachine.FrameFor(layout, g.w, g.h, g.r) or layout, 1.0, 0)
+            end
+        end)
+        ContentFx.End()
+        if not ok then error(err, 0) end
+    end
+    if tr.Active and tr.SharedPair then
+        tr.Reveal = 1
+        RenderShared(tr.SharedPair, layout, StateMachine.SharedM(tr.SharedPair))
+    elseif tr.Active then
+        local r = tr.Shrink and math.min(1, tr.Progress / 0.5) or math.max(0, math.min(1, (tr.Progress - 0.05) / 0.70))
+        r = math.max(r, tr.Reveal or 0)
+        tr.Reveal = r
+        if r > 0.001 then
+            local ok, err = pcall(function()
+                local D = Config.Dimensions
+                local fl = StateMachine.FrameFor(layout, D.CompactTargetW or D.CompactW, D.CompactTargetH or D.CompactH, D.CompactTargetR or D.CompactRadius)
+                ContentFx.Begin(fl, 1, 0.92 + 0.08 * EaseOutCubic(r), r, 0.25)
+                RenderStateLayer(StateMachine.TargetState, fl, 1.0, 0)
+            end)
+            ContentFx.End()
+            if not ok then error(err, 0) end
+        end
+    else
+        RenderStateLayer(StateMachine.Current, layout, 1.0, 0.0)
+    end
+end
+
 local function RenderDragGuides(layout)
     if not DragState.IsDragging then return end
 
@@ -8954,12 +9154,12 @@ local function RenderDragGuides(layout)
     local guideCol = Config.Colors.GridHighlight
     Render.Rect(Vec2(layout.x - 3, layout.y - 3), Vec2(layout.x + layout.w + 3, layout.y + layout.h + 3), guideCol, layout.r + 3, Enum.DrawFlags.None, 1.5)
 
-    local fontBold = Config.Fonts.Bold
+    local fontBold, fs = TF("FootnoteEm", 1)
     local hintText = string.format("X: %d   Y: %d", math.floor(layout.x), math.floor(layout.y))
-    local hSize = Render.TextSize(fontBold, 11, hintText)
-    local hx = math.floor(layout.x + (layout.w - hSize.x) / 2)
+    local hw = Odometer.Width(fontBold, fs, hintText)
+    local hx = math.floor(layout.x + (layout.w - hw) / 2)
     local hy = math.floor(layout.y + layout.h + 8)
-    Render.Text(fontBold, 11, hintText, Vec2(hx, hy), Config.Colors.TextPrimary)
+    Odometer.Draw(fontBold, fs, hintText, Vec2(hx, hy), Config.Colors.TextPrimary)
 end
 
 local LastMenuOpenState = false
@@ -8999,10 +9199,10 @@ function DynamicIsland.OnFrame()
         else
             VolumeState.Alpha = math.min(1.0, VolumeState.Alpha + dt * 8.0)
         end
-        local nC, nVC = MotionEngine.SolveSpring(VolumeState.Current or 50.0, VolumeState.CurrentVel or 0.0, VolumeState.Target or 50.0, dt, 42.0, 0.88, 0.1)
+        local nC, nVC = MotionEngine.Step(VolumeState.Current or 50.0, VolumeState.CurrentVel or 0.0, VolumeState.Target or 50.0, dt, "SNAPPY", 0.1)
         VolumeState.Current = nC
         VolumeState.CurrentVel = nVC
-        local nO, nVO = MotionEngine.SolveSpring(VolumeState.Overstretch or 0.0, VolumeState.OverstretchVel or 0.0, 0.0, dt, 32.0, 0.72, 0.15)
+        local nO, nVO = MotionEngine.Step(VolumeState.Overstretch or 0.0, VolumeState.OverstretchVel or 0.0, 0.0, dt, "SNAPPY", 0.15)
         VolumeState.Overstretch = nO
         VolumeState.OverstretchVel = nVO
     end
@@ -9023,21 +9223,47 @@ function DynamicIsland.OnFrame()
     end
     ThemeSpring.target = targetFactor
 
-    local nF, nV = SolveDampedSpring(ThemeSpring.factor, ThemeSpring.vel, targetFactor, dt, 14.0, 0.80)
+    local nF, nV = MotionEngine.Step(ThemeSpring.factor, ThemeSpring.vel, targetFactor, dt, "SMOOTH")
     ThemeSpring.factor = nF
     ThemeSpring.vel = nV
 
     local f = math.min(1.0, math.max(0.0, ThemeSpring.factor))
-    Config.Colors.TextPrimary = LerpColor(Color(255, 255, 255, 255), Color(18, 18, 24, 255), f)
-    Config.Colors.TextSecondary = LerpColor(Color(160, 160, 170, 255), Color(65, 65, 75, 230), f)
-    Config.Colors.TextMuted = LerpColor(Color(120, 120, 130, 255), Color(110, 110, 120, 200), f)
-    Config.Colors.Border = LerpColor(Color(255, 255, 255, 28), Color(0, 0, 0, 35), f)
-    Config.Colors.TrackProgressBg = LerpColor(Color(255, 255, 255, 40), Color(0, 0, 0, 28), f)
-    Config.Colors.ChipActive = LerpColor(Color(255, 255, 255, 52), Color(0, 0, 0, 35), f)
-    Config.Colors.ChipActiveBorder = LerpColor(Color(255, 255, 255, 225), Color(0, 0, 0, 180), f)
-    Config.Colors.ChipInactive = LerpColor(Color(255, 255, 255, 10), Color(0, 0, 0, 10), f)
-    Config.Colors.ChipInactiveBorder = LerpColor(Color(255, 255, 255, 24), Color(0, 0, 0, 24), f)
-    Config.Colors.TextInverse = LerpColor(Color(18, 18, 24, 255), Color(255, 255, 255, 255), f)
+    if f ~= ThemeSpring.LastF then
+        ThemeSpring.LastF = f
+        local C = Config.Colors
+        local function D(r1, g1, b1, a1, r2, g2, b2, a2)
+            return LerpColor(Color(r1, g1, b1, a1), Color(r2, g2, b2, a2), f)
+        end
+        C.TextPrimary = D(255, 255, 255, 255, 0, 0, 0, 255)
+        C.TextSecondary = D(235, 235, 245, 153, 60, 60, 67, 153)
+        C.TextMuted = D(235, 235, 245, 77, 60, 60, 67, 77)
+        C.TextQuaternary = D(235, 235, 245, 46, 60, 60, 67, 46)
+        C.TextInverse = D(0, 0, 0, 255, 255, 255, 255, 255)
+        C.Separator = D(84, 84, 88, 153, 60, 60, 67, 74)
+        C.Fill = D(120, 120, 128, 92, 120, 120, 128, 51)
+        C.FillSecondary = D(120, 120, 128, 82, 120, 120, 128, 41)
+        C.FillTertiary = D(118, 118, 128, 61, 118, 118, 128, 31)
+        C.FillQuaternary = D(118, 118, 128, 46, 116, 116, 128, 20)
+        C.Border = D(255, 255, 255, 28, 0, 0, 0, 35)
+        C.SegThumb = D(99, 99, 102, 255, 255, 255, 255, 255)
+        C.ChipActiveBorder = D(255, 255, 255, 255, 0, 0, 0, 255)
+        C.Red = D(255, 69, 58, 255, 255, 59, 48, 255)
+        C.Orange = D(255, 159, 10, 255, 255, 149, 0, 255)
+        C.Yellow = D(255, 214, 10, 255, 255, 204, 0, 255)
+        C.Green = D(48, 209, 88, 255, 52, 199, 89, 255)
+        C.Mint = D(99, 230, 226, 255, 0, 199, 190, 255)
+        C.Teal = D(64, 200, 224, 255, 48, 176, 199, 255)
+        C.Cyan = D(100, 210, 255, 255, 50, 173, 230, 255)
+        C.Blue = D(10, 132, 255, 255, 0, 122, 255, 255)
+        C.Indigo = D(94, 92, 230, 255, 88, 86, 214, 255)
+        C.Purple = D(191, 90, 242, 255, 175, 82, 222, 255)
+        C.Pink = D(255, 55, 95, 255, 255, 45, 85, 255)
+        C.Brown = D(172, 142, 104, 255, 162, 132, 94, 255)
+        C.TrackProgressBg = C.Fill
+        C.ChipInactive = C.FillTertiary
+        C.SegTrack = C.FillTertiary
+        C.Grabber = C.TextMuted
+    end
 
     if inGame and CachedDotaMapHandle == nil and os.clock() - LastMapWarmCheck > 10.0 then
         LastMapWarmCheck = os.clock()
@@ -9047,9 +9273,18 @@ function DynamicIsland.OnFrame()
     PerformanceData.FrameCount = PerformanceData.FrameCount + 1
     if curClock - PerformanceData.LastFPSUpdate >= 0.5 then
         local elapsed = curClock - PerformanceData.LastFPSUpdate
-        PerformanceData.FPS = math.floor(PerformanceData.FrameCount / elapsed)
+        local raw = PerformanceData.FrameCount / elapsed
         PerformanceData.FrameCount = 0
         PerformanceData.LastFPSUpdate = curClock
+        local ema = PerformanceData.FpsEma or raw
+        local k = (math.abs(raw - ema) / math.max(1, ema) > 0.15) and 0.75 or 0.35
+        ema = ema + (raw - ema) * k
+        PerformanceData.FpsEma = ema
+        local shown = PerformanceData.FPS
+        if not PerformanceData.FpsShown or math.abs(ema - shown) >= math.max(3, shown * 0.03) then
+            PerformanceData.FPS = math.floor(ema + 0.5)
+            PerformanceData.FpsShown = true
+        end
     end
 
     local scale = (UI and UI.Main and UI.Main.Scale) and (UI.Main.Scale:Get() / 100.0) or 1.0
@@ -9073,52 +9308,57 @@ function DynamicIsland.OnFrame()
     StateMachine.Spring.Radius.value = newR
     StateMachine.Spring.Radius.vel = newVelR
 
-    local squishProf = MotionEngine.GetProfile("SQUISH")
+    local squishProf = MotionEngine.GetProfile("SNAPPY")
     local newSq, newVelSq = MotionEngine.SolveSpring(StateMachine.Spring.Squish.value, StateMachine.Spring.Squish.vel, 0, smoothDt, squishProf.omega, squishProf.zeta)
     StateMachine.Spring.Squish.value = newSq
     StateMachine.Spring.Squish.vel = newVelSq
 
-    local btnProf = MotionEngine.GetProfile("BUTTON")
+    local btnProf = MotionEngine.GetProfile("SNAPPY")
     for btnName, btnData in pairs(ButtonSprings) do
         local nS, nV = MotionEngine.SolveSpring(btnData.scale, btnData.vel, 1.0, smoothDt, btnProf.omega, btnProf.zeta)
         btnData.scale = nS
         btnData.vel = nV
     end
 
-    local fromAlpha = 0.0
-    local toAlpha = 1.0
-    local toYOffset = 0.0
-    local fromYOffset = 0.0
-
-    if StateMachine.Transition.Active then
-        local elapsed = curClock - StateMachine.Transition.StartTime
-        local animDur = math.max(0.18, StateMachine.Transition.Duration * AnimScale())
-        local t = math.min(1.0, elapsed / animDur)
-        StateMachine.Transition.Progress = t
-
-        local smoothT = t * t * (3.0 - 2.0 * t)
-        fromAlpha = math.max(0.0, 1.0 - (smoothT / 0.65)) * (StateMachine.Transition.FromAlphaScale or 1.0)
-        toAlpha = math.max(0.0, math.min(1.0, (smoothT - 0.20) / 0.80))
-
-        fromYOffset = -(smoothT * 5.0 * scale)
-        toYOffset = ((1.0 - smoothT) * 5.0 * scale)
-
-        if t >= 1.0 then
-            StateMachine.Transition.Active = false
-            StateMachine.Transition.FromAlphaScale = 1.0
+    local tr = StateMachine.Transition
+    if tr.Active then
+        local tW = Config.Dimensions.CompactTargetW or Config.Dimensions.CompactW
+        local tH = Config.Dimensions.CompactTargetH or Config.Dimensions.CompactH
+        local d = math.abs(StateMachine.Spring.W.value - tW) + math.abs(StateMachine.Spring.H.value - tH)
+        if not tr.Dist0 or d > tr.Dist0 then
+            tr.Dist0 = d
+            tr.Shrink = tW * tH < StateMachine.Spring.W.value * StateMachine.Spring.H.value
+        end
+        local elapsed = curClock - tr.StartTime
+        local p
+        if tr.Dist0 > 3 then
+            p = 1 - d / tr.Dist0
+        else
+            p = elapsed / (0.25 * AnimScale())
+        end
+        p = math.max(p, elapsed / (1.6 * AnimScale()))
+        p = math.max(tr.Progress or 0, math.min(1, math.max(0, p)))
+        tr.Progress = p
+        local settled = true
+        if tr.SharedPair then
+            local m = StateMachine.SharedM(tr.SharedPair)
+            settled = (m <= 0 or m >= 1) or elapsed > 2.5 * AnimScale()
+        end
+        if p >= 0.999 and settled then
+            tr.Active = false
+            tr.SharedPair = nil
+            tr.Reveal = 1
             StateMachine.Current = StateMachine.TargetState
-            fromAlpha = 0.0
-            toAlpha = 1.0
-            toYOffset = 0.0
-            fromYOffset = 0.0
-            NotificationQueue.LastDismissed = nil
         end
     else
         StateMachine.Current = StateMachine.TargetState
-        toAlpha = 1.0
-        fromAlpha = 0.0
-        toYOffset = 0.0
-        fromYOffset = 0.0
+    end
+    if not tr.Active and NotificationQueue.LastDismissed and StateMachine.TargetState ~= StateMachine.States.NOTIFICATION then
+        local held = false
+        for _, g in ipairs(StateMachine.Ghosts) do
+            if g.state == StateMachine.States.NOTIFICATION then held = true end
+        end
+        if not held then NotificationQueue.LastDismissed = nil end
     end
 
     if Haptic and Haptic.Update then
@@ -9149,26 +9389,7 @@ function DynamicIsland.OnFrame()
 
     Render.PushClip(p1, p2)
 
-    if StateMachine.Transition.Active then
-        local fState = StateMachine.Transition.FromState
-        local tState = StateMachine.Transition.ToState
-        if (fState == StateMachine.States.COMPACT_MEDIA and tState == StateMachine.States.LARGE_MEDIA) or
-           (fState == StateMachine.States.LARGE_MEDIA and tState == StateMachine.States.COMPACT_MEDIA) then
-            RenderMediaSharedTransition(fState, tState, layout, StateMachine.Transition.Progress)
-        elseif (fState == StateMachine.States.COMPACT_IDLE and tState == StateMachine.States.LARGE_IDLE) or
-               (fState == StateMachine.States.LARGE_IDLE and tState == StateMachine.States.COMPACT_IDLE) then
-            RenderIdleSharedTransition(fState, tState, layout, StateMachine.Transition.Progress)
-        else
-            if fromAlpha > 0.01 then
-                RenderStateLayer(fState, layout, fromAlpha, fromYOffset)
-            end
-            if toAlpha > 0.01 then
-                RenderStateLayer(tState, layout, toAlpha, toYOffset)
-            end
-        end
-    else
-        RenderStateLayer(StateMachine.Current, layout, 1.0, 0.0)
-    end
+    RenderContent(layout, dt)
 
     if VolumeState.Visible and VolumeState.Alpha > 0.01 then
         RenderVolumeOverlay(layout, VolumeState.Alpha)
