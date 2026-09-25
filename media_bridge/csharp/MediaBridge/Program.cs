@@ -146,6 +146,7 @@ internal static class Program
             if (path == "/media")
             {
                 MediaSessionService.SetScriptsDir(request.QueryString["dir"]);
+                SpotifyFlags.SetEnabled(request.QueryString["likes"]);
                 var data = await MediaSessionService.GetMediaInfoAsync() ?? MediaSessionService.LastValidData ?? new MediaInfo
                 {
                     is_playing = false,

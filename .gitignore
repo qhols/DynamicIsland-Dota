@@ -6,6 +6,7 @@
 !/docs/
 /docs/*
 !/docs/autostart.md
+!/docs/spotify-likes.md
 
 /media_bridge/*
 !/media_bridge/README.md

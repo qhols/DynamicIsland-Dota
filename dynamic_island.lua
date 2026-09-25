@@ -3772,7 +3772,8 @@ function Impl.PollMediaBridge()
         end
         Impl.MediaQuery = dir ~= "" and ("?dir=" .. dir:gsub("[^%w%-%._~]", function(c) return string.format("%%%02X", string.byte(c)) end)) or ""
     end
-    local url = string.format("http://127.0.0.1:%d/media", port) .. Impl.MediaQuery
+    local likes = (UI.Media.SpotifyLike and UI.Media.SpotifyLike:Get()) and "1" or "0"
+    local url = string.format("http://127.0.0.1:%d/media", port) .. Impl.MediaQuery .. (Impl.MediaQuery == "" and "?" or "&") .. "likes=" .. likes
 
     pcall(HTTP.Request, "GET", url, {}, function(res)
         if not res or not res.response or res.response == "" then return end

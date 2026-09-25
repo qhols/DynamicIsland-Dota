@@ -8,6 +8,7 @@ iPhone style dynamic island for dota, made for umbrella. one small pill at the t
 - [media bridge](https://github.com/qhols/DynamicIsland-Dota/releases/latest/download/media_bridge.exe)
 - [media bridge source](media_bridge)
 - [start the bridge together with dota](docs/autostart.md)
+- [set up spotify likes](docs/spotify-likes.md)
 - [fonts](https://github.com/qhols/DynamicIsland-Dota/releases/download/v2.0.0/fonts.zip)
 
 ## What's in it
@@ -49,6 +50,8 @@ Step by step guide (english and russian): [docs/autostart.md](docs/autostart.md)
 ## Spotify likes
 
 Needs [spicetify](https://spicetify.app) and spotify started with `--remote-debugging-port=9222`. The bridge adds that flag to your spotify shortcuts and `spotify:` links on its own, so after the first restart it just works. If spotify was started without it, the island tells you.
+
+Step by step guide with spicetify install and troubleshooting (english and russian): [docs/spotify-likes.md](docs/spotify-likes.md)
 
 ## Controls
 

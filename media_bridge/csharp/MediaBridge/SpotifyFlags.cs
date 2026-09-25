@@ -12,6 +12,17 @@ public static class SpotifyFlags
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMilliseconds(400) };
     private static string _state = "none";
     private static DateTime _stateAt = DateTime.MinValue;
+    private static volatile bool _enabled = true;
+
+    public static void SetEnabled(string? value)
+    {
+        if (value == "0") _enabled = false;
+        else if (value == "1")
+        {
+            if (!_enabled) _ = Task.Run(() => { try { Heal(); } catch { } });
+            _enabled = true;
+        }
+    }
 
     public static void StartHealer()
     {
@@ -47,6 +58,7 @@ public static class SpotifyFlags
 
     private static void Heal()
     {
+        if (!_enabled) return;
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         if (!File.Exists(Path.Combine(appData, "Spotify", "Spotify.exe"))) return;
 
