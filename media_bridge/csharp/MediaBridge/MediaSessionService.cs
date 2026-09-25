@@ -50,8 +50,21 @@ internal static class WinRtAsync
 public static class MediaSessionService
 {
     private static readonly string TempDir = Path.Combine(Path.GetTempPath(), "dynamic_island_covers");
-    private const string ScriptsDir = @"C:\Umbrella\scripts";
-    private static readonly string UmbrellaDir = Path.Combine(ScriptsDir, "dynamic_island_covers");
+    private static string ScriptsDir = @"C:\Umbrella\scripts";
+    private static string UmbrellaDir => Path.Combine(ScriptsDir, "dynamic_island_covers");
+
+    public static void SetScriptsDir(string? dir)
+    {
+        if (string.IsNullOrWhiteSpace(dir)) return;
+        try
+        {
+            string full = Path.GetFullPath(dir);
+            if (string.Equals(full, ScriptsDir, StringComparison.OrdinalIgnoreCase) || !Directory.Exists(full)) return;
+            ScriptsDir = full;
+            _coverDirsReady = false;
+        }
+        catch { }
+    }
     private static bool _coverDirsReady;
 
     private static void PrepareCoverDirs()

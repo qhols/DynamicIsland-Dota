@@ -12,7 +12,7 @@ namespace MediaBridge;
 public record CommandResponse(string status, int volume, bool is_liked);
 public record FocusResponse(string status, bool focused);
 public record SoundResponse(string status);
-public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions, string spotify_debug);
+public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions, string spotify_debug, bool fonts_ok);
 
 [JsonSerializable(typeof(MediaInfo))]
 [JsonSerializable(typeof(CommandResponse))]
@@ -21,6 +21,7 @@ public record StatusResponse(string status, string version, string latest_versio
 [JsonSerializable(typeof(StatusResponse))]
 [JsonSerializable(typeof(SystemInfo))]
 [JsonSerializable(typeof(UpdateStatus))]
+[JsonSerializable(typeof(FontStatus))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 
 internal static class AppJson
@@ -144,6 +145,7 @@ internal static class Program
 
             if (path == "/media")
             {
+                MediaSessionService.SetScriptsDir(request.QueryString["dir"]);
                 var data = await MediaSessionService.GetMediaInfoAsync() ?? MediaSessionService.LastValidData ?? new MediaInfo
                 {
                     is_playing = false,
@@ -226,6 +228,15 @@ internal static class Program
                 await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
                 _ = Task.Run(async () => { await Task.Delay(300); Updater.Restart(); });
             }
+            else if (path == "/fonts")
+            {
+                await WriteJsonAsync(response, FontInstaller.Status, AppJson.Context.FontStatus);
+            }
+            else if (path == "/fonts/install")
+            {
+                FontInstaller.Start();
+                await WriteJsonAsync(response, FontInstaller.Status, AppJson.Context.FontStatus);
+            }
             else if (path == "/open")
             {
                 Updater.OpenReleasePage();
@@ -241,7 +252,7 @@ internal static class Program
             }
             else if (path == "/status")
             {
-                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, Updater.TestMode ? "v9.9.9" : UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync()), AppJson.Context.StatusResponse);
+                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, Updater.TestMode ? "v9.9.9" : UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync(), FontInstaller.Installed), AppJson.Context.StatusResponse);
             }
             else
             {

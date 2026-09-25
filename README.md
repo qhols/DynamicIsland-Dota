@@ -23,6 +23,7 @@ iPhone style dynamic island for dota, made for umbrella. one small pill at the t
 - system alerts: headphones or speakers switching, windows sound muted, laptop charging and low battery
 - notification center with your last alerts, even the ones do not disturb kept quiet
 - updates right from the island: a new version shows up in the menu and installs in one click
+- no sf pro yet? the island offers to install the fonts in one click, no admin rights needed
 - english and russian, switches live with the umbrella language
 
 ## Install
@@ -56,7 +57,7 @@ Needs [spicetify](https://spicetify.app) and spotify started with `--remote-debu
 - drag the progress bar to seek
 - scroll over the player for volume
 - right click the island with the umbrella menu open for the widget editor
-- ctrl + drag to move it
+- ctrl + drag to move it, it snaps to the center of the screen
 - double click a side bubble to close it
 
 ## Building the bridge

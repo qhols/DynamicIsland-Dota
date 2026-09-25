@@ -343,7 +343,17 @@ end)()
 
 local MenuTextOffsetY = 0.0
 local MenuIconOffsetY = 0.0
-local Render = setmetatable({}, { __index = Render })
+local ClipDepth = { n = 0 }
+local Render = setmetatable({}, { __index = setmetatable({
+    PushClip = function(...)
+        ClipDepth.n = ClipDepth.n + 1
+        return Render.PushClip(...)
+    end,
+    PopClip = function(...)
+        ClipDepth.n = math.max(0, ClipDepth.n - 1)
+        return Render.PopClip(...)
+    end
+}, { __index = Render }) })
 
 local DynamicIsland = {}
 
@@ -620,6 +630,18 @@ local localization = qLocalization.new({
         di_ui_controls_hint = "Ctrl + LMB: move  \u{2022}  RMB: widgets",
         di_ui_music = "Music",
         di_ui_fight = "Fight",
+        di_br_title = "MediaBridge isn't running",
+        di_br_sub = "No music, sounds or updates without it",
+        di_fonts_title = "SF Pro fonts are missing",
+        di_fonts_sub = "The island looks off without them",
+        di_fonts_install = "Install",
+        di_fonts_installing = "Installing fonts…",
+        di_fonts_done = "Fonts installed",
+        di_fonts_failed = "Couldn't install fonts",
+        di_fonts_failed_sub = "Get them from the link in the README",
+        di_main_debug = "Debug log",
+        di_main_debug_tip = "Writes errors and frame time to debug.log. Turn it on if something breaks and send the log",
+        di_ui_module_off = "Part of the island turned off after an error, see debug.log",
         di_main_demo = "Show all screens",
         di_upd_available = "Update available",
         di_upd_manual = "Download it from GitHub",
@@ -638,14 +660,14 @@ local localization = qLocalization.new({
         di_upd_retry = "Try Again",
         di_wn_title = "What's New",
         di_wn_continue = "Continue",
-        di_wn_1_t = "System alerts",
-        di_wn_1_d = "Headphones, sound and battery in the island",
-        di_wn_2_t = "Notification Center",
-        di_wn_2_d = "Expand the island and scroll down",
-        di_wn_3_t = "Press and hold",
-        di_wn_3_d = "Opens the island like on iPhone, see settings",
-        di_wn_4_t = "One-click updates",
-        di_wn_4_d = "New versions install right from the island",
+        di_wn_1_t = "Fonts in one click",
+        di_wn_1_d = "SF Pro installs right from the island",
+        di_wn_2_t = "Sharp on any screen",
+        di_wn_2_d = "Scales itself for 1440p and 4K",
+        di_wn_3_t = "Smooth dragging",
+        di_wn_3_d = "Snaps to the center like on iPhone",
+        di_wn_4_t = "Rock solid",
+        di_wn_4_d = "One broken piece never takes it down",
         di_nc_title = "Notifications",
         di_nc_clear = "Clear",
         di_nc_empty = "No notifications",
@@ -1061,6 +1083,18 @@ local localization = qLocalization.new({
         di_ui_controls_hint = "Ctrl + ЛКМ: двигать  \u{2022}  ПКМ: виджеты",
         di_ui_music = "Музыка",
         di_ui_fight = "Бой",
+        di_br_title = "MediaBridge не запущен",
+        di_br_sub = "Без него нет музыки, звуков и обнов",
+        di_fonts_title = "Нет шрифтов SF Pro",
+        di_fonts_sub = "Без них островок выглядит криво",
+        di_fonts_install = "Установить",
+        di_fonts_installing = "Установка шрифтов…",
+        di_fonts_done = "Шрифты установлены",
+        di_fonts_failed = "Не удалось поставить шрифты",
+        di_fonts_failed_sub = "Скачай их по ссылке в README",
+        di_main_debug = "Лог отладки",
+        di_main_debug_tip = "Пишет ошибки и время кадра в debug.log. Включи, если что-то сломалось, и скинь лог",
+        di_ui_module_off = "Часть островка отключилась из-за ошибки, смотри debug.log",
         di_main_demo = "Показать все экраны",
         di_upd_available = "Доступно обновление",
         di_upd_manual = "Скачай новую версию на GitHub",
@@ -1079,14 +1113,14 @@ local localization = qLocalization.new({
         di_upd_retry = "Повторить",
         di_wn_title = "Что нового",
         di_wn_continue = "Продолжить",
-        di_wn_1_t = "Системные уведомления",
-        di_wn_1_d = "Наушники, звук и батарея прямо в островке",
-        di_wn_2_t = "Центр уведомлений",
-        di_wn_2_d = "Раскрой островок и прокрути вниз",
-        di_wn_3_t = "Раскрытие удержанием",
-        di_wn_3_d = "Как на айфоне, включается в настройках",
-        di_wn_4_t = "Обновления в один клик",
-        di_wn_4_d = "Новая версия ставится прямо из островка",
+        di_wn_1_t = "Шрифты в один клик",
+        di_wn_1_d = "SF Pro ставятся прямо из островка",
+        di_wn_2_t = "Чёткий на любом экране",
+        di_wn_2_d = "Сам подстраивается под 1440p и 4K",
+        di_wn_3_t = "Плавное перетаскивание",
+        di_wn_3_d = "Липнет к центру, как на айфоне",
+        di_wn_4_t = "Не падает",
+        di_wn_4_d = "Одна поломка больше не валит всё",
         di_nc_title = "Уведомления",
         di_nc_clear = "Очистить",
         di_nc_empty = "Нет уведомлений",
@@ -1450,6 +1484,56 @@ local Config = {
 
 local Impl = {}
 
+local Fuse = { Count = {}, Off = {}, Logged = 0 }
+
+function Fuse.Fail(name, err)
+    local c = (Fuse.Count[name] or 0) + 1
+    Fuse.Count[name] = c
+    if c <= 3 and Fuse.Logged < 60 then
+        Fuse.Logged = Fuse.Logged + 1
+        Log.Write("[Dynamic Island] " .. name .. ": " .. tostring(err))
+    end
+    if c == 30 then
+        Fuse.Off[name] = true
+        Log.Write("[Dynamic Island] " .. name .. " turned off after repeated errors")
+    end
+end
+
+function Fuse.Unwind(depth)
+    local base = getmetatable(Render).__index
+    while ClipDepth.n > depth do base.PopClip() end
+end
+
+function Fuse.Guard(name, fn, ...)
+    if Fuse.Off[name] then return end
+    local depth = ClipDepth.n
+    local ok, err = pcall(fn, ...)
+    if not ok then
+        Fuse.Unwind(depth)
+        Fuse.Fail(name, err)
+    end
+end
+
+local Perf = { Now = os.clock, Frame = { sum = 0, max = 0, n = 0 }, Update = { sum = 0, max = 0, n = 0 }, At = 0 }
+do
+    local ok, chronos = pcall(require, "chronos")
+    if ok and type(chronos) == "table" and chronos.nanotime then Perf.Now = chronos.nanotime end
+end
+
+function Perf.Add(name, dt)
+    local b = (name == "OnFrame" and Perf.Frame) or (name == "OnUpdateEx" and Perf.Update) or nil
+    if not b then return end
+    b.sum, b.n = b.sum + dt, b.n + 1
+    if dt > b.max then b.max = dt end
+    local now = os.clock()
+    if now - Perf.At < 10 then return end
+    Perf.At = now
+    local f, u = Perf.Frame, Perf.Update
+    Log.Write(string.format("[Dynamic Island] frame %.3f ms avg, %.3f max | update %.3f ms avg, %.3f max", f.n > 0 and f.sum / f.n * 1000 or 0, f.max * 1000, u.n > 0 and u.sum / u.n * 1000 or 0, u.max * 1000))
+    Perf.Frame = { sum = 0, max = 0, n = 0 }
+    Perf.Update = { sum = 0, max = 0, n = 0 }
+end
+
 local function TF(role, scale)
     local t = Config.Type[role]
     return Config.Fonts[t[1]], t[2] * (scale or 1)
@@ -1784,11 +1868,11 @@ local Success = { Fired = {} }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts = {}, LayoutCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 
-local SCRIPT_VERSION = "2.2.0"
+local SCRIPT_VERSION = "2.3.0"
 
 local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
 local SystemState = { LastPoll = 0, Seen = false }
-local Sheet = { Kind = nil, Hits = {}, Dismissed = false, SeenVer = nil, ConfigLoaded = false, MenuSince = nil, Forced = nil, Upd = { State = "idle", Progress = 0, Error = "", Version = "", LastPoll = 0, LastOk = 0 } }
+local Sheet = { Kind = nil, Hits = {}, Dismissed = false, SeenVer = nil, ConfigLoaded = false, MenuSince = nil, Forced = nil, Upd = { State = "idle", Progress = 0, Error = "", Version = "", LastPoll = 0, LastOk = 0 }, Fonts = { State = "idle", LastPoll = 0, LastOk = 0 } }
 local NotifCenter = { Items = {}, Hits = {} }
 local Demo = { Active = false, Step = 0, At = 0 }
 local SatelliteSubBounds = {}
@@ -1977,7 +2061,13 @@ local function CleanUnescapedString(s)
     return res
 end
 
-Impl.ConfigSavePaths = { "dynamic_island_config.json", "C:/Umbrella/scripts/dynamic_island_config.json", "scripts/dynamic_island_config.json" }
+Impl.ConfigSavePaths = { "dynamic_island_config.json", "scripts/dynamic_island_config.json" }
+
+function Impl.OpenFile(path, mode)
+    local ok, f = pcall(io.open, path, mode)
+    if ok then return f end
+    return nil
+end
 
 Impl.PALETTE = {
     { r = 255, g = 69,  b = 58,  hex = "FF453A" },
@@ -2076,12 +2166,13 @@ end
 local function SaveAllConfig()
     local paths = Impl.ConfigSavePaths
     for _, path in ipairs(paths) do
-        local f = io.open(path, "w")
+        local f = Impl.OpenFile(path, "w")
         if f then
             local activeStr = table.concat(HUDCustomizer.ActiveChips, ",")
             f:write("active=" .. activeStr .. "\n")
             f:write(string.format("drag_center=%d,%d\n", math.floor(DragState.CustomX or -1), math.floor(DragState.CustomY or -1)))
             if Sheet.SeenVer then f:write("seen_ver=" .. Sheet.SeenVer .. "\n") end
+            if Sheet.BridgeHintSeen then f:write("bridge_hint=1\n") end
 
             for id, cfg in pairs(HUDCustomizer.WidgetConfigs) do
                 f:write(string.format("cfg_%s=%s,%d,%d,%s,%s\n", id, cfg.bold and "1" or "0", cfg.colorMode or 1, cfg.format or 1, cfg.showIcon and "1" or "0", cfg.customHex or ""))
@@ -2188,6 +2279,7 @@ local function SaveAllConfig()
                 end
             end
             f:close()
+            break
         end
     end
 end
@@ -2196,10 +2288,11 @@ function Impl.LoadAllConfig()
     local paths = Impl.ConfigSavePaths
     local f = nil
     for _, path in ipairs(paths) do
-        f = io.open(path, "r")
+        f = Impl.OpenFile(path, "r")
         if f then break end
     end
     if not f then return end
+    Impl.HadConfig = true
 
     for line in f:lines() do
         local activeMatch = string.match(line, "^active=([%w_,]+)")
@@ -2207,6 +2300,8 @@ function Impl.LoadAllConfig()
         local seenMatch = string.match(line, "^seen_ver=([%w%.]+)")
         if seenMatch then
             Sheet.SeenVer = seenMatch
+        elseif line == "bridge_hint=1" then
+            Sheet.BridgeHintSeen = true
         elseif activeMatch then
             local newActive = {}
             for item in string.gmatch(activeMatch, "[%w_]+") do
@@ -2807,6 +2902,8 @@ function Impl.InitMenu()
     M.ExpandMode:Icon("\u{f065}")
     M.ExpandMode:ToolTip("di_main_expand_tip")
     M.Demo = gMore:Button("di_main_demo", function() Demo.Start() end)
+    M.Debug = gMore:Switch("di_main_debug", false, "\u{f188}")
+    M.Debug:ToolTip("di_main_debug_tip")
     T.ToastDuration = gAll:Slider("di_timings_toast_duration", 1, 10, 4, "%d s")
     T.ToastDuration:Icon("\u{f254}")
     T.ToastDuration:ToolTip("di_toast_duration_tip")
@@ -3613,7 +3710,7 @@ function Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
     }
     for _, p in ipairs(paths) do
         if p and p ~= "" then
-            local f = io.open(p, "rb")
+            local f = Impl.OpenFile(p, "rb")
             if f then
                 f:close()
                 local ok, handle = pcall(Render.LoadImage, p)
@@ -3667,7 +3764,15 @@ function Impl.PollMediaBridge()
     MediaData.LastPollTime = clk
 
     local port = 45455
-    local url = string.format("http://127.0.0.1:%d/media", port)
+    if not Impl.MediaQuery then
+        local dir = ""
+        if Engine and Engine.GetCheatDirectory then
+            local ok, cd = pcall(Engine.GetCheatDirectory)
+            if ok and cd and cd ~= "" then dir = cd:gsub("/", "\\"):gsub("\\$", "") .. "\\scripts" end
+        end
+        Impl.MediaQuery = dir ~= "" and ("?dir=" .. dir:gsub("[^%w%-%._~]", function(c) return string.format("%%%02X", string.byte(c)) end)) or ""
+    end
+    local url = string.format("http://127.0.0.1:%d/media", port) .. Impl.MediaQuery
 
     pcall(HTTP.Request, "GET", url, {}, function(res)
         if not res or not res.response or res.response == "" then return end
@@ -3838,6 +3943,8 @@ function Impl.PollBridgeStatus()
         BridgeStatus.Latest = string.match(body, '"latest_version"%s*:%s*"([^"]*)"') or ""
         BridgeStatus.MediaSessions = string.match(body, '"media_sessions"%s*:%s*"([^"]*)"') or ""
         BridgeStatus.SpotifyDebug = string.match(body, '"spotify_debug"%s*:%s*"([^"]*)"') or ""
+        local fontsOk = string.match(body, '"fonts_ok"%s*:%s*(%a+)')
+        if fontsOk then BridgeStatus.FontsOk = fontsOk == "true" end
     end, "bridge_status")
 end
 
@@ -3929,6 +4036,9 @@ function Impl.CollectStatusHints()
         table.insert(out, { text = L("di_ui_spotify_no_port"), dot = Color(255, 159, 10, 255) })
     end
 
+    if next(Fuse.Off) then
+        table.insert(out, { text = L("di_ui_module_off"), dot = Color(255, 69, 58, 255) })
+    end
     local latest = Impl.ParseVersion(BridgeStatus.Latest)
     if latest then
         local mine = Impl.ParseVersion(SCRIPT_VERSION)
@@ -5897,16 +6007,23 @@ function Impl.HandleInteractions()
             DragState.IsDragging = false
             SaveAllConfig()
         else
-            local gridSize = (DragState.GridSize) or 16
             local rawX = cx - DragState.OffsetX
             local rawY = cy - DragState.OffsetY
-            DragState.CustomX = math.floor((rawX + gridSize / 2) / gridSize) * gridSize
-            DragState.CustomY = math.floor((rawY + gridSize / 2) / gridSize) * gridSize
+            local mid = Render.ScreenSize().x / 2
+            local snap = math.abs(rawX - mid) <= 14 * layout.scale
+            if snap and not DragState.SnapX then Haptic.Silent(Haptic.Types.RATCHET_NOTCH) end
+            DragState.SnapX = snap
+            DragState.CustomX = math.floor(snap and mid or rawX)
+            DragState.CustomY = math.floor(rawY)
             if UI.Main.Preset:Get() ~= 1 then
                 UI.Main.Preset:Set(1)
             end
-            local target = inCombat and StateMachine.States.COMPACT_FIGHT or (mediaActive and StateMachine.States.COMPACT_MEDIA or StateMachine.States.COMPACT_IDLE)
-            TriggerStateTransition(target)
+            local st = StateMachine.TargetState
+            local S = StateMachine.States
+            if st == S.LARGE_IDLE or st == S.LARGE_MEDIA or st == S.LARGE_FIGHT or st == S.COURIER_LARGE or st == S.NOTIF_CENTER then
+                local target = inCombat and S.COMPACT_FIGHT or (mediaActive and S.COMPACT_MEDIA or S.COMPACT_IDLE)
+                TriggerStateTransition(target)
+            end
         end
     end
 
@@ -6270,6 +6387,9 @@ function Impl.HandleInteractions()
             if detected == StateMachine.States.MENU_IDLE and Sheet.Pick(nowClk) then
                 detected = StateMachine.States.SHEET
             end
+            if HUDCustomizer.IsOpen and detected ~= StateMachine.States.MENU_MATCH_FOUND then
+                detected = StateMachine.States.COMPACT_IDLE
+            end
             if detected ~= StateMachine.States.MENU_MATCH_FOUND and StateMachine.TargetState ~= StateMachine.States.MENU_MATCH_FOUND then
                 Journey.Reset()
             end
@@ -6445,7 +6565,7 @@ function Impl.HandleInteractions()
         end
     end
 
-    if HUDCustomizer.IsOpen or Demo.Active then return end
+    if HUDCustomizer.IsOpen or Demo.Active or DragState.IsDragging then return end
 
     local holdMode = UI.Main.ExpandMode and UI.Main.ExpandMode:Get() == 1
     local openOnHover = not holdMode
@@ -9374,6 +9494,10 @@ function Sheet.BridgeOnline()
     return BridgeStatus.LastOk > 0 and (os.clock() - BridgeStatus.LastOk) < 10
 end
 
+function Sheet.BridgeMissing(now)
+    return BridgeStatus.FirstPoll > 0 and (now - BridgeStatus.FirstPoll) > 6 and not Sheet.BridgeOnline()
+end
+
 function Sheet.UpdateInfo()
     if not Sheet.BridgeOnline() then return nil end
     local mine = Impl.ParseVersion(SCRIPT_VERSION)
@@ -9399,37 +9523,67 @@ function Sheet.Pick(now)
         return true
     end
     if not Sheet.MenuSince or now - Sheet.MenuSince < 1.5 then return false end
+    local kind
     if Sheet.Upd.State ~= "idle" then
-        Sheet.Kind = "update"
-        return true
+        kind = "update"
+    elseif Sheet.Fonts.State ~= "idle" then
+        kind = "fonts"
+    elseif Sheet.ConfigLoaded and Sheet.SeenVer ~= SCRIPT_VERSION then
+        kind = "whatsnew"
+    elseif not Sheet.BridgeHintSeen and Sheet.BridgeMissing(now) then
+        kind = "bridge"
+    elseif not Sheet.FontsDismissed and Sheet.BridgeOnline() and BridgeStatus.FontsOk == false then
+        kind = "fonts"
+    elseif not Sheet.Dismissed and Sheet.UpdateInfo() then
+        kind = "update"
     end
-    if Sheet.ConfigLoaded and Sheet.SeenVer ~= SCRIPT_VERSION then
-        Sheet.Kind = "whatsnew"
-        return true
-    end
-    if not Sheet.Dismissed and Sheet.UpdateInfo() then
-        Sheet.Kind = "update"
-        return true
-    end
-    return false
+    Sheet.Kind = kind or Sheet.Kind
+    return kind ~= nil
 end
 
 Sheet.News = {
-    { glyph = "headphones", color = "Blue", t = "di_wn_1_t", d = "di_wn_1_d" },
-    { glyph = "bell", color = "Orange", t = "di_wn_2_t", d = "di_wn_2_d" },
+    { glyph = "arrow_down", color = "Blue", t = "di_wn_1_t", d = "di_wn_1_d" },
+    { glyph = "display", color = "Orange", t = "di_wn_2_t", d = "di_wn_2_d" },
     { glyph = "hold", color = "Purple", t = "di_wn_3_t", d = "di_wn_3_d" },
-    { glyph = "arrow_down", color = "Green", t = "di_wn_4_t", d = "di_wn_4_d" }
+    { glyph = "check", color = "Green", t = "di_wn_4_t", d = "di_wn_4_d" }
 }
+
+function Sheet.Desc()
+    local C = Config.Colors
+    local kind = Sheet.Kind
+    if kind == "bridge" then
+        return { icon = "square", color = C.Orange, glyph = "music", title = L("di_br_title"), sub = L("di_br_sub"), buttons = { { L("di_upd_ok"), true, "bridge_seen" } } }
+    end
+    if kind == "fonts" then
+        local st = Sheet.Fonts.State
+        if st == "installing" then
+            return { icon = "spin", title = L("di_fonts_installing"), sub = "SF Pro" }
+        elseif st == "done" then
+            return { icon = "ok", title = L("di_fonts_done"), sub = L("di_upd_ready_sub"), buttons = { { L("di_upd_restart"), true, "reload" } } }
+        elseif st == "error" then
+            return { icon = "fail", title = L("di_fonts_failed"), sub = L("di_fonts_failed_sub"), buttons = { { L("di_upd_later"), false, "fonts_later" }, { L("di_upd_retry"), true, "fonts_install" } } }
+        end
+        return { icon = "text", color = C.Blue, text = "Aa", title = L("di_fonts_title"), sub = L("di_fonts_sub"), buttons = { { L("di_upd_later"), false, "fonts_later" }, { L("di_fonts_install"), true, "fonts_install" } } }
+    end
+    local u = Sheet.Upd
+    local info = Sheet.UpdateInfo() or { title = "Dynamic Island", sub = "", canSelf = true }
+    if u.State == "downloading" or u.State == "installing" or u.State == "restarting" then
+        local p = u.State == "downloading" and math.max(0.02, math.min(1, u.Progress)) or 1
+        return { icon = "ring", progress = p, title = u.State == "downloading" and L("di_upd_downloading") or L("di_upd_installing"), sub = info.title }
+    elseif u.State == "ready" then
+        return { icon = "ok", title = L("di_upd_ready"), sub = L("di_upd_ready_sub"), buttons = { { L("di_upd_restart"), true, "restart" } } }
+    elseif u.State == "error" then
+        return { icon = "fail", title = L("di_upd_failed"), sub = L("di_upd_failed_sub"), buttons = { { L("di_upd_later"), false, "later" }, { L("di_upd_retry"), true, "install" } } }
+    end
+    local buttons = info.canSelf and { { L("di_upd_later"), false, "later" }, { L("di_upd_install"), true, "install" } } or { { L("di_upd_ok"), true, "later" } }
+    return { icon = "square", color = C.Blue, glyph = "arrow_down", title = info.title, sub = info.sub, buttons = buttons }
+end
 
 function Sheet.Size()
     if Sheet.Kind == "whatsnew" then
         return 360, 18 + 30 + #Sheet.News * 46 + 6 + 36 + 18
     end
-    local st = Sheet.Upd.State
-    if st == "downloading" or st == "installing" or st == "restarting" then
-        return 340, 80
-    end
-    return 340, 126
+    return 340, Sheet.Desc().buttons and 126 or 80
 end
 
 function Sheet.UrlEncode(s)
@@ -9452,16 +9606,33 @@ function Sheet.StartUpdate(now)
     pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/start?" .. q, {}, function() end, "di_update_start")
 end
 
+function Sheet.PollFonts(now)
+    local f = Sheet.Fonts
+    if f.State ~= "installing" then return end
+    if now - f.LastOk > 60 then
+        f.State = "error"
+        return
+    end
+    if now - f.LastPoll < 0.4 then return end
+    f.LastPoll = now
+    pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/fonts", {}, function(res)
+        if not res or not res.response or res.response == "" then return end
+        local st = string.match(res.response, '"state"%s*:%s*"([^"]*)"')
+        if not st then return end
+        f.LastOk = os.clock()
+        if st == "done" or st == "error" then f.State = st end
+    end, "di_fonts_status")
+end
+
 function Sheet.PollUpdate()
     local u = Sheet.Upd
     local now = os.clock()
-    if u.State == "restarting" then
-        if u.ReloadAt and now >= u.ReloadAt then
-            u.ReloadAt = nil
-            if Engine and Engine.ReloadScriptSystem then pcall(Engine.ReloadScriptSystem) end
-        end
+    if Sheet.ReloadAt and now >= Sheet.ReloadAt then
+        Sheet.ReloadAt = nil
+        if Engine and Engine.ReloadScriptSystem then pcall(Engine.ReloadScriptSystem) end
         return
     end
+    Sheet.PollFonts(now)
     if u.State ~= "downloading" and u.State ~= "installing" then return end
     if now - u.LastOk > 20 then
         u.State = "error"
@@ -9492,8 +9663,20 @@ function Sheet.Action(action, now)
         Sheet.StartUpdate(now)
     elseif action == "restart" then
         Sheet.Upd.State = "restarting"
-        Sheet.Upd.ReloadAt = now + 1.2
+        Sheet.ReloadAt = now + 1.2
         pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/update/restart", {}, function() end, "di_update_restart")
+    elseif action == "reload" then
+        Sheet.ReloadAt = now + 0.2
+    elseif action == "fonts_install" then
+        Sheet.Fonts.State = "installing"
+        Sheet.Fonts.LastOk = now
+        pcall(HTTP.Request, "GET", "http://127.0.0.1:45455/fonts/install", {}, function() end, "di_fonts_install")
+    elseif action == "fonts_later" then
+        Sheet.FontsDismissed = true
+        Sheet.Fonts.State = "idle"
+    elseif action == "bridge_seen" then
+        Sheet.BridgeHintSeen = true
+        SaveAllConfig()
     elseif action == "seen" then
         Sheet.SeenVer = SCRIPT_VERSION
         Sheet.Forced = nil
@@ -9533,47 +9716,46 @@ function Sheet.Render(layout, alphaMul, yOffset)
     if Sheet.Kind == "whatsnew" then
         Sheet.RenderNews(layout, alphaMul, yOffset)
     else
-        Sheet.RenderUpdate(layout, alphaMul, yOffset)
+        Sheet.RenderCard(layout, alphaMul, yOffset, Sheet.Desc())
     end
 end
 
-function Sheet.RenderUpdate(layout, alphaMul, yOffset)
+function Sheet.RenderCard(layout, alphaMul, yOffset, d)
     local a = alphaMul or 1
     local s = layout.scale
     local C = Config.Colors
-    local u = Sheet.Upd
-    local info = Sheet.UpdateInfo() or { title = "Dynamic Island", sub = "", canSelf = true }
     local pad = math.floor(16 * s)
     local isz = math.floor(44 * s)
     local ix = layout.x + pad
     local iy = math.floor(layout.y + pad + (yOffset or 0))
     local icx, icy = ix + isz / 2, iy + isz / 2
-    local title, sub = info.title, info.sub
-    local busy = u.State == "downloading" or u.State == "installing" or u.State == "restarting"
+    local white = FadeColor(Color(255, 255, 255, 255), a)
 
-    if busy then
+    if d.icon == "ring" or d.icon == "spin" then
         local r = math.floor(18 * s)
         Render.Circle(Vec2(icx, icy), r, FadeColor(C.Fill, a), 3 * s, 0, 1.0, false, 48)
-        local p = u.State == "downloading" and math.max(0.02, math.min(1, u.Progress)) or 1
-        Render.Circle(Vec2(icx, icy), r, FadeColor(C.Blue, a), 3 * s, 270, p, true, 48)
-        local fP, sP = TF("Caption2", s)
-        local pct = string.format("%d", math.floor(p * 100 + 0.5))
-        local pw = Odometer.Width(fP, sP, pct)
-        local ph = Render.TextSize(fP, sP, pct).y
-        Odometer.Draw(fP, sP, pct, Vec2(math.floor(icx - pw / 2), math.floor(icy - ph / 2)), FadeColor(C.TextPrimary, a))
-        sub = title
-        title = u.State == "downloading" and L("di_upd_downloading") or L("di_upd_installing")
-    elseif u.State == "ready" then
-        Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(C.Green, a), 0, 1.0, 32)
-        Glyph("check", icx, icy, math.floor(isz * 0.5), FadeColor(Color(255, 255, 255, 255), a))
-        title, sub = L("di_upd_ready"), L("di_upd_ready_sub")
-    elseif u.State == "error" then
-        Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(C.Red, a), 0, 1.0, 32)
-        Glyph("close", icx, icy, math.floor(isz * 0.46), FadeColor(Color(255, 255, 255, 255), a))
-        title, sub = L("di_upd_failed"), L("di_upd_failed_sub")
+        if d.icon == "spin" then
+            Render.Circle(Vec2(icx, icy), r, FadeColor(C.Blue, a), 3 * s, (os.clock() * 360) % 360, 0.28, true, 48)
+        else
+            Render.Circle(Vec2(icx, icy), r, FadeColor(C.Blue, a), 3 * s, 270, d.progress, true, 48)
+            local fP, sP = TF("Caption2", s)
+            local pct = string.format("%d", math.floor(d.progress * 100 + 0.5))
+            local pw = Odometer.Width(fP, sP, pct)
+            local ph = Render.TextSize(fP, sP, pct).y
+            Odometer.Draw(fP, sP, pct, Vec2(math.floor(icx - pw / 2), math.floor(icy - ph / 2)), FadeColor(C.TextPrimary, a))
+        end
+    elseif d.icon == "ok" or d.icon == "fail" then
+        Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(d.icon == "ok" and C.Green or C.Red, a), 0, 1.0, 32)
+        Glyph(d.icon == "ok" and "check" or "close", icx, icy, math.floor(isz * (d.icon == "ok" and 0.5 or 0.46)), white)
     else
-        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(C.Blue, a), math.floor(11 * s))
-        Glyph("arrow_down", icx, icy, math.floor(isz * 0.52), FadeColor(Color(255, 255, 255, 255), a))
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(d.color or C.Blue, a), math.floor(11 * s))
+        if d.text then
+            local fA, sA = TF("Title", s * 1.15)
+            local ts = Render.TextSize(fA, sA, d.text)
+            Render.Text(fA, sA, d.text, Vec2(math.floor(icx - ts.x / 2), math.floor(icy - ts.y / 2)), white)
+        else
+            Glyph(d.glyph, icx, icy, math.floor(isz * 0.52), white)
+        end
     end
 
     local tx = ix + isz + math.floor(12 * s)
@@ -9583,19 +9765,11 @@ function Sheet.RenderUpdate(layout, alphaMul, yOffset)
     local th = Render.TextSize(fT, sT, "Ag").y
     local sh = Render.TextSize(fS, sS, "Ag").y
     local ty = math.floor(icy - (th + sh + 2 * s) / 2)
-    Render.Text(fT, sT, TruncateToWidth(fT, sT, title, maxW), Vec2(tx, ty), FadeColor(C.TextPrimary, a))
-    Render.Text(fS, sS, TruncateToWidth(fS, sS, sub, maxW), Vec2(tx, math.floor(ty + th + 2 * s)), FadeColor(C.TextSecondary, a))
+    Render.Text(fT, sT, TruncateToWidth(fT, sT, d.title, maxW), Vec2(tx, ty), FadeColor(C.TextPrimary, a))
+    Render.Text(fS, sS, TruncateToWidth(fS, sS, d.sub or "", maxW), Vec2(tx, math.floor(ty + th + 2 * s)), FadeColor(C.TextSecondary, a))
 
-    if busy then return end
-    local by = iy + isz + math.floor(16 * s)
-    if u.State == "ready" then
-        Sheet.Buttons(layout, by, a, s, { L("di_upd_restart"), true, "restart" })
-    elseif u.State == "error" then
-        Sheet.Buttons(layout, by, a, s, { L("di_upd_later"), false, "later" }, { L("di_upd_retry"), true, "install" })
-    elseif info.canSelf then
-        Sheet.Buttons(layout, by, a, s, { L("di_upd_later"), false, "later" }, { L("di_upd_install"), true, "install" })
-    else
-        Sheet.Buttons(layout, by, a, s, { L("di_upd_ok"), true, "later" })
+    if d.buttons then
+        Sheet.Buttons(layout, iy + isz + math.floor(16 * s), a, s, d.buttons[1], d.buttons[2])
     end
 end
 
@@ -9835,7 +10009,7 @@ function Demo.Stop()
     Demo.Saved = nil
 end
 
-local function RenderStateLayer(state, layout, alphaMul, yOffset)
+local function RenderStateLayerRaw(state, layout, alphaMul, yOffset)
     if alphaMul <= 0.01 then return end
     if state == StateMachine.States.COMPACT_IDLE then
         RenderModularIdlePill(layout, alphaMul, yOffset)
@@ -9892,6 +10066,10 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
     elseif state == StateMachine.States.NOTIF_CENTER then
         NotifCenter.Render(layout, alphaMul, yOffset)
     end
+end
+
+local function RenderStateLayer(state, layout, alphaMul, yOffset)
+    Fuse.Guard("state_" .. tostring(state), RenderStateLayerRaw, state, layout, alphaMul, yOffset)
 end
 
 local ContentFx = { k = 1, alpha = 1, cx = 0, cy = 0, top = 0, h = 1, stagger = 0, reveal = nil, Installed = false }
@@ -10024,7 +10202,7 @@ function Impl.RenderContent(layout, dt)
         local ok, err = pcall(function()
             ContentFx.Begin(layout, g.a ^ 1.5, 1 - 0.06 * (1 - g.a))
             if g.shared then
-                Impl.RenderShared(g.shared, layout, g.m)
+                Fuse.Guard("shared", Impl.RenderShared, g.shared, layout, g.m)
             else
                 RenderStateLayer(g.state, g.w and StateMachine.FrameFor(layout, g.w, g.h, g.r) or layout, 1.0, 0)
             end
@@ -10034,7 +10212,7 @@ function Impl.RenderContent(layout, dt)
     end
     if tr.Active and tr.SharedPair then
         tr.Reveal = 1
-        Impl.RenderShared(tr.SharedPair, layout, StateMachine.SharedM(tr.SharedPair))
+        Fuse.Guard("shared", Impl.RenderShared, tr.SharedPair, layout, StateMachine.SharedM(tr.SharedPair))
     elseif tr.Active then
         local r = tr.Shrink and math.min(1, tr.Progress / 0.5) or math.max(0, math.min(1, (tr.Progress - 0.05) / 0.70))
         r = math.max(r, tr.Reveal or 0)
@@ -10055,28 +10233,18 @@ function Impl.RenderContent(layout, dt)
 end
 
 function Impl.RenderDragGuides(layout)
-    if not DragState.IsDragging then return end
-
+    local target = (DragState.IsDragging and DragState.SnapX) and 1 or 0
+    local a = DragState.GuideA or 0
+    a = a + (target - a) * 0.22
+    if a < 0.01 then a = 0 end
+    DragState.GuideA = a
+    if a <= 0 then return end
     local scr = Render.ScreenSize()
-    Render.FilledRect(Vec2(0, 0), scr, Config.Colors.GridOverlay)
-
-    local midScreenX = math.floor(scr.x / 2)
-    Render.Line(Vec2(midScreenX, 0), Vec2(midScreenX, scr.y), Config.Colors.GridAxis, 1.0)
-
-    local islandCenterX = math.floor(layout.x + layout.w / 2)
-    local islandCenterY = math.floor(layout.y + layout.h / 2)
-    Render.Line(Vec2(islandCenterX, 0), Vec2(islandCenterX, scr.y), Config.Colors.GridHighlight, 1.0)
-    Render.Line(Vec2(0, islandCenterY), Vec2(scr.x, islandCenterY), Config.Colors.GridHighlight, 1.0)
-
-    local guideCol = Config.Colors.GridHighlight
-    Render.Rect(Vec2(layout.x - 3, layout.y - 3), Vec2(layout.x + layout.w + 3, layout.y + layout.h + 3), guideCol, layout.r + 3, Enum.DrawFlags.None, 1.5)
-
-    local fontBold, fs = TF("FootnoteEm", 1)
-    local hintText = string.format("X: %d   Y: %d", math.floor(layout.x), math.floor(layout.y))
-    local hw = Odometer.Width(fontBold, fs, hintText)
-    local hx = math.floor(layout.x + (layout.w - hw) / 2)
-    local hy = math.floor(layout.y + layout.h + 8)
-    Odometer.Draw(fontBold, fs, hintText, Vec2(hx, hy), Config.Colors.TextPrimary)
+    local gx = math.floor(scr.x / 2)
+    local gap = math.floor(8 * layout.scale)
+    local col = Color(255, 255, 255, math.floor(200 * a))
+    Render.Line(Vec2(gx, 0), Vec2(gx, layout.y - gap), col, 1.0)
+    Render.Line(Vec2(gx, layout.y + layout.h + gap), Vec2(gx, scr.y), col, 1.0)
 end
 
 local LastMenuOpenState = false
@@ -10319,11 +10487,11 @@ function DynamicIsland.OnFrame()
 
     Render.PopClip()
 
-    Sheet.RenderBadge(layout)
-    Impl.RenderSecondarySatelliteBubble(layout)
-    Focus.RenderBubble(layout)
-    Impl.RenderMenuClosedHint(layout)
-    Impl.RenderHUDDrawer(layout, dt)
+    Fuse.Guard("badge", Sheet.RenderBadge, layout)
+    Fuse.Guard("satellite", Impl.RenderSecondarySatelliteBubble, layout)
+    Fuse.Guard("focus_bubble", Focus.RenderBubble, layout)
+    Fuse.Guard("hints", Impl.RenderMenuClosedHint, layout)
+    Fuse.Guard("drawer", Impl.RenderHUDDrawer, layout, dt)
 end
 
 function DynamicIsland.OnUpdateEx()
@@ -10335,14 +10503,14 @@ function DynamicIsland.OnUpdateEx()
             HeroData.HeroName = NPC.GetUnitName(HeroData.Local)
         end
         if HeroData.Local and not Demo.Active then
-            Impl.ProcessFightDetector()
+            Fuse.Guard("fight", Impl.ProcessFightDetector)
         end
-        Impl.ProcessGameEvents()
-        Reminders.Tick()
-        Rampage.Tick()
+        Fuse.Guard("events", Impl.ProcessGameEvents)
+        Fuse.Guard("reminders", Reminders.Tick)
+        Fuse.Guard("rampage", Rampage.Tick)
         if not Demo.Active then
-            Impl.ProcessPauseTracker()
-            Impl.ProcessCourierTracker()
+            Fuse.Guard("pause", Impl.ProcessPauseTracker)
+            Fuse.Guard("courier", Impl.ProcessCourierTracker)
         end
     else
         if WasInGame then
@@ -10396,11 +10564,11 @@ function DynamicIsland.OnUpdateEx()
         CourierTracker.BasePos = nil
         CourierTracker.CachedCourier = nil
     end
-    Impl.HandleInteractions()
-    Impl.PollMediaBridge()
-    Impl.PollBridgeStatus()
-    Impl.PollSystem()
-    Sheet.PollUpdate()
+    Fuse.Guard("input", Impl.HandleInteractions)
+    Fuse.Guard("media", Impl.PollMediaBridge)
+    Fuse.Guard("bridge", Impl.PollBridgeStatus)
+    Fuse.Guard("system", Impl.PollSystem)
+    Fuse.Guard("updater", Sheet.PollUpdate)
 end
 
 function DynamicIsland.OnScriptsLoaded()
@@ -10408,6 +10576,11 @@ function DynamicIsland.OnScriptsLoaded()
     Impl.InitMenu()
     Impl.LoadAllConfig()
     Sheet.ConfigLoaded = true
+    if not Impl.HadConfig and UI.Main.Scale:Get() == 100 then
+        local scr = Render.ScreenSize()
+        local auto = math.floor(math.max(80, math.min(180, scr.y / 1080 * 100)) / 5 + 0.5) * 5
+        if auto ~= 100 then UI.Main.Scale:Set(auto) end
+    end
 
     local inGame = Engine.IsInGame and Engine.IsInGame()
     if inGame then
@@ -10432,6 +10605,29 @@ function DynamicIsland.OnScriptsLoaded()
     StateMachine.Spring.Squish.value = 0
 
     Impl.PollMediaBridge()
+end
+
+do
+    local function Finish(name, ok, ...)
+        if ok then return ... end
+        ContentFx.End()
+        Fuse.Unwind(0)
+        Fuse.Fail(name, (...))
+    end
+    local function Timed(name, t0, ok, ...)
+        Perf.Add(name, Perf.Now() - t0)
+        return Finish(name, ok, ...)
+    end
+    for name, fn in pairs(DynamicIsland) do
+        if type(fn) == "function" and name:sub(1, 2) == "On" then
+            DynamicIsland[name] = function(...)
+                if UI and UI.Main.Debug and UI.Main.Debug:Get() then
+                    return Timed(name, Perf.Now(), pcall(fn, ...))
+                end
+                return Finish(name, pcall(fn, ...))
+            end
+        end
+    end
 end
 
 DynamicIsland.HapticPlaySound = HapticPlaySound

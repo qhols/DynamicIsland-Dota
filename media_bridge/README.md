@@ -30,6 +30,7 @@ Just start `media_bridge.exe`. Only one copy runs at a time, starting it again r
 | `/update/status` | download progress and state |
 | `/update/restart` | swap in the new exe and restart |
 | `/open` | open the latest release page |
+| `/fonts`, `/fonts/install` | check and install the sf pro fonts for the current user |
 
 ## Build
 
