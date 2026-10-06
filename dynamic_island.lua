@@ -387,6 +387,8 @@ local localization = qLocalization.new({
         di_playlist_failed = "Could not open playlists in Yandex Music",
         di_playlist_add_failed = "Could not add the track",
         di_playlist_tip = "Add the current Yandex Music track\nto one of your playlists",
+        di_media_center_short_title = "Center Short Track Titles",
+        di_media_center_short_title_tip = "Center a short track title\nin the small island",
         di_media_show_artist = "Show Artist",
         di_media_show_artist_tip = "Show the artist with the title\nin the small island",
         di_ui_restart_yandex = "Quit Yandex Music from the tray and open it from the taskbar or Start",
@@ -1035,6 +1037,8 @@ local localization = qLocalization.new({
         di_playlist_failed = "Не удалось открыть плейлисты Яндекс Музыки",
         di_playlist_add_failed = "Не удалось добавить трек",
         di_playlist_tip = "Добавить текущий трек Яндекс Музыки\nв один из плейлистов",
+        di_media_center_short_title = "Короткий трек по центру",
+        di_media_center_short_title_tip = "Выравнивать короткое название трека\nпо центру маленького островка",
         di_media_show_artist = "Показывать исполнителя",
         di_media_show_artist_tip = "Показывает исполнителя с названием трека\nв маленьком островке",
         di_ui_restart_yandex = "Закрой Яндекс Музыку через трей и открой с панели задач или из Пуска",
@@ -3808,6 +3812,8 @@ function Impl.InitMenu()
     P.Media:ToolTip("di_media_priority_tip")
     Md.CompactTitle = gPlayer:Switch("di_media_compact_title", true, "\u{f031}")
     Md.CompactTitle:ToolTip("di_media_compact_title_tip")
+    Md.CenterShortTitle = gPlayer:Switch("di_media_center_short_title", false, "\u{f036}")
+    Md.CenterShortTitle:ToolTip("di_media_center_short_title_tip")
     Md.ShowArtist = gPlayer:Switch("di_media_show_artist", true, "\u{f007}")
     Md.ShowArtist:ToolTip("di_media_show_artist_tip")
     Md.MarqueeSpeed = gPlayer:Slider("di_media_marquee_speed", 20, 100, 45, "%d px/s")
@@ -3815,7 +3821,7 @@ function Impl.InitMenu()
     Md.MarqueeSpeed:Icon("\u{f337}")
     Md.SpotifyLike = gMedia:Switch("di_media_spotify_like", true, "\u{f004}")
     Md.SpotifyLike:ToolTip("di_media_spotify_like_tip")
-    Md.Playlist = gMedia:Switch("di_playlist_title", true, "\u{f067}")
+    Md.Playlist = gMedia:Switch("di_playlist_title", false, "\u{f067}")
     Md.Playlist:ToolTip("di_playlist_tip")
     local gSpotifyLike = Md.SpotifyLike:Gear("di_gear_alert")
     P.SpotifyLike = prio(gSpotifyLike, "di_alert_priority", 1)
@@ -3918,6 +3924,7 @@ function Impl.InitMenu()
         Md.SpotifyLike:Disabled(not mOn)
         Md.Playlist:Disabled(not mOn)
         Md.ShowArtist:Disabled(not mOn)
+        Md.CenterShortTitle:Disabled(not mOn)
         Md.VolumeWheel:Disabled(not mOn)
         Md.Lyrics:Disabled(not mOn)
         Md.SecondaryBubble:Disabled(not mOn)
@@ -4526,7 +4533,7 @@ function Impl.OpenPlaylistPicker(retry)
             if reason == "no_list" and PlaylistPicker.Retries < 2 then
                 PlaylistPicker.Retries = PlaylistPicker.Retries + 1
                 PlaylistPicker.Loading = true
-                PlaylistPicker.RetryAt = os.clock() + 0.6
+                PlaylistPicker.RetryAt = os.clock() + 1.2
                 if Dbg.On then Dbg.Log("playlist", "retry no_list " .. tostring(PlaylistPicker.Retries)) end
             else
                 PlaylistPicker.Error = reason .. ": " .. L("di_playlist_failed")
@@ -10533,6 +10540,14 @@ function Impl.RenderMenuClosedHint(layout)
     end
 end
 
+function Impl.CompactTitleX(layout, textStartX, textAvailW, font, size, title)
+    if not UI.Media.CenterShortTitle:Get() then return textStartX end
+    local titleW = Render.TextSize(font, size, title).x
+    if titleW >= textAvailW then return textStartX end
+    local centerX = layout.x + (layout.w - titleW) / 2
+    return math.floor(math.max(textStartX, math.min(centerX, textStartX + textAvailW - titleW)))
+end
+
 local function RenderCompactMedia(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
@@ -10573,12 +10588,12 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
 
         local showTitle = CompactMediaTitle()
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
-            local oldStr = TrackTransition.OldTitle .. (TrackTransition.OldArtist ~= "" and (" • " .. TrackTransition.OldArtist) or "")
-            if showTitle then RenderMarqueeText(fontBold, headSize, oldStr, textStartX + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale) end
+            local oldStr = TrackTransition.OldTitle .. (UI.Media.ShowArtist:Get() and TrackTransition.OldArtist ~= "" and (" • " .. TrackTransition.OldArtist) or "")
+            if showTitle then RenderMarqueeText(fontBold, headSize, oldStr, Impl.CompactTitleX(layout, textStartX, textAvailW, fontBold, headSize, oldStr) + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale) end
             DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
         end
         if inAlpha > 0.02 then
-            if showTitle then RenderMarqueeText(fontBold, headSize, displayStr, textStartX + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale) end
+            if showTitle then RenderMarqueeText(fontBold, headSize, displayStr, Impl.CompactTitleX(layout, textStartX, textAvailW, fontBold, headSize, displayStr) + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale) end
             DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, inAlpha, 0.85 + t * 0.15)
         end
         if t >= 1.0 then
@@ -10586,7 +10601,7 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
         end
     else
         if CompactMediaTitle() and not (Impl.LyCompactOn() and Impl.LyCompactDraw(textStartX, textY, textAvailW, fontBold, headSize, aMul, scale, displayStr)) then
-            RenderMarqueeText(fontBold, headSize, displayStr, textStartX, textY, textAvailW, textCol, scale)
+            RenderMarqueeText(fontBold, headSize, displayStr, Impl.CompactTitleX(layout, textStartX, textAvailW, fontBold, headSize, displayStr), textY, textAvailW, textCol, scale)
         end
         DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, aMul)
     end
@@ -11758,7 +11773,7 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
     if compactAlpha > 0.01 and CompactMediaTitle() then
         local compStr = (UI.Media.ShowArtist:Get() and artistStr ~= "" and titleStr ~= "") and (titleStr .. " \u{2022} " .. artistStr) or titleStr
         if not (Impl.LyCompactOn() and Impl.LyCompactDraw(cTextStartX, cTextY, cTextAvailW, fontHead, headSz, compactAlpha, scale, compStr)) then
-            RenderMarqueeText(fontHead, headSz, compStr, cTextStartX, cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale)
+            RenderMarqueeText(fontHead, headSz, compStr, Impl.CompactTitleX(cL, cTextStartX, cTextAvailW, fontHead, headSz, compStr), cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale)
         end
     end
 
