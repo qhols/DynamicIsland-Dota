@@ -2323,7 +2323,7 @@ local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 local PlaylistPicker = { Open = false, Loading = false, Busy = false, Items = {}, Selected = {}, Offset = 0, Hits = {}, Error = nil, Track = "", Retries = 0, RetryAt = 0 }
 
-local SCRIPT_VERSION = "2.5.2"
+local SCRIPT_VERSION = "2.5.3"
 
 local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
 local SystemState = { LastPoll = 0, Seen = false }
