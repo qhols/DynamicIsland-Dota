@@ -600,8 +600,8 @@ public static class MediaSessionService
                 cover_color = _coverColor,
                 waveform = Array.ConvertAll(bars, x => (double)x),
                 volume = volInt,
-                shuffle = isShuffle,
-                repeat = repeatMode,
+                shuffle = YandexLike.IsApp(appId) ? YandexLike.FreshShuffle ?? isShuffle : isShuffle,
+                repeat = YandexLike.IsApp(appId) ? YandexLike.FreshRepeat ?? repeatMode : repeatMode,
                 is_liked = CurrentIsLiked
             };
 
@@ -681,12 +681,6 @@ public static class MediaSessionService
                 return AppAudioControl.StepAppVolume(delta, targetFam);
             }
 
-            if (cmd == "like")
-            {
-                await LikeState.ToggleAsync(LikeState.PlayerOf(targetFam, session?.SourceAppUserModelId ?? ""));
-                return null;
-            }
-
             if (session != null)
             {
                 switch (cmd)
@@ -737,5 +731,18 @@ public static class MediaSessionService
         }
         catch { }
         return null;
+    }
+
+    public static async Task<bool> ToggleLikeAsync()
+    {
+        try
+        {
+            var mgr = await GetManagerAsync();
+            if (mgr == null) return false;
+            var session = FindBestSession(mgr);
+            if (session == null) return false;
+            return await LikeState.ToggleAsync(LikeState.PlayerOf(GetMediaSessionFamily(session), session.SourceAppUserModelId ?? ""));
+        }
+        catch { return false; }
     }
 }

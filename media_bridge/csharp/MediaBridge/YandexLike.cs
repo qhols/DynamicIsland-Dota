@@ -18,8 +18,29 @@ public static class YandexLike
     private static DateTime _stateAt = DateTime.MinValue;
     private static float _volume = -1f;
     private static DateTime _volumeAt = DateTime.MinValue;
+    private static bool? _shuffle;
+    private static int? _repeat;
+    private static DateTime _modesAt = DateTime.MinValue;
 
     public static float? FreshVolume => _volume >= 0f && (DateTime.UtcNow - _volumeAt).TotalSeconds < 12 ? _volume : null;
+    public static bool? FreshShuffle => (DateTime.UtcNow - _modesAt).TotalSeconds < 10 ? _shuffle : null;
+    public static int? FreshRepeat => (DateTime.UtcNow - _modesAt).TotalSeconds < 10 ? _repeat : null;
+
+    public static async Task<bool> ToggleModeAsync(string mode)
+    {
+        if (mode is not ("shuffle" or "repeat")) return false;
+        string js = "(() => { const bar=document.querySelector('[data-test-id=\"PLAYERBAR_DESKTOP\"]') || document.querySelector('[data-test-id=\"VIBE_PLAYERBAR\"]'); if(!bar) return 'NO_PLAYER';" +
+            " const buttons=[...bar.querySelectorAll('button')]; const mode='" + mode + "';" +
+            " const b=buttons.find(e => { const key=[e.getAttribute('data-test-id'),e.getAttribute('aria-label'),e.getAttribute('title'),e.innerText].filter(Boolean).join(' ').toLowerCase();" +
+            " return mode==='shuffle' ? /(shuffle|перемеш|случайн)/i.test(key) : /(repeat|повтор|зацикл)/i.test(key); });" +
+            " if(!b || b.disabled) return 'NO_BUTTON'; b.click(); return 'OK'; })()";
+        string? result = await DevTools.EvaluateAsync(Port, PageUrl, js);
+        if (result != "OK") return false;
+        if (mode == "shuffle") _shuffle = !(_shuffle ?? false);
+        else _repeat = ((_repeat ?? 0) + 1) % 3;
+        _modesAt = DateTime.UtcNow;
+        return true;
+    }
 
     private static void RememberVolume(string? text)
     {
@@ -59,7 +80,7 @@ public static class YandexLike
         if ((DateTime.UtcNow - _stateAt).TotalSeconds < 5) return _state;
         _stateAt = DateTime.UtcNow;
         if (!IsApp(MediaSessionService.CurrentAppId)) return _state = "none";
-        return _state = await DevTools.IsOpenAsync(Port) ? "ok" : "closed";
+        return _state = await DevTools.HasPageAsync(Port, PageUrl) ? "ok" : "closed";
     }
 
     public static async Task<bool?> QueryAsync()

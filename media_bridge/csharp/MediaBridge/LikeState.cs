@@ -51,15 +51,17 @@ public static class LikeState
         });
     }
 
-    public static async Task ToggleAsync(string player)
+    public static async Task<bool> ToggleAsync(string player)
     {
+        if (player == "" || (player == "spotify" && !SpotifyFlags.Enabled)) return false;
+        string track = _track;
         bool before = MediaSessionService.CurrentIsLiked;
-        MediaSessionService.CurrentIsLiked = !before;
         _holdUntil = DateTime.UtcNow.AddSeconds(3);
         bool? res = player == "yandex" ? await YandexLike.ToggleAsync() : await SpotifyLike.ToggleLikeAsync();
-        if (res != null) MediaSessionService.CurrentIsLiked = res.Value;
-        else if (player == "yandex") MediaSessionService.CurrentIsLiked = before;
+        if (player != _player || track != _track) return res != null;
+        MediaSessionService.CurrentIsLiked = res ?? before;
         _holdUntil = DateTime.UtcNow.AddSeconds(1.5);
         _nextQuery = DateTime.MinValue;
+        return res != null;
     }
 }

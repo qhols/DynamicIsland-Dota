@@ -11,6 +11,7 @@ namespace MediaBridge;
 
 public record CommandResponse(string status, int volume, bool is_liked, string target);
 public record AudioDiag(string status, string app, string family, string sessions);
+public record PlaylistResponse(string status, string[] items, bool[] selected);
 public record FocusResponse(string status, bool focused);
 public record SoundResponse(string status);
 public record LevelResponse(double[] l, string src, int n, double p);
@@ -26,6 +27,7 @@ public record StatusResponse(string status, string version, string latest_versio
 [JsonSerializable(typeof(FontStatus))]
 [JsonSerializable(typeof(LevelResponse))]
 [JsonSerializable(typeof(AudioDiag))]
+[JsonSerializable(typeof(PlaylistResponse))]
 internal partial class AppJsonContext : JsonSerializerContext { }
 
 internal static class AppJson
@@ -169,6 +171,21 @@ internal static class Program
                 }
                 await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
             }
+            else if (path == "/playlist/open")
+            {
+                var (status, items, selected) = await YandexPlaylist.OpenAsync();
+                await WriteJsonAsync(response, new PlaylistResponse(status, items.Select(Uri.EscapeDataString).ToArray(), selected), AppJson.Context.PlaylistResponse);
+            }
+            else if (path == "/playlist/add")
+            {
+                bool ok = int.TryParse(request.QueryString["index"], out int index) && await YandexPlaylist.AddAsync(index);
+                await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
+            }
+            else if (path == "/playlist/remove")
+            {
+                bool ok = int.TryParse(request.QueryString["index"], out int index) && await YandexPlaylist.RemoveAsync(index);
+                await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
+            }
             else if (path is "/media/playpause" or "/media/next" or "/media/prev" or "/media/shuffle"
                      or "/media/repeat" or "/media/like" or "/media/volup" or "/media/voldown")
             {
@@ -186,11 +203,14 @@ internal static class Program
                     SoundEngine.Play(bump ? "wheel_boundary_bump" : "wheel_notch", notchVol);
                 }
 
-                float? curVol = await MediaSessionService.HandleMediaCommandAsync(cmd);
+                bool yandexMode = (cmd is "shuffle" or "repeat") && YandexLike.IsApp(MediaSessionService.CurrentAppId);
+                bool commandOk = cmd == "like" ? await MediaSessionService.ToggleLikeAsync()
+                    : !yandexMode || await YandexLike.ToggleModeAsync(cmd);
+                float? curVol = cmd == "like" || yandexMode ? null : await MediaSessionService.HandleMediaCommandAsync(cmd);
                 curVol ??= AppAudioControl.GetAppVolume(MediaSessionService.CurrentFamily);
                 int volInt = (int)Math.Round(curVol.Value * 100);
 
-                await WriteJsonAsync(response, new CommandResponse("ok", volInt, MediaSessionService.CurrentIsLiked, AppAudioControl.LastTarget), AppJson.Context.CommandResponse);
+                await WriteJsonAsync(response, new CommandResponse(commandOk ? "ok" : "failed", volInt, MediaSessionService.CurrentIsLiked, AppAudioControl.LastTarget), AppJson.Context.CommandResponse);
             }
             else if (path == "/sound")
             {

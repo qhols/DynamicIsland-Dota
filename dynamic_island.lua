@@ -380,6 +380,15 @@ local localization = qLocalization.new({
     en = {
         di_ui_spotify_no_port = "Spotify is running without the debug port, likes won't work. Restart it",
         di_ui_yandex_no_port = "Yandex Music is running without the debug port, likes won't work. Restart it",
+        di_ui_like_failed = "Could not change the like. Check MediaBridge and restart Yandex Music",
+        di_playlist_title = "Add to playlist",
+        di_playlist_loading = "Loading playlists...",
+        di_playlist_empty = "No playlists found",
+        di_playlist_failed = "Could not open playlists in Yandex Music",
+        di_playlist_add_failed = "Could not add the track",
+        di_playlist_tip = "Add the current Yandex Music track\nto one of your playlists",
+        di_media_show_artist = "Show Artist",
+        di_media_show_artist_tip = "Show the artist with the title\nin the small island",
         di_ui_restart_yandex = "Quit Yandex Music from the tray and open it from the taskbar or Start",
         di_ui_yandex_music = "Yandex Music",
         di_ui_removed_from_yandex = "Removed from Yandex Music",
@@ -828,6 +837,8 @@ local localization = qLocalization.new({
         di_main_custom_label_tip = "Shown instead of the hero name\nin the Hero widget",
         di_main_bg_color = "Island Background Color",
         di_main_bg_color_tip = "Island color. On a light color\nthe text turns dark",
+        di_main_bg_opacity = "Background Opacity",
+        di_main_bg_opacity_tip = "Transparency of the colored island\nwhen glass mode is off",
         di_main_pure_glass = "Glass Mode",
         di_main_pure_glass_tip = "A see-through glass island\ninstead of a solid one",
         di_main_border_thickness = "Border Thickness",
@@ -1017,6 +1028,15 @@ local localization = qLocalization.new({
     ru = {
         di_ui_spotify_no_port = "Спотифай запущен без порта, лайки не работают. Перезапусти его",
         di_ui_yandex_no_port = "Яндекс Музыка запущена без порта, лайки не работают. Перезапусти её",
+        di_ui_like_failed = "Не удалось изменить лайк. Проверь MediaBridge и перезапусти Яндекс Музыку",
+        di_playlist_title = "Добавить в плейлист",
+        di_playlist_loading = "Загружаю плейлисты...",
+        di_playlist_empty = "Плейлисты не найдены",
+        di_playlist_failed = "Не удалось открыть плейлисты Яндекс Музыки",
+        di_playlist_add_failed = "Не удалось добавить трек",
+        di_playlist_tip = "Добавить текущий трек Яндекс Музыки\nв один из плейлистов",
+        di_media_show_artist = "Показывать исполнителя",
+        di_media_show_artist_tip = "Показывает исполнителя с названием трека\nв маленьком островке",
         di_ui_restart_yandex = "Закрой Яндекс Музыку через трей и открой с панели задач или из Пуска",
         di_ui_yandex_music = "Яндекс Музыка",
         di_ui_removed_from_yandex = "Удалено из Яндекс Музыки",
@@ -1465,6 +1485,8 @@ local localization = qLocalization.new({
         di_main_custom_label_tip = "Показывается вместо имени героя\nв виджете Герой",
         di_main_bg_color = "Цвет фона островка",
         di_main_bg_color_tip = "Цвет островка. На светлом\nтекст становится темным",
+        di_main_bg_opacity = "Прозрачность фона",
+        di_main_bg_opacity_tip = "Прозрачность цветного островка,\nкогда режим стекла выключен",
         di_main_pure_glass = "Режим стекла",
         di_main_pure_glass_tip = "Прозрачный стеклянный островок\nвместо сплошного",
         di_main_border_thickness = "Толщина обводки",
@@ -2014,6 +2036,7 @@ local ButtonSprings = {
     MediaNext = { scale = 1.0, vel = 0 },
     MediaPrev = { scale = 1.0, vel = 0 },
     MediaLike = { scale = 1.0, vel = 0 },
+    MediaPlaylist = { scale = 1.0, vel = 0 },
     MediaShuffle = { scale = 1.0, vel = 0 },
     MediaRepeat = { scale = 1.0, vel = 0 },
     MediaLyrics = { scale = 1.0, vel = 0 },
@@ -2294,6 +2317,7 @@ local Rampage = { Count = 0, LastKill = -100, Left = 0, SuccessAt = -10, Target 
 local Success = { Fired = {} }
 local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts = {}, LayoutCount = 0 }
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
+local PlaylistPicker = { Open = false, Loading = false, Busy = false, Items = {}, Selected = {}, Offset = 0, Hits = {}, Error = nil, Track = "", Retries = 0, RetryAt = 0 }
 
 local SCRIPT_VERSION = "2.5.2"
 
@@ -2312,6 +2336,7 @@ local ButtonHits = {
     MediaPlay = nil,
     MediaNext = nil,
     MediaLike = nil,
+    MediaPlaylist = nil,
     MediaShuffle = nil,
     MediaRepeat = nil,
     SatellitePrev = nil,
@@ -3575,6 +3600,9 @@ function Impl.InitMenu()
     Md.Shadow:ToolTip("di_media_shadow_tip")
     M.IslandBgColor = gLookGear:ColorPicker("di_main_bg_color", Color(0, 0, 0, 245), "\u{f53f}")
     M.IslandBgColor:ToolTip("di_main_bg_color_tip")
+    M.BgOpacity = gLookGear:Slider("di_main_bg_opacity", 0, 100, 100, "%d%%")
+    M.BgOpacity:Icon("\u{f042}")
+    M.BgOpacity:ToolTip("di_main_bg_opacity_tip")
     Md.AccentColor = gLookGear:ColorPicker("di_media_accent_color", Config.Colors.Accent, "\u{f53f}")
     Md.AccentColor:ToolTip("di_media_accent_color_tip")
     Md.ArtworkTint = gLookGear:Switch("di_media_artwork_tint", true, "\u{f1fc}")
@@ -3780,11 +3808,15 @@ function Impl.InitMenu()
     P.Media:ToolTip("di_media_priority_tip")
     Md.CompactTitle = gPlayer:Switch("di_media_compact_title", true, "\u{f031}")
     Md.CompactTitle:ToolTip("di_media_compact_title_tip")
+    Md.ShowArtist = gPlayer:Switch("di_media_show_artist", true, "\u{f007}")
+    Md.ShowArtist:ToolTip("di_media_show_artist_tip")
     Md.MarqueeSpeed = gPlayer:Slider("di_media_marquee_speed", 20, 100, 45, "%d px/s")
     Md.MarqueeSpeed:ToolTip("di_media_marquee_speed_tip")
     Md.MarqueeSpeed:Icon("\u{f337}")
     Md.SpotifyLike = gMedia:Switch("di_media_spotify_like", true, "\u{f004}")
     Md.SpotifyLike:ToolTip("di_media_spotify_like_tip")
+    Md.Playlist = gMedia:Switch("di_playlist_title", true, "\u{f067}")
+    Md.Playlist:ToolTip("di_playlist_tip")
     local gSpotifyLike = Md.SpotifyLike:Gear("di_gear_alert")
     P.SpotifyLike = prio(gSpotifyLike, "di_alert_priority", 1)
     D.SpotifyLike = dur(gSpotifyLike)
@@ -3884,12 +3916,16 @@ function Impl.InitMenu()
         H.AudioDucking:Disabled(not hOn)
         local mOn = Md.Enabled:Get()
         Md.SpotifyLike:Disabled(not mOn)
+        Md.Playlist:Disabled(not mOn)
+        Md.ShowArtist:Disabled(not mOn)
         Md.VolumeWheel:Disabled(not mOn)
         Md.Lyrics:Disabled(not mOn)
         Md.SecondaryBubble:Disabled(not mOn)
+        M.BgOpacity:Disabled(M.PureGlass:Get())
     end
     H.Enabled:SetCallback(refreshDisabled, true)
     Md.Enabled:SetCallback(refreshDisabled)
+    M.PureGlass:SetCallback(refreshDisabled)
 
     Md.AccentColor:SetCallback(function(w)
         local c = w:Get()
@@ -4425,10 +4461,11 @@ function Reminders.Tick()
     end
 end
 
-local function SendMediaCommand(cmd)
+local function SendMediaCommand(cmd, onResult)
     local base = string.match(cmd, "^(%a+)") or cmd
     if Sheet.BridgeOnline and not Sheet.BridgeOnline() then
         if Dbg.On then Dbg.Log("media", base .. " not sent, the bridge is offline") end
+        if onResult then onResult(false) end
         if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.ERROR) end
         return
     end
@@ -4438,6 +4475,7 @@ local function SendMediaCommand(cmd)
     local url = string.format("http://127.0.0.1:%d/media/%s", port, cmd)
     pcall(Impl.HttpRequest, "GET", url, {}, function(res)
         if Dbg.On then Dbg.MediaReply(base, res, sentAt) end
+        if onResult then onResult(res ~= nil and res.response ~= nil and string.find(res.response, '"status"%s*:%s*"ok"') ~= nil, res) end
         if res and res.response and res.response ~= "" then
             local vStr = string.match(res.response, '"volume"%s*:%s*(%d+)')
             if vStr then
@@ -4451,6 +4489,99 @@ local function SendMediaCommand(cmd)
             end
         end
     end, "media_cmd")
+end
+
+function Impl.OpenPlaylistPicker(retry)
+    if PlaylistPicker.Loading or (PlaylistPicker.Open and not retry) then return end
+    PlaylistPicker.Open = true
+    PlaylistPicker.Loading = true
+    PlaylistPicker.Error = nil
+    if not retry then
+        PlaylistPicker.Items = {}
+        PlaylistPicker.Selected = {}
+        PlaylistPicker.Offset = 0
+        PlaylistPicker.Hits = {}
+        PlaylistPicker.Track = MediaData.LastTrackKey
+        PlaylistPicker.Retries = 0
+        PlaylistPicker.RetryAt = 0
+    end
+    local ok, sent = pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/playlist/open", {}, function(res)
+        if not PlaylistPicker.Open then return end
+        PlaylistPicker.Loading = false
+        local body = res and res.response or ""
+        if string.match(body, '"status"%s*:%s*"ok"') then
+            local items = string.match(body, '"items"%s*:%s*%[(.-)%]') or ""
+            for encoded in string.gmatch(items, '"([^"]+)"') do
+                local name = string.gsub(encoded, "%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
+                PlaylistPicker.Items[#PlaylistPicker.Items + 1] = name
+            end
+            local selected = string.match(body, '"selected"%s*:%s*%[(.-)%]') or ""
+            for flag in string.gmatch(selected, "%a+") do
+                PlaylistPicker.Selected[#PlaylistPicker.Selected + 1] = flag == "true"
+            end
+            if #PlaylistPicker.Items == 0 then PlaylistPicker.Error = L("di_playlist_empty") end
+        else
+            local reason = string.match(body, '"status"%s*:%s*"([^"]+)"') or "no_answer"
+            if Dbg.On then Dbg.Log("playlist", "open: " .. reason) end
+            if reason == "no_list" and PlaylistPicker.Retries < 2 then
+                PlaylistPicker.Retries = PlaylistPicker.Retries + 1
+                PlaylistPicker.Loading = true
+                PlaylistPicker.RetryAt = os.clock() + 0.6
+                if Dbg.On then Dbg.Log("playlist", "retry no_list " .. tostring(PlaylistPicker.Retries)) end
+            else
+                PlaylistPicker.Error = reason .. ": " .. L("di_playlist_failed")
+            end
+        end
+    end, "playlist_open")
+    if not ok or sent == false then
+        PlaylistPicker.Loading = false
+        PlaylistPicker.Error = L("di_playlist_failed")
+    end
+end
+
+function Impl.RemoveFromPlaylist(index)
+    if PlaylistPicker.Busy or PlaylistPicker.Track ~= MediaData.LastTrackKey then
+        PlaylistPicker.Error = L("di_playlist_add_failed")
+        return
+    end
+    PlaylistPicker.Busy = true
+    local ok, sent = pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/playlist/remove?index=" .. tostring(index - 1), {}, function(res)
+        PlaylistPicker.Busy = false
+        if not PlaylistPicker.Open then return end
+        if res and res.response and string.match(res.response, '"status"%s*:%s*"ok"') then
+            PlaylistPicker.Selected[index] = false
+        else
+            if Dbg.On then Dbg.Log("playlist", "remove failed: " .. tostring(res and res.response or "no answer")) end
+            PlaylistPicker.Error = L("di_playlist_add_failed")
+        end
+    end, "playlist_remove")
+    if not ok or sent == false then
+        PlaylistPicker.Busy = false
+        PlaylistPicker.Error = L("di_playlist_add_failed")
+    end
+end
+
+function Impl.AddToPlaylist(index)
+    if PlaylistPicker.Busy or PlaylistPicker.Track ~= MediaData.LastTrackKey then
+        PlaylistPicker.Error = L("di_playlist_add_failed")
+        return
+    end
+    PlaylistPicker.Busy = true
+    local ok, sent = pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/playlist/add?index=" .. tostring(index - 1), {}, function(res)
+        PlaylistPicker.Busy = false
+        if not PlaylistPicker.Open then return end
+        if res and res.response and string.match(res.response, '"status"%s*:%s*"ok"') then
+            PlaylistPicker.Open = false
+            PlaylistPicker.Items = {}
+        else
+            if Dbg.On then Dbg.Log("playlist", "add failed: " .. tostring(res and res.response or "no answer")) end
+            PlaylistPicker.Error = L("di_playlist_add_failed")
+        end
+    end, "playlist_add")
+    if not ok or sent == false then
+        PlaylistPicker.Busy = false
+        PlaylistPicker.Error = L("di_playlist_add_failed")
+    end
 end
 
 function Impl.GetScriptRelPath()
@@ -6328,7 +6459,7 @@ function Journey.LineWidth(scale, label, right, hasIcon)
 end
 
 function Journey.IdleTexts()
-    return L("di_ui_main_menu"), os.date("%H:%M")
+    return L("di_ui_main_menu"), GetChipContent("clock").text
 end
 
 function Journey.SearchTexts()
@@ -7213,6 +7344,38 @@ function Impl.HandleInteractions()
         isLMouseDown, isRMouseDown = false, false
     end
 
+    if PlaylistPicker.Open then
+        if isRightClicked then
+            PlaylistPicker.Open = false
+        elseif isLeftClicked then
+            local bounds = PlaylistPicker.Hits.Bounds
+            local close = PlaylistPicker.Hits.Close
+            if bounds and (cx < bounds.x1 or cx > bounds.x2 or cy < bounds.y1 or cy > bounds.y2) then
+                PlaylistPicker.Open = false
+            elseif close and cx >= close.x1 and cx <= close.x2 and cy >= close.y1 and cy <= close.y2 then
+                PlaylistPicker.Open = false
+            else
+                for _, hit in ipairs(PlaylistPicker.Hits.Rows or {}) do
+                    if cx >= hit.x1 and cx <= hit.x2 and cy >= hit.y1 and cy <= hit.y2 then
+                        if PlaylistPicker.Selected[hit.index] then
+                            Impl.RemoveFromPlaylist(hit.index)
+                        else
+                            Impl.AddToPlaylist(hit.index)
+                        end
+                        break
+                    end
+                end
+            end
+        end
+        local wheelUp = Input.IsKeyDown(Enum.ButtonCode.KEY_MWHEELUP)
+        local wheelDown = Input.IsKeyDown(Enum.ButtonCode.KEY_MWHEELDOWN)
+        if wheelUp and not MouseInput.WheelUp then PlaylistPicker.Offset = math.max(0, PlaylistPicker.Offset - 1) end
+        if wheelDown and not MouseInput.WheelDown then PlaylistPicker.Offset = math.min(math.max(0, #PlaylistPicker.Items - 6), PlaylistPicker.Offset + 1) end
+        MouseInput.WheelUp = wheelUp
+        MouseInput.WheelDown = wheelDown
+        return
+    end
+
     if SeekDrag.Active then
         local hit = ButtonHits.MediaSeek
         if hit and hit.x2 > hit.x1 then
@@ -7281,6 +7444,18 @@ function Impl.HandleInteractions()
 
     local isCtrlOnly = Input.IsKeyDown(Enum.ButtonCode.KEY_LCONTROL) or Input.IsKeyDown(Enum.ButtonCode.KEY_RCONTROL)
     local layout = GetIslandLayout()
+
+    local playlistHit = ButtonHits.MediaPlaylist
+    if isLeftClicked and not isCtrlOnly and not HUDCustomizer.IsOpen and not Demo.Active
+        and StateMachine.TargetState == StateMachine.States.LARGE_MEDIA and mediaActive
+        and playlistHit and cx >= playlistHit.x1 and cx <= playlistHit.x2
+        and cy >= playlistHit.y1 and cy <= playlistHit.y2 then
+        ButtonSprings.MediaPlaylist.scale = 0.65
+        if Dbg.On then Dbg.Log("playlist", "plus clicked") end
+        Impl.OpenPlaylistPicker()
+        if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_MEDIUM) end
+        return
+    end
 
     local padHit = 6
     local isHover = (cx >= layout.x - padHit and cx <= layout.x + layout.w + padHit and cy >= layout.y - padHit and cy <= layout.y + layout.h + padHit)
@@ -8225,23 +8400,36 @@ function Impl.HandleInteractions()
                     })
                     return
                 end
-                local isNowLiked = not MediaData.IsLiked
-                MediaData.IsLiked = isNowLiked
-                if MediaData.LastTrackKey ~= "" then
-                    MediaData.LikedTracks[MediaData.LastTrackKey] = isNowLiked
-                end
-
-                SendMediaCommand("like")
-                DynamicIsland.PushNotification({
-                    Type = "spotify_like",
-                    Tag = inYandex and L("di_ui_yandex_music") or "Spotify",
-                    Title = isNowLiked and L("di_ui_liked_songs") or L("di_ui_removed_from_favorites"),
-                    Subtitle = isNowLiked and L("di_ui_saved_to_library") or (inYandex and L("di_ui_removed_from_yandex") or L("di_ui_removed_from_spotify")),
-                    AccentColor = Color(255, 55, 95, 255),
-                    IconType = "svg",
-                    FallbackSvg = isNowLiked and "heart_fill" or "heart_outline",
-                    Duration = 2.5
-                })
+                local trackKey = MediaData.LastTrackKey
+                SendMediaCommand("like", function(ok, res)
+                    if not ok then
+                        DynamicIsland.PushNotification({
+                            Type = "spotify_like",
+                            Tag = inYandex and L("di_ui_yandex_music") or "Spotify",
+                            Title = L("di_ui_likes_unavailable"),
+                            Subtitle = L("di_ui_like_failed"),
+                            AccentColor = Color(255, 159, 10, 255),
+                            IconType = "svg",
+                            FallbackSvg = "heart_outline"
+                        })
+                        return
+                    end
+                    local isNowLiked = string.find(res.response, '"is_liked"%s*:%s*true') ~= nil
+                    if trackKey == MediaData.LastTrackKey then
+                        MediaData.IsLiked = isNowLiked
+                        MediaData.LikedTracks[trackKey] = isNowLiked
+                    end
+                    DynamicIsland.PushNotification({
+                        Type = "spotify_like",
+                        Tag = inYandex and L("di_ui_yandex_music") or "Spotify",
+                        Title = isNowLiked and L("di_ui_liked_songs") or L("di_ui_removed_from_favorites"),
+                        Subtitle = isNowLiked and L("di_ui_saved_to_library") or (inYandex and L("di_ui_removed_from_yandex") or L("di_ui_removed_from_spotify")),
+                        AccentColor = Color(255, 55, 95, 255),
+                        IconType = "svg",
+                        FallbackSvg = isNowLiked and "heart_fill" or "heart_outline",
+                        Duration = 2.5
+                    })
+                end)
                 return
             end
         end
@@ -8634,7 +8822,9 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
         Render.Blur(p1, p2, 1.0, a, radius, Enum.DrawFlags.None)
     end
     if not IsPureGlass() then
-        Render.FilledRect(p1, p2, FadeColor(UI.Main.IslandBgColor:Get(), a), radius)
+        local bg = UI.Main.IslandBgColor:Get()
+        local opacity = UI.Main.BgOpacity:Get() / 100
+        Render.FilledRect(p1, p2, Color(bg.r, bg.g, bg.b, math.floor((bg.a or 255) * opacity * a)), radius)
     end
     local curBorder = borderCol
     if StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
@@ -10364,7 +10554,7 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
     local textAvailW = math.max(10, math.floor((waveX - 4 * scale) - textStartX))
 
     local displayStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_music")
-    if MediaData.Artist ~= "" and MediaData.Title ~= "" then
+    if UI.Media.ShowArtist:Get() and MediaData.Artist ~= "" and MediaData.Title ~= "" then
         displayStr = MediaData.Title .. " • " .. MediaData.Artist
     end
 
@@ -11067,7 +11257,7 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
         end
         if inAlpha > 0.02 then
             Render.Text(fontBold, titleSz, titleStr, Vec2(infoX + inOffset, infoY), FadeColor(Config.Colors.TextPrimary, inAlpha))
-            Render.Text(fontMain, artistSz, artistStr, Vec2(infoX + inOffset, infoY + 22 * scale), FadeColor(Config.Colors.TextSecondary, inAlpha))
+            if artistStr ~= "" then Render.Text(fontMain, artistSz, artistStr, Vec2(infoX + inOffset, infoY + 22 * scale), FadeColor(Config.Colors.TextSecondary, inAlpha)) end
             DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), inAlpha, (0.85 + t * 0.15) * (MediaData.ArtK or 1))
         end
     else
@@ -11078,13 +11268,15 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
             Render.Text(fontBold, titleSz, titleStr, Vec2(infoX, infoY), textCol)
         end
 
-        local artSizeText = Render.TextSize(fontMain, artistSz, artistStr)
-        local artYPos = math.floor(infoY + titleSize.y + 2 * scale)
-        local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(layout.x + layout.w - pad - 16 * scale - 10 * scale - infoX - (Impl.Ly.Btn > 0.01 and 28 * scale or 0))) or maxInfoW
-        if artSizeText.x > artistW then
-            RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, artistW, subCol, scale)
-        else
-            Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artYPos), subCol)
+        if artistStr ~= "" then
+            local artSizeText = Render.TextSize(fontMain, artistSz, artistStr)
+            local artYPos = math.floor(infoY + titleSize.y + 2 * scale)
+            local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(layout.x + layout.w - pad - 16 * scale - 10 * scale - infoX - (Impl.Ly.Btn > 0.01 and 28 * scale or 0))) or maxInfoW
+            if artSizeText.x > artistW then
+                RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, artistW, subCol, scale)
+            else
+                Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artYPos), subCol)
+            end
         end
 
         local ak = MediaData.ArtK or 1
@@ -11182,9 +11374,25 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
         end
     end
 
+    local playlistActive = UI.Media.Playlist:Get() and string.find(string.lower(MediaData.App or ""), "yandex", 1, true) ~= nil
+        and string.find(string.lower(MediaData.App or ""), "music", 1, true) ~= nil
+    local playlistX = math.floor(layout.x + layout.w - pad - 8 * scale - (UI.Media.SpotifyLike:Get() and 28 * scale or 0))
+    local playlistY = math.floor(artY + artSize - 10 * scale)
+    if playlistActive then
+        ButtonHits.MediaPlaylist = { x1 = playlistX - 14 * scale, y1 = playlistY - 14 * scale, x2 = playlistX + 14 * scale, y2 = playlistY + 14 * scale }
+        local pk, pd = Impl.PointerBlob("m_playlist", playlistX, playlistY, 14 * scale, ButtonHits.MediaPlaylist, aMul)
+        local plusH = GetVectorIcon("plus")
+        if plusH then
+            local sz = 16 * scale * ButtonSprings.MediaPlaylist.scale * pk
+            Impl.Img(plusH, Vec2(playlistX - sz / 2, playlistY - sz / 2), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, aMul * pd), 0)
+        end
+    else
+        ButtonHits.MediaPlaylist = nil
+    end
+
     local lyB = Impl.Ly.Btn
     if lyB > 0.01 then
-        local lyX = math.floor(layout.x + layout.w - pad - 8 * scale - (UI.Media.SpotifyLike:Get() and 28 * scale or 0))
+        local lyX = math.floor(layout.x + layout.w - pad - 8 * scale - (UI.Media.SpotifyLike:Get() and 28 * scale or 0) - (playlistActive and 28 * scale or 0))
         local lyY = math.floor(artY + artSize - 10 * scale)
         ButtonHits.MediaLyrics = { x1 = lyX - 14 * scale, y1 = lyY - 14 * scale, x2 = lyX + 14 * scale, y2 = lyY + 14 * scale }
         local lk, ld = Impl.PointerBlob("m_lyr", lyX, lyY, 14 * scale, ButtonHits.MediaLyrics, aMul)
@@ -11200,7 +11408,7 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
 
     if UI.Media.SpotifyLike:Get() then
         local likeScale = ButtonSprings.MediaLike.scale
-        local isLiked = (MediaData.IsLiked == true) or (MediaData.LikedTracks[MediaData.LastTrackKey] == true)
+        local isLiked = (MediaData.IsLiked == true)
         local likeX = math.floor(layout.x + layout.w - pad - 8 * scale)
         local likeY = math.floor(artY + artSize - 10 * scale)
         local heartH = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
@@ -11253,13 +11461,17 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local subCol = FadeColor(Config.Colors.TextSecondary, aMul)
 
-    local timeHM = os.date("%H:%M")
+    local clockCfg = HUDCustomizer.WidgetConfigs.clock
+    local clockFormat = clockCfg and clockCfg.format or 1
+    local timeHM = os.date(clockFormat == 2 and "%I:%M" or "%H:%M")
     local timeSec = os.date(":%S")
     local hmH = Render.TextSize(fNum, sNum, "0").y
     local hmW = Odometer.Width(fNum, sNum, timeHM)
     Odometer.Text("large_hm", fNum, sNum, timeHM, Vec2(g.leftX, g.leftY), textCol)
     local secH = Render.TextSize(fSec, sSec, "0").y
-    Odometer.Text("large_sec", fSec, sSec, timeSec, Vec2(math.floor(g.leftX + hmW + 2 * scale), math.floor(g.leftY + (hmH - secH) * 0.8)), subCol)
+    if clockFormat ~= 2 then
+        Odometer.Text("large_sec", fSec, sSec, timeSec, Vec2(math.floor(g.leftX + hmW + 2 * scale), math.floor(g.leftY + (hmH - secH) * 0.8)), subCol)
+    end
 
     local matchTime = GetActualMatchTime()
     local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
@@ -11544,7 +11756,7 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
 
     local compactAlpha = math.max(0.0, 1.0 - artT * 2.5)
     if compactAlpha > 0.01 and CompactMediaTitle() then
-        local compStr = (artistStr ~= "" and titleStr ~= "") and (titleStr .. " \u{2022} " .. artistStr) or titleStr
+        local compStr = (UI.Media.ShowArtist:Get() and artistStr ~= "" and titleStr ~= "") and (titleStr .. " \u{2022} " .. artistStr) or titleStr
         if not (Impl.LyCompactOn() and Impl.LyCompactDraw(cTextStartX, cTextY, cTextAvailW, fontHead, headSz, compactAlpha, scale, compStr)) then
             RenderMarqueeText(fontHead, headSz, compStr, cTextStartX, cTextY, cTextAvailW, FadeColor(Config.Colors.TextPrimary, compactAlpha), scale)
         end
@@ -11636,11 +11848,21 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
 
         local likeTargetX = math.floor(lL.x + lL.w - pad - 8 * scale)
         local likeY = math.floor(curThumbY + curThumbSize - 10 * scale)
+        local playlistActive = UI.Media.Playlist:Get() and string.find(string.lower(MediaData.App or ""), "yandex", 1, true) ~= nil
+            and string.find(string.lower(MediaData.App or ""), "music", 1, true) ~= nil
+        if playlistActive then
+            local icon = GetVectorIcon("plus")
+            if icon then
+                local px = likeTargetX - (UI.Media.SpotifyLike:Get() and 28 * scale or 0)
+                local sz = 16 * scale * ButtonSprings.MediaPlaylist.scale * elemScale
+                Impl.Img(icon, Vec2(px - sz / 2, likeY - sz / 2), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, secAlpha), 0)
+            end
+        end
         local lyB = Impl.Ly.Btn
         if lyB > 0.01 then
             local icon = GetVectorIcon("lyrics")
             if icon then
-                local lyX = math.floor(likeTargetX - (UI.Media.SpotifyLike:Get() and 28 * scale or 0))
+                local lyX = math.floor(likeTargetX - (UI.Media.SpotifyLike:Get() and 28 * scale or 0) - (playlistActive and 28 * scale or 0))
                 local sz = 16 * scale * elemScale
                 local col = Impl.Ly.Open and Config.Colors.TextPrimary or Config.Colors.TextSecondary
                 Impl.Img(icon, Vec2(lyX - sz / 2, likeY - sz / 2), Vec2(sz, sz), FadeColor(col, secAlpha * lyB), 0)
@@ -11648,7 +11870,7 @@ function Impl.RenderMediaSharedTransition(fromState, toState, layout, progress)
         end
         local likeScale = ButtonSprings.MediaLike.scale * elemScale
         local curLikeX = likeTargetX
-        local isLiked = (MediaData.IsLiked == true) or (MediaData.LikedTracks[MediaData.LastTrackKey] == true)
+        local isLiked = (MediaData.IsLiked == true)
         local likeSvg = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
         if likeSvg and UI.Media.SpotifyLike:Get() then
             local lSz = 16 * scale * likeScale
@@ -11703,7 +11925,9 @@ function Impl.RenderIdleSharedTransition(fromState, toState, layout, progress)
     local curSize = Q(sChip + (sNum - sChip) * elemT)
     local fontMix = math.max(0, math.min(1, (elemT - 0.25) / 0.5))
     local curFont = fontMix > 0.5 and fNum or cFont
-    local timeHM = os.date("%H:%M")
+    local clockCfg = HUDCustomizer.WidgetConfigs.clock
+    local clockFormat = clockCfg and clockCfg.format or 1
+    local timeHM = os.date(clockFormat == 2 and "%I:%M" or "%H:%M")
     local clockCol = clockChip and LerpColor(clockChip.chip.color, Config.Colors.TextPrimary, elemT) or Config.Colors.TextPrimary
     if fontMix < 1 then
         local txt = clockChip and clockChip.chip.text or timeHM
@@ -11760,7 +11984,9 @@ function Impl.RenderIdleSharedTransition(fromState, toState, layout, progress)
         local hmH = Render.TextSize(fNum, sNum, "0").y
         local hmW = Odometer.Width(curFont, curSize, timeHM)
         local secH = Render.TextSize(fSec, sSec, "0").y
-        Odometer.Draw(fSec, sSec, os.date(":%S"), Vec2(math.floor(curClockX + hmW + 2 * scale), math.floor(curClockY + (hmH - secH) * 0.8)), FadeColor(Config.Colors.TextSecondary, lateAlpha))
+        if clockFormat ~= 2 then
+            Odometer.Draw(fSec, sSec, os.date(":%S"), Vec2(math.floor(curClockX + hmW + 2 * scale), math.floor(curClockY + (hmH - secH) * 0.8)), FadeColor(Config.Colors.TextSecondary, lateAlpha))
+        end
         local matchTime = GetActualMatchTime()
         local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
         Odometer.Draw(fFoot, sFoot, subInfo, Vec2(g.leftX, math.floor(curClockY + hmH + 2 * scale)), FadeColor(Config.Colors.TextSecondary, lateAlpha))
@@ -15741,6 +15967,53 @@ end
 
 local LastMenuOpenState = false
 
+function Impl.RenderPlaylistPicker(layout)
+    if not PlaylistPicker.Open then return end
+    local screen = Render.ScreenSize()
+    local scale = layout.scale
+    local width = math.min(360 * scale, screen.x - 24)
+    local count = math.min(6, #PlaylistPicker.Items)
+    local height = (PlaylistPicker.Loading or PlaylistPicker.Error) and 82 * scale or (53 + count * 34) * scale
+    local x = math.max(12, math.min(screen.x - width - 12, layout.x + layout.w / 2 - width / 2))
+    local y = layout.y + layout.h + 10 * scale
+    if y + height > screen.y - 12 then y = math.max(12, layout.y - height - 10 * scale) end
+    if UI.Media.Shadow:Get() then
+        SoftShadow(Vec2(x, y), Vec2(x + width, y + height), 14 * scale, Config.Colors.Shadow, 16, Vec2(0, 3))
+    end
+    IslandSurface(Vec2(x, y), Vec2(x + width, y + height), 14 * scale, Config.Colors.Border, UI.Main.BorderThickness:Get())
+    local font, size = TF("FootnoteEm", scale)
+    local normal, small = TF("Footnote", scale)
+    Render.Text(font, size, L("di_playlist_title"), Vec2(x + 16 * scale, y + 12 * scale), Config.Colors.TextPrimary)
+    Render.Text(font, size, "×", Vec2(x + width - 28 * scale, y + 12 * scale), Config.Colors.TextSecondary)
+    PlaylistPicker.Hits = { Bounds = { x1 = x, x2 = x + width, y1 = y, y2 = y + height }, Close = { x1 = x + width - 42 * scale, x2 = x + width, y1 = y, y2 = y + 40 * scale }, Rows = {} }
+    if PlaylistPicker.Loading or PlaylistPicker.Error then
+        Render.PushClip(Vec2(x + 12 * scale, y + 42 * scale), Vec2(x + width - 12 * scale, y + height))
+        Render.Text(normal, small, PlaylistPicker.Loading and L("di_playlist_loading") or PlaylistPicker.Error, Vec2(x + 16 * scale, y + 47 * scale), Config.Colors.TextSecondary)
+        Render.PopClip()
+        return
+    end
+    local cx, cy = Input.GetCursorPos()
+    for row = 1, count do
+        local index = PlaylistPicker.Offset + row
+        local rowY = y + (44 + (row - 1) * 34) * scale
+        local hit = { x1 = x + 8 * scale, x2 = x + width - 8 * scale, y1 = rowY, y2 = rowY + 32 * scale, index = index }
+        PlaylistPicker.Hits.Rows[#PlaylistPicker.Hits.Rows + 1] = hit
+        if cx >= hit.x1 and cx <= hit.x2 and cy >= hit.y1 and cy <= hit.y2 then
+            Render.FilledRect(Vec2(hit.x1, hit.y1), Vec2(hit.x2, hit.y2), Config.Colors.FillSecondary, 7 * scale)
+        end
+        Render.PushClip(Vec2(hit.x1 + 8 * scale, hit.y1), Vec2(hit.x2 - 30 * scale, hit.y2))
+        Render.Text(normal, small, PlaylistPicker.Items[index], Vec2(hit.x1 + 8 * scale, rowY + 7 * scale), Config.Colors.TextPrimary)
+        Render.PopClip()
+        if PlaylistPicker.Selected[index] then
+            local check = GetVectorIcon("check")
+            if check then
+                local sz = 14 * scale
+                Impl.Img(check, Vec2(hit.x2 - 24 * scale, rowY + (32 * scale - sz) / 2), Vec2(sz, sz), Config.Colors.Green, 0)
+            end
+        end
+    end
+end
+
 function DynamicIsland.OnFrame()
     if not UI or not UI.Main.Enabled:Get() then return end
     ContentFx.Glass = IsPureGlass()
@@ -16004,9 +16277,15 @@ function DynamicIsland.OnFrame()
     Fuse.Guard("hints", Impl.RenderMenuClosedHint, layout)
     Fuse.Guard("drawer", Impl.RenderHUDDrawer, layout, dt)
     Fuse.Guard("setup", Setup.Render, layout, dt)
+    Fuse.Guard("playlist", Impl.RenderPlaylistPicker, layout)
 end
 
 function DynamicIsland.OnUpdateEx()
+    if PlaylistPicker.Open and PlaylistPicker.Loading and PlaylistPicker.RetryAt > 0 and os.clock() >= PlaylistPicker.RetryAt then
+        PlaylistPicker.RetryAt = 0
+        PlaylistPicker.Loading = false
+        Impl.OpenPlaylistPicker(true)
+    end
     local inGame = Engine.IsInGame and Engine.IsInGame()
     if inGame then
         WasInGame = true
@@ -16101,6 +16380,7 @@ function DynamicIsland.OnScriptsLoaded()
     Impl.LoadScriptFonts()
     Impl.InitMenu()
     Impl.LoadAllConfig()
+    UI.Main.Enabled:Set(true)
     Sheet.ConfigLoaded = true
     Sdk.Ready = true
     if not Impl.HadConfig and UI.Main.Scale:Get() == 100 then

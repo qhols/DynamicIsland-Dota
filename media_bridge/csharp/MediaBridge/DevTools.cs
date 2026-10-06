@@ -21,6 +21,19 @@ public static class DevTools
         }
     }
 
+    public static async Task<bool> HasPageAsync(int port, string urlPrefix)
+    {
+        try
+        {
+            string json = await Http.GetStringAsync($"http://127.0.0.1:{port}/json");
+            return PickPage(json, port, urlPrefix) != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static async Task<string?> EvaluateAsync(int port, string urlPrefix, string js, int timeoutMs = 800)
     {
         try
@@ -71,7 +84,6 @@ public static class DevTools
         using var doc = JsonDocument.Parse(json);
         if (doc.RootElement.ValueKind != JsonValueKind.Array) return null;
         string local = $"ws://127.0.0.1:{port}/devtools/page/";
-        string? first = null;
         foreach (var t in doc.RootElement.EnumerateArray())
         {
             if (!t.TryGetProperty("type", out var type) || type.GetString() != "page") continue;
@@ -80,8 +92,8 @@ public static class DevTools
             if (!wsUrl.StartsWith(local, StringComparison.Ordinal)) continue;
             string url = t.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "";
             if (urlPrefix != "" && url.StartsWith(urlPrefix, StringComparison.OrdinalIgnoreCase)) return wsUrl;
-            first ??= wsUrl;
+            if (urlPrefix == "") return wsUrl;
         }
-        return first;
+        return null;
     }
 }
