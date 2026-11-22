@@ -777,6 +777,8 @@ local localization = qLocalization.new({
         di_sdk_focus = "Allow in Focus",
         di_sdk_focus_tip = "Its time-sensitive alerts show\neven in Do Not Disturb",
         di_nc_empty = "No notifications",
+        di_nc_end = "That's everything",
+        di_nc_clear_all = "Clear All",
         di_nc_now = "now",
         di_nc_min = "%dm",
         di_nc_hour = "%dh",
@@ -1416,6 +1418,8 @@ local localization = qLocalization.new({
         di_sdk_focus = "Разрешить в фокусе",
         di_sdk_focus_tip = "Его срочные оповещения видны\nдаже в Не беспокоить",
         di_nc_empty = "Нет уведомлений",
+        di_nc_end = "Это всё",
+        di_nc_clear_all = "Очистить всё",
         di_nc_now = "сейчас",
         di_nc_min = "%d мин",
         di_nc_hour = "%d ч",
@@ -7391,9 +7395,12 @@ function DynamicIsland.OnKeyEvent(data)
             local mx, my = Input.GetCursorPos()
             if lay and mx >= lay.x - 12 and mx <= lay.x + lay.w + 12 and my >= lay.y - 12 and my <= lay.y + lay.h + 12 then
                 if isDown and st == idleBase and #(NotifCenter.Items or {}) > 0 then
+                    NotifCenter.Reset()
                     TriggerStateTransition(StateMachine.States.NOTIF_CENTER)
-                elseif isUp and st == StateMachine.States.NOTIF_CENTER then
-                    TriggerStateTransition(idleBase)
+                elseif st == StateMachine.States.NOTIF_CENTER then
+                    if not NotifCenter.Wheel(isDown) and isUp then
+                        TriggerStateTransition(idleBase)
+                    end
                 end
                 return false
             end
@@ -7852,6 +7859,10 @@ function Impl.HandleInteractions()
     end
 
     if isLeftClicked and isHover and StateMachine.TargetState == StateMachine.States.NOTIFICATION and not isCtrlOnly then
+        if not Sdk.Expanded and Sdk.CanExpand() and UI.Main.ExpandMode then
+            local mode = UI.Main.ExpandMode:Get()
+            if mode == 2 then StateMachine.TapAt = nowClk elseif mode == 1 then StateMachine.PressAt = nowClk end
+        end
         return
     end
 
@@ -12427,6 +12438,8 @@ function Sheet.Action(action, now)
     elseif action == "nc_clear" then
         if Dbg.On then Dbg.Log("notif", "notification center cleared") end
         NotifCenter.Items = {}
+        NotifCenter.Reset()
+        NotifCenter.Close()
     elseif action == "sdk_allow" then
         Sdk.Answer(true)
     elseif action == "sdk_deny" then
@@ -12614,16 +12627,26 @@ function Sheet.RenderBadge(layout)
 end
 
 function NotifCenter.Add(n)
-    table.insert(NotifCenter.Items, 1, { tag = n.Tag or "", title = n.Title or "", accent = n.AccentColor, fb = n.FallbackSvg, icon = n.Icon, mono = n.Mono, app = n.SdkApp, onTap = n.OnTap, t = os.clock() })
+    local gt = nil
+    if Engine.IsInGame and Engine.IsInGame() then
+        local ok, v = pcall(GetActualMatchTime)
+        if ok and type(v) == "number" and v > 0 then gt = v end
+    end
+    local sub = n.Subtitle or n.Body or ""
+    if type(sub) ~= "string" then sub = tostring(sub) end
+    table.insert(NotifCenter.Items, 1, { tag = n.Tag or "", title = n.Title or "", sub = sub, accent = n.AccentColor, fb = n.FallbackSvg, icon = n.Icon, mono = n.Mono, app = n.SdkApp, onTap = n.OnTap, t = os.clock(), gt = gt })
     while #NotifCenter.Items > 24 do table.remove(NotifCenter.Items) end
 end
 
-NotifCenter.Open = {}
 NotifCenter.RowHits = {}
-NotifCenter.RowH = 44
-NotifCenter.StackH = 8
+NotifCenter.Inner = {}
+NotifCenter.Sel = 1
+NotifCenter.Pos = 1
+NotifCenter.PosV = 0
+NotifCenter.InnerX = 0
+NotifCenter.InnerV = 0
 
-function NotifCenter.Rows()
+function NotifCenter.Cards()
     local groups, order = {}, {}
     for _, it in ipairs(NotifCenter.Items) do
         local g = groups[it.tag]
@@ -12634,28 +12657,61 @@ function NotifCenter.Rows()
         end
         g.items[#g.items + 1] = it
     end
-    local rows = {}
-    for i = 1, math.min(5, #order) do
+    local cards = {}
+    for i = 1, math.min(12, #order) do
         local g = order[i]
-        if #g.items > 1 and NotifCenter.Open[g.key] then
-            for j = 1, math.min(5, #g.items) do
-                rows[#rows + 1] = { item = g.items[j], group = g, count = 1, open = true }
-            end
-        else
-            rows[#rows + 1] = { item = g.items[1], group = g, count = #g.items }
-        end
+        local n = #g.items
+        local k = math.max(1, math.min(n, NotifCenter.Inner[g.key] or 1))
+        cards[#cards + 1] = { item = g.items[k], group = g, count = n, inner = k }
     end
-    return rows
+    return cards
 end
 
 function NotifCenter.Height()
-    local rows = NotifCenter.Rows()
-    if #rows == 0 then return 96 end
-    local h = 46
-    for _, r in ipairs(rows) do
-        h = h + NotifCenter.RowH + (r.count > 1 and NotifCenter.StackH or 0)
+    local n = #NotifCenter.Cards()
+    if n == 0 then return 96 end
+    if n == 1 then return 146 end
+    return 188
+end
+
+function NotifCenter.Reset()
+    NotifCenter.Sel, NotifCenter.Pos, NotifCenter.PosV = 1, 1, 0
+    NotifCenter.Inner = {}
+    NotifCenter.InnerX, NotifCenter.InnerV = 0, 0
+end
+
+function NotifCenter.Close()
+    if StateMachine.TargetState == StateMachine.States.NOTIF_CENTER then
+        TriggerStateTransition(Impl.IdleWidgets() and StateMachine.States.LARGE_IDLE or StateMachine.States.COMPACT_IDLE)
     end
-    return h + 6
+end
+
+function NotifCenter.Wheel(down)
+    local cards = NotifCenter.Cards()
+    local total = #cards + (#cards >= 2 and 1 or 0)
+    local sel = math.max(1, math.min(total, NotifCenter.Sel or 1))
+    local c = cards[sel]
+    if down then
+        if c and c.inner < c.count then
+            NotifCenter.Inner[c.group.key] = c.inner + 1
+            NotifCenter.InnerX = 14
+        elseif sel < total then
+            NotifCenter.Sel = sel + 1
+        else
+            return true
+        end
+    else
+        if c and c.inner > 1 then
+            NotifCenter.Inner[c.group.key] = c.inner - 1
+            NotifCenter.InnerX = -14
+        elseif sel > 1 then
+            NotifCenter.Sel = sel - 1
+        else
+            return false
+        end
+    end
+    if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_LIGHT) end
+    return true
 end
 
 function NotifCenter.Ago(t)
@@ -12673,128 +12729,192 @@ function NotifCenter.Remove(row)
             table.remove(list, i)
         end
     end
-    local left = 0
-    for _, it in ipairs(list) do
-        if it.tag == row.group.key then left = left + 1 end
-    end
-    if left < 2 then NotifCenter.Open[row.group.key] = nil end
+    NotifCenter.Inner[row.group.key] = nil
+    if #list == 0 then NotifCenter.Close() end
 end
 
 function NotifCenter.Toggle(row)
-    if row.count > 1 then
-        NotifCenter.Open[row.group.key] = true
-    elseif row.open then
-        NotifCenter.Open[row.group.key] = nil
-    else
-        return
-    end
+    if not row or row.count < 2 then return end
+    local k = row.inner + 1
+    if k > row.count then k = 1 end
+    NotifCenter.Inner[row.group.key] = k
+    NotifCenter.InnerX = 14
     if Haptic and Haptic.Trigger then Haptic.Trigger(Haptic.Types.TAP_LIGHT) end
+end
+
+function NotifCenter.DrawCard(card, x, y, w, h, s, a)
+    local C = Config.Colors
+    local it = card.item
+    local accent = it.accent or C.Blue
+    local isz = math.floor(46 * s)
+    local ix, iy = math.floor(x + 14 * s), math.floor(y + 16 * s)
+    local img = it.icon and GetCachedImage(it.icon) or nil
+    if not img and it.fb and not NotifGlyphs[it.fb] and not it.mono then img = GetCachedImage(nil, it.fb) end
+    if img then
+        Impl.Img(img, Vec2(ix, iy), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), a), math.floor(12 * s))
+    else
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(accent, a), 12 * s)
+        Glyph(it.fb or "bell", ix + isz / 2, iy + isz / 2, math.floor(isz * 0.52), FadeColor(Color(255, 255, 255, 255), a))
+    end
+    local tx = math.floor(ix + isz + 12 * s)
+    local right = x + w - 16 * s
+    local fC, sC = TF("FootnoteEm", s)
+    local fF, sF = TF("Footnote", s)
+    local fT, sT = TF("Title", s)
+    local fB, sB = TF("Subhead", s)
+    local when = it.gt and FormatTime(it.gt) or NotifCenter.Ago(it.t)
+    local ww = Render.TextSize(fF, sF, when).x
+    Render.Text(fC, sC, TruncateToWidth(fC, sC, it.tag or "", right - tx - ww - 8 * s), Vec2(tx, math.floor(y + 16 * s)), FadeColor(Impl.OnLight(accent), a))
+    Render.Text(fF, sF, when, Vec2(math.floor(right - ww), math.floor(y + 16 * s)), FadeColor(C.TextMuted, a))
+    Render.Text(fT, sT, TruncateToWidth(fT, sT, it.title or "", right - tx), Vec2(tx, math.floor(y + 33 * s)), FadeColor(C.TextPrimary, a))
+    if it.sub and it.sub ~= "" then
+        Render.Text(fB, sB, TruncateToWidth(fB, sB, it.sub, right - tx), Vec2(tx, math.floor(y + 56 * s)), FadeColor(C.TextSecondary, a))
+    end
+    if card.count > 1 then
+        local n = math.min(card.count, 8)
+        local gap = 10 * s
+        local dx0 = x + w / 2 - (n * gap) / 2
+        local dy = y + h - 20 * s
+        for k = 1, n do
+            local px = dx0 + (k - 1) * gap
+            if k == math.min(card.inner, n) then
+                Render.FilledRect(Vec2(px - 3 * s, dy), Vec2(px + 9 * s, dy + 5 * s), FadeColor(C.TextPrimary, a * 0.9), 2.5 * s)
+            else
+                Render.FilledCircle(Vec2(px + 2.5 * s, dy + 2.5 * s), 2.5 * s, FadeColor(C.TextPrimary, a * 0.35), 0, 1.0, 12)
+            end
+        end
+        local more = "+" .. tostring(card.count - 1)
+        local ms = Render.TextSize(fC, sC, more)
+        Render.Text(fC, sC, more, Vec2(math.floor(right - ms.x), math.floor(dy + 2.5 * s - ms.y / 2)), FadeColor(C.TextSecondary, a))
+    end
+end
+
+function NotifCenter.DrawEnd(x, y, w, h, s, a, front)
+    local C = Config.Colors
+    local fS, sS = TF("Subhead", s)
+    local msg = L("di_nc_end")
+    local ts = Render.TextSize(fS, sS, msg)
+    Render.Text(fS, sS, msg, Vec2(math.floor(x + (w - ts.x) / 2), math.floor(y + h / 2 - ts.y - 8 * s)), FadeColor(C.TextMuted, a))
+    local fH, sH = TF("Headline", s)
+    local lab = L("di_nc_clear_all")
+    local ls = Render.TextSize(fH, sH, lab)
+    local bw, bh = ls.x + 36 * s, 32 * s
+    local bx, by = math.floor(x + (w - bw) / 2), math.floor(y + h / 2 + 2 * s)
+    local _, pk = Pointer.Button("nc_clear", bx, by, bx + bw, by + bh)
+    Render.FilledRect(Vec2(bx, by), Vec2(bx + bw, by + bh), FadeColor(C.FillSecondary, a * (1 - 0.3 * pk)), bh / 2)
+    Render.Text(fH, sH, lab, Vec2(math.floor(bx + (bw - ls.x) / 2), math.floor(by + (bh - ls.y) / 2)), FadeColor(C.TextPrimary, a))
+    if front and a > 0.9 then
+        table.insert(NotifCenter.Hits, { x1 = bx, y1 = by, x2 = bx + bw, y2 = by + bh, action = "nc_clear" })
+    end
 end
 
 function NotifCenter.Render(layout, alphaMul, yOffset)
     local a = alphaMul or 1
     local s = layout.scale
     local C = Config.Colors
-    local pad = math.floor(16 * s)
-    local yOff = yOffset or 0
-    local fH, sH = TF("FootnoteEm", s)
-    local hy = math.floor(layout.y + 16 * s + yOff)
-    Render.Text(fH, sH, L("di_nc_title"), Vec2(layout.x + pad, hy), FadeColor(C.TextSecondary, a))
+    local X, Y, W, H = layout.x, layout.y + (yOffset or 0), layout.w, layout.h
     NotifCenter.RowHits = {}
-
-    local rows = NotifCenter.Rows()
-    if #rows == 0 then
+    local cards = NotifCenter.Cards()
+    local n = #cards
+    if n == 0 then
         local fE, sE = TF("Subhead", s)
         local msg = L("di_nc_empty")
         local ts = Render.TextSize(fE, sE, msg)
-        Render.Text(fE, sE, msg, Vec2(math.floor(layout.x + (layout.w - ts.x) / 2), math.floor(layout.y + 50 * s + yOff)), FadeColor(C.TextMuted, a))
+        Render.Text(fE, sE, msg, Vec2(math.floor(X + (W - ts.x) / 2), math.floor(Y + (H - ts.y) / 2)), FadeColor(C.TextMuted, a))
         return
     end
-
-    local clr = L("di_nc_clear")
-    local cs = Render.TextSize(fH, sH, clr)
-    local ccx = math.floor(layout.x + layout.w - pad - cs.x)
-    local _, cpk = Pointer.Button("nc_clear", ccx - 6, hy - 6, ccx + cs.x + 6, hy + cs.y + 6)
-    Render.Text(fH, sH, clr, Vec2(ccx, hy), FadeColor(C.Blue, a * (1 - 0.4 * cpk)))
-    if a > 0.9 then
-        table.insert(NotifCenter.Hits, { x1 = ccx - 6, y1 = hy - 6, x2 = ccx + cs.x + 6, y2 = hy + cs.y + 6, action = "nc_clear" })
-    end
-
+    local total = n + (n >= 2 and 1 or 0)
+    NotifCenter.Sel = math.max(1, math.min(total, NotifCenter.Sel or 1))
     local dt = Pointer.dt
-    local fT, sT = TF("Caption", s)
-    local fB, sB = TF("Subhead", s)
-    local isz = math.floor(26 * s)
-    local gl, gr = layout.x + 10 * s, layout.x + layout.w - 10 * s
-    local w = gr - gl
-    local cardH = (NotifCenter.RowH - 6) * s
+    NotifCenter.Pos, NotifCenter.PosV = MotionEngine.Step(NotifCenter.Pos or 1, NotifCenter.PosV or 0, NotifCenter.Sel, dt, "SNAPPY")
+    NotifCenter.InnerX, NotifCenter.InnerV = MotionEngine.Step(NotifCenter.InnerX or 0, NotifCenter.InnerV or 0, 0, dt, "SNAPPY")
+    local pos = NotifCenter.Pos
+    local dots = total >= 2
+    local cw = W - (dots and 44 or 28) * s
+    local ch = 112 * s
+    local peek = 15 * s
+    local ccx = X + (W - (dots and 16 or 0) * s) / 2
+    local ccy = Y + H / 2
+    local order = {}
+    for i = 1, total do order[i] = i end
+    local front = NotifCenter.Sel
+    table.sort(order, function(p, q)
+        if p == front or q == front then return q == front and p ~= front end
+        local dp, dq = math.abs(p - pos), math.abs(q - pos)
+        if dp ~= dq then return dp > dq end
+        return p < q
+    end)
     local dragItem = Swipe.Target == "nc" and Swipe.Row and Swipe.Row.item or nil
-    local y = 42 * s
-    local th = Render.TextSize(fT, sT, "Ag").y
-    for _, r in ipairs(rows) do
-        local it = r.item
-        if not it._y then it._y, it._yv = y, 0 end
-        it._y, it._yv = MotionEngine.Step(it._y, it._yv, y, dt, "SMOOTH")
-        local xo = it._x or 0
-        if dragItem ~= it then
-            local tx = it._gone and -(w + 40 * s) or 0
-            it._x, it._xv = MotionEngine.Step(xo, it._xv or 0, tx, dt, it._gone and "SNAPPY" or "BOUNCY")
-            xo = it._x
+    local base = ch / 2 + peek - ch * 0.9 * 0.75 / 2
+    local ib = IsPureGlass() and Color(28, 28, 30, 235) or UI.Main.IslandBgColor:Get()
+    local under = Color(ib.r, ib.g, ib.b, IsPureGlass() and (ib.a or 235) or 255)
+    for _, i in ipairs(order) do
+        local d = i - pos
+        local ad = math.abs(d)
+        local card = cards[i]
+        local xo = 0
+        if card then
+            local it = card.item
+            if dragItem ~= it then
+                local tx = it._gone and -(W + 40 * s) or 0
+                it._x, it._xv = MotionEngine.Step(it._x or 0, it._xv or 0, tx, dt, it._gone and "SNAPPY" or "BOUNCY")
+            end
+            if ad < 0.5 then xo = it._x or 0 end
+            if it._gone and (it._x or 0) < -W then NotifCenter.Remove(card) end
         end
-        local top = math.floor(layout.y + it._y + yOff)
-
-        if xo < -4 * s and not it._gone then
-            local rw = math.min(-xo - 6 * s, w)
-            if rw > 6 * s then
-                Render.FilledRect(Vec2(gr - rw, top), Vec2(gr, top + cardH), FadeColor(C.Red, a), math.min(12 * s, rw / 2))
-                local ls = Render.TextSize(fT, sT, clr)
-                if rw > ls.x + 16 * s then
-                    Render.Text(fT, sT, clr, Vec2(math.floor(gr - rw / 2 - ls.x / 2), math.floor(top + (cardH - ls.y) / 2)), FadeColor(Color(255, 255, 255, 255), a))
+        if ad <= 1.6 then
+            local k1 = math.min(ad, 1)
+            local sc = 1 - 0.1 * k1
+            local w = cw * sc
+            local h = ch * sc * (1 - 0.25 * k1)
+            local off = ad <= 1 and ad * base or base + (ad - 1) * 20 * s
+            local cy = ccy + (d > 0 and off or -off)
+            local vis = ad <= 1 and 1 or math.max(0, 1 - (ad - 1) / 0.6)
+            local shade = 1 - 0.5 * k1
+            local contentA = i == front and 1 - math.max(0, math.min(1, (ad - 0.7) / 0.3)) or 1 - math.max(0, math.min(1, (ad - 0.35) / 0.5))
+            local x1, y1 = ccx - w / 2, cy - h / 2
+            local ca = a * vis
+            if ca > 0.01 then
+                if xo < -4 * s then
+                    local rw = math.min(-xo - 8 * s, w)
+                    if rw > 6 * s then
+                        local rx2 = x1 + w
+                        Render.FilledRect(Vec2(rx2 - rw, y1), Vec2(rx2, y1 + h), FadeColor(C.Red, ca), math.min(24 * s, rw / 2))
+                        local fR, sR = TF("Headline", s)
+                        local clr = L("di_nc_clear")
+                        local ls = Render.TextSize(fR, sR, clr)
+                        if rw > ls.x + 20 * s then
+                            Render.Text(fR, sR, clr, Vec2(math.floor(rx2 - rw / 2 - ls.x / 2), math.floor(y1 + (h - ls.y) / 2)), FadeColor(Color(255, 255, 255, 255), ca))
+                        end
+                    end
+                end
+                Render.FilledRect(Vec2(x1 + xo, y1), Vec2(x1 + xo + w, y1 + h), FadeColor(under, ca), 24 * s * sc)
+                Render.FilledRect(Vec2(x1 + xo, y1), Vec2(x1 + xo + w, y1 + h), FadeColor(C.Group, ca * shade), 24 * s * sc)
+                if contentA > 0.02 then
+                    Render.PushClip(Vec2(x1 + xo, y1), Vec2(x1 + xo + w, y1 + h), true)
+                    if card then
+                        NotifCenter.DrawCard(card, x1 + xo + (ad < 0.5 and NotifCenter.InnerX * s or 0), y1, w, h, s * sc, ca * contentA)
+                    else
+                        NotifCenter.DrawEnd(x1 + xo, y1, w, h, s * sc, ca * contentA, ad < 0.5)
+                    end
+                    Render.PopClip()
+                end
+                if ad < 0.5 and card and a > 0.9 and not card.item._gone then
+                    NotifCenter.RowHits[#NotifCenter.RowHits + 1] = { x1 = x1, y1 = y1, x2 = x1 + w, y2 = y1 + h, row = card }
                 end
             end
         end
-
-        if r.count > 1 then
-            Render.FilledRect(Vec2(gl + 16 * s + xo, top + cardH), Vec2(gr - 16 * s + xo, top + cardH + 7 * s), FadeColor(C.Group, a * 0.45), 8 * s, Enum.DrawFlags.RoundCornersBottom)
-            Render.FilledRect(Vec2(gl + 8 * s + xo, top + cardH), Vec2(gr - 8 * s + xo, top + cardH + 3.5 * s), FadeColor(C.Group, a * 0.8), 8 * s, Enum.DrawFlags.RoundCornersBottom)
+    end
+    if dots then
+        local gap = 10 * s
+        local dx = X + W - 16 * s
+        local y0 = ccy - (total * gap) / 2
+        for k = 1, total do
+            local dd = math.max(0, 1 - math.abs(k - pos))
+            local hgt = (5 + 9 * dd) * s
+            local y = y0 + (k - 1) * gap + 2.5 * s
+            Render.FilledRect(Vec2(dx, y - hgt / 2), Vec2(dx + 5 * s, y + hgt / 2), FadeColor(C.TextPrimary, a * (0.35 + 0.55 * dd)), 2.5 * s)
         end
-        Render.FilledRect(Vec2(gl + xo, top), Vec2(gr + xo, top + cardH), FadeColor(C.Group, a), 12 * s)
-
-        local icx, icy = gl + xo + 8 * s + isz / 2, top + cardH / 2
-        local accent = it.accent or C.Blue
-        local img = it.icon and GetCachedImage(it.icon) or nil
-        if not img and it.fb and not NotifGlyphs[it.fb] and not it.mono then img = GetCachedImage(nil, it.fb) end
-        if img then
-            Impl.Img(img, Vec2(math.floor(icx - isz / 2), math.floor(icy - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), a), math.floor(isz / 2))
-        else
-            Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(accent, a), 0, 1.0, 24)
-            Glyph(it.fb or "bell", icx, icy, math.floor(isz * 0.56), FadeColor(Color(255, 255, 255, 255), a))
-        end
-        local tx = math.floor(gl + xo + 8 * s + isz + 9 * s)
-        local right = gr + xo - 10 * s
-        local ago = NotifCenter.Ago(it.t)
-        local aw = Render.TextSize(fT, sT, ago).x
-        local ly = math.floor(top + cardH / 2 - th - 1 * s)
-        Render.Text(fT, sT, TruncateToWidth(fT, sT, it.tag, right - tx - aw - 8 * s), Vec2(tx, ly), FadeColor(Impl.OnLight(accent), a))
-        Render.Text(fT, sT, ago, Vec2(math.floor(right - aw), ly), FadeColor(C.TextMuted, a))
-        local titleMax = right - tx
-        if r.count > 1 then
-            local badge = "+" .. tostring(r.count - 1)
-            local bw = Render.TextSize(fT, sT, badge).x + 10 * s
-            local bh = th + 2 * s
-            local by = math.floor(top + cardH / 2 + 1 * s)
-            Render.FilledRect(Vec2(right - bw, by), Vec2(right, by + bh), FadeColor(C.FillSecondary, a), bh / 2)
-            Render.Text(fT, sT, badge, Vec2(math.floor(right - bw + 5 * s), math.floor(by + 1 * s)), FadeColor(C.TextPrimary, a))
-            titleMax = titleMax - bw - 6 * s
-        end
-        Render.Text(fB, sB, TruncateToWidth(fB, sB, it.title, titleMax), Vec2(tx, math.floor(top + cardH / 2)), FadeColor(C.TextPrimary, a))
-
-        if a > 0.9 and not it._gone then
-            NotifCenter.RowHits[#NotifCenter.RowHits + 1] = { x1 = gl, y1 = top, x2 = gr, y2 = top + cardH, row = r }
-        end
-        if it._gone and xo < -w then
-            NotifCenter.Remove(r)
-        end
-        y = y + NotifCenter.RowH * s + (r.count > 1 and NotifCenter.StackH * s or 0)
     end
 end
 
@@ -13481,6 +13601,10 @@ function Sdk.TapNotif(now)
     local n = NotificationQueue.Active
     if not n then return end
     if Sdk.ExpandedAt and Sdk.PressAt and Sdk.ExpandedAt >= Sdk.PressAt then return end
+    if not Sdk.Expanded and Sdk.CanExpand() and UI.Main.ExpandMode and UI.Main.ExpandMode:Get() == 2 then
+        Sdk.Expand(os.clock())
+        return
+    end
     local fn, app = n.OnTap, n.SdkApp
     if Sdk.Expanded and Sdk.ExpandK > 0.9 then
         for _, h in ipairs(Sdk.Hits) do
