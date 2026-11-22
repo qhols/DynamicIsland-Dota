@@ -455,32 +455,15 @@ local localization = qLocalization.new({
         di_rem_tag = "REMINDER",
         di_rem_default = "Reminder %d",
         di_rem_text_tip = "What the island shows",
+        di_rem_index = "Reminder number",
+        di_rem_index_tip = "Pick which reminder to edit, 1 to 300.\nA dot means it is on",
+        di_rem_on = "Reminder on",
+        di_rem_text = "Text",
+        di_rem_min = "Minute",
+        di_rem_sec = "Second",
+        di_rem_every = "Repeat every, min",
         di_rem_every_tip = "Repeat every N minutes,\n0 means once",
         di_priority_reminder = "Custom Reminder",
-        di_rem_1 = "Reminder 1",
-        di_rem_gear_1 = "Reminder 1",
-        di_rem1_text = "Text",
-        di_rem1_min = "Minute",
-        di_rem1_sec = "Second",
-        di_rem1_every = "Repeat every, min",
-        di_rem_2 = "Reminder 2",
-        di_rem_gear_2 = "Reminder 2",
-        di_rem2_text = "Text",
-        di_rem2_min = "Minute",
-        di_rem2_sec = "Second",
-        di_rem2_every = "Repeat every, min",
-        di_rem_3 = "Reminder 3",
-        di_rem_gear_3 = "Reminder 3",
-        di_rem3_text = "Text",
-        di_rem3_min = "Minute",
-        di_rem3_sec = "Second",
-        di_rem3_every = "Repeat every, min",
-        di_rem_4 = "Reminder 4",
-        di_rem_gear_4 = "Reminder 4",
-        di_rem4_text = "Text",
-        di_rem4_min = "Minute",
-        di_rem4_sec = "Second",
-        di_rem4_every = "Repeat every, min",
         di_rune_names_double_damage = "Double Damage",
         di_rune_names_haste = "Haste",
         di_rune_names_illusion = "Illusion",
@@ -771,14 +754,17 @@ local localization = qLocalization.new({
         di_upd_retry = "Try Again",
         di_wn_title = "What's New",
         di_wn_continue = "Continue",
-        di_wn_1_t = "Activities side by side",
-        di_wn_1_d = "Two live activities at once, like on iPhone",
-        di_wn_2_t = "Synced lyrics",
-        di_wn_2_d = "Line by line, in the player and the small island",
-        di_wn_3_t = "Accessibility",
-        di_wn_3_d = "Reduce Motion, Bold Text, Increase Contrast",
-        di_wn_4_t = "Widgets for scripts",
-        di_wn_4_d = "Other scripts add their own chips",
+        di_wn_next = "Next",
+        di_wn_1_t = "A new shape",
+        di_wn_1_d = "Real iPhone proportions, empty by default",
+        di_wn_2_t = "Apple motion",
+        di_wn_2_d = "Every animation redone frame by frame",
+        di_wn_3_t = "Gestures",
+        di_wn_3_d = "Tap to open, swipe to switch, no more dragging",
+        di_wn_4_t = "Live on the map",
+        di_wn_4_d = "Fights and the courier, illusions ignored",
+        di_wn_5_t = "Zero lag",
+        di_wn_5_d = "The bridge talks to the island directly",
         di_nc_title = "Notifications",
         di_nc_clear = "Clear",
         di_sdk_perm_sub = "Would Like to Send You Notifications",
@@ -797,6 +783,7 @@ local localization = qLocalization.new({
         di_main_expand = "Expand island",
         di_main_expand_hover = "On hover",
         di_main_expand_hold = "Press and hold",
+        di_main_expand_tap = "Tap",
         di_main_expand_tip = "Hover opens the island under the cursor,\nhold opens it after a long press like on iPhone",
         di_group_system = "System",
         di_sys_output = "Audio output",
@@ -827,6 +814,8 @@ local localization = qLocalization.new({
         di_main_enabled_tip = "Turns the whole island on or off.\nMore settings are in the gear",
         di_main_only_in_game = "Only In-Game",
         di_main_only_in_game_tip = "Hide the island in the main menu,\nshow it only in a match",
+        di_main_idle_widgets = "Widgets on the Empty Island",
+        di_main_idle_widgets_tip = "Old look: clock and stats on the idle island\nand a large idle card. Off is the iPhone look",
         di_main_preset = "Position Preset",
         di_main_preset_tip = "Where the island sits.\nCtrl and drag moves it anywhere",
         di_main_offset_y = "Vertical Offset (Y)",
@@ -999,7 +988,7 @@ local localization = qLocalization.new({
         di_alert_sound_tip = "Play a sound when\nthis alert shows up",
         di_sdk_slot_tip = "Lets this script show notifications,\nactivities and widgets",
         di_rem_time_tip = "Game time of the reminder",
-        di_rem_on_tip = "Your own reminder at a game time.\nText and time are in the gear",
+        di_rem_on_tip = "Your own reminder at a game time.\nPick a number above, then set text and time",
         di_lead_tip = "How many seconds before\nto remind you",
         di_haptics_intensity = "Kinetic Intensity",
         di_haptics_intensity_tip = "How strong the squish is",
@@ -1105,32 +1094,15 @@ local localization = qLocalization.new({
         di_rem_tag = "НАПОМИНАНИЕ",
         di_rem_default = "Напоминание %d",
         di_rem_text_tip = "Что покажет островок",
+        di_rem_index = "Номер напоминания",
+        di_rem_index_tip = "Выбери, какое напоминание правишь, от 1 до 300.\nТочка значит, что оно включено",
+        di_rem_on = "Напоминание включено",
+        di_rem_text = "Текст",
+        di_rem_min = "Минута",
+        di_rem_sec = "Секунда",
+        di_rem_every = "Повтор каждые, мин",
         di_rem_every_tip = "Повторять каждые N минут,\n0 значит один раз",
         di_priority_reminder = "Своё напоминание",
-        di_rem_1 = "Напоминание 1",
-        di_rem_gear_1 = "Напоминание 1",
-        di_rem1_text = "Текст",
-        di_rem1_min = "Минута",
-        di_rem1_sec = "Секунда",
-        di_rem1_every = "Повтор каждые, мин",
-        di_rem_2 = "Напоминание 2",
-        di_rem_gear_2 = "Напоминание 2",
-        di_rem2_text = "Текст",
-        di_rem2_min = "Минута",
-        di_rem2_sec = "Секунда",
-        di_rem2_every = "Повтор каждые, мин",
-        di_rem_3 = "Напоминание 3",
-        di_rem_gear_3 = "Напоминание 3",
-        di_rem3_text = "Текст",
-        di_rem3_min = "Минута",
-        di_rem3_sec = "Секунда",
-        di_rem3_every = "Повтор каждые, мин",
-        di_rem_4 = "Напоминание 4",
-        di_rem_gear_4 = "Напоминание 4",
-        di_rem4_text = "Текст",
-        di_rem4_min = "Минута",
-        di_rem4_sec = "Секунда",
-        di_rem4_every = "Повтор каждые, мин",
         di_rune_names_double_damage = "Двойной урон",
         di_rune_names_haste = "Ускорение",
         di_rune_names_illusion = "Иллюзии",
@@ -1421,14 +1393,17 @@ local localization = qLocalization.new({
         di_upd_retry = "Повторить",
         di_wn_title = "Что нового",
         di_wn_continue = "Продолжить",
-        di_wn_1_t = "Активности рядом",
-        di_wn_1_d = "Две активности сразу, как на iPhone",
-        di_wn_2_t = "Текст песен",
-        di_wn_2_d = "По строкам, в плеере и в маленьком островке",
-        di_wn_3_t = "Универсальный доступ",
-        di_wn_3_d = "Уменьшение движения, жирный шрифт, контраст",
-        di_wn_4_t = "Виджеты для скриптов",
-        di_wn_4_d = "Другие скрипты добавляют свои чипы",
+        di_wn_next = "Далее",
+        di_wn_1_t = "Новая форма",
+        di_wn_1_d = "Пропорции iPhone, по умолчанию пустой",
+        di_wn_2_t = "Анимации Apple",
+        di_wn_2_d = "Каждая пересобрана покадрово",
+        di_wn_3_t = "Жесты",
+        di_wn_3_d = "Тап открывает, свайп переключает, без перетаскивания",
+        di_wn_4_t = "На карте",
+        di_wn_4_d = "Драки и курьер, иллюзии не считаются",
+        di_wn_5_t = "Без задержек",
+        di_wn_5_d = "Мост общается с островом напрямую",
         di_nc_title = "Уведомления",
         di_nc_clear = "Очистить",
         di_sdk_perm_sub = "Хочет отправлять вам уведомления",
@@ -1447,6 +1422,7 @@ local localization = qLocalization.new({
         di_main_expand = "Раскрытие",
         di_main_expand_hover = "При наведении",
         di_main_expand_hold = "Удержанием",
+        di_main_expand_tap = "Нажатием",
         di_main_expand_tip = "Наведение раскрывает островок под курсором,\nудержание после долгого нажатия, как на айфоне",
         di_group_system = "Система",
         di_sys_output = "Вывод звука",
@@ -1477,6 +1453,8 @@ local localization = qLocalization.new({
         di_main_enabled_tip = "Включает и выключает весь островок.\nОстальное в шестеренке",
         di_main_only_in_game = "Только в игре",
         di_main_only_in_game_tip = "Прятать островок в главном меню,\nпоказывать только в матче",
+        di_main_idle_widgets = "Виджеты на пустом островке",
+        di_main_idle_widgets_tip = "Старый вид: часы и статистика на пустом островке\nи большая карточка. Выключено как на iPhone",
         di_main_preset = "Пресет позиции",
         di_main_preset_tip = "Где стоит островок.\nCtrl и перетаскивание ставят его куда угодно",
         di_main_offset_y = "Смещение (Y)",
@@ -1649,7 +1627,7 @@ local localization = qLocalization.new({
         di_alert_sound_tip = "Проигрывать звук,\nкогда появляется это оповещение",
         di_sdk_slot_tip = "Разрешает скрипту показывать уведомления,\nактивности и виджеты",
         di_rem_time_tip = "Время игры для напоминания",
-        di_rem_on_tip = "Свое напоминание на время игры.\nТекст и время в шестеренке",
+        di_rem_on_tip = "Свое напоминание на время игры.\nВыбери номер выше, затем текст и время",
         di_lead_tip = "За сколько секунд\nнапомнить",
         di_haptics_intensity = "Сила кинетического импульса",
         di_haptics_intensity_tip = "Насколько сильное сжатие",
@@ -1714,8 +1692,8 @@ local function AnimScale()
         AnimWidget = Menu.Find("SettingsHidden", "", "", "", "Main", "Animation Duration")
     end
     local d = AnimWidget and AnimWidget:Get()
-    if not d then return 1.5 end
-    return math.min(1000, math.max(10, d)) * 1.5 / 200
+    if not d then return 1.0 end
+    return math.min(1000, math.max(10, d)) / 200
 end
 
 local function LerpColor(c1, c2, t)
@@ -1730,8 +1708,8 @@ end
 local MotionEngine = {
     Profiles = {
         SNAPPY = { omega = 21.0, zeta = 0.82 },
-        SMOOTH = { omega = 16.0, zeta = 1.0 },
-        BOUNCY = { omega = 13.5, zeta = 0.72 }
+        SMOOTH = { omega = 14.0, zeta = 1.0 },
+        BOUNCY = { omega = 12.8, zeta = 0.81 }
     },
     CurrentProfile = "BOUNCY",
     SmoothedDt = 0.016
@@ -1846,53 +1824,53 @@ local Config = {
 
     Dimensions = {
         CompactW = 120,
-        CompactH = 34,
-        CompactRadius = 17,
+        CompactH = 37,
+        CompactRadius = 18.5,
 
         CompactMediaW = 205,
-        CompactMediaBareW = 124,
-        CompactMediaH = 34,
-        CompactMediaRadius = 17,
+        CompactMediaBareW = 168,
+        CompactMediaH = 37,
+        CompactMediaRadius = 18.5,
 
         CompactFightW = 200,
-        CompactFightH = 34,
-        CompactFightRadius = 17,
+        CompactFightH = 37,
+        CompactFightRadius = 18.5,
 
-        NotificationW = 260,
-        NotificationH = 44,
-        NotificationRadius = 22,
+        NotificationW = 340,
+        NotificationH = 72,
+        NotificationRadius = 36,
 
-        ExpandedW = 335,
+        ExpandedW = 375,
         ExpandedH = 88,
-        ExpandedRadius = 26,
+        ExpandedRadius = 44,
 
-        LargeMediaW = 360,
-        LargeMediaH = 148,
-        LargeMediaRadius = 28,
+        LargeMediaW = 375,
+        LargeMediaH = 204,
+        LargeMediaRadius = 50,
 
-        LargeFightW = 365,
-        LargeFightH = 148,
-        LargeFightRadius = 28,
+        LargeFightW = 375,
+        LargeFightH = 160,
+        LargeFightRadius = 50,
 
-        LargeW = 340,
-        LargeH = 105,
-        LargeRadius = 24,
+        LargeW = 375,
+        LargeH = 136,
+        LargeRadius = 50,
 
         GamePausedW = 180,
-        GamePausedH = 34,
-        GamePausedRadius = 17,
+        GamePausedH = 37,
+        GamePausedRadius = 18.5,
 
-        CourierDeliveryW = 230,
-        CourierDeliveryH = 34,
-        CourierDeliveryRadius = 17,
+        CourierDeliveryW = 168,
+        CourierDeliveryH = 37,
+        CourierDeliveryRadius = 18.5,
 
         CourierDeliveredW = 180,
-        CourierDeliveredH = 34,
-        CourierDeliveredRadius = 17,
+        CourierDeliveredH = 37,
+        CourierDeliveredRadius = 18.5,
 
-        CourierLargeW = 340,
-        CourierLargeH = 115,
-        CourierLargeRadius = 24,
+        CourierLargeW = 375,
+        CourierLargeH = 148,
+        CourierLargeRadius = 50,
 
         FloorHeight = 34
     }
@@ -1905,6 +1883,7 @@ local Dbg = { On = false, TB = debug and debug.traceback }
 Impl.HttpUnsent = {}
 
 function Impl.HttpRequest(method, url, data, cb, tag)
+    if type(cb) == "function" and Impl.SafeCallback then cb = Impl.SafeCallback("http", cb) end
     if not Dbg.On or type(cb) ~= "function" then
         if tag ~= nil then return HTTP.Request(method, url, data, cb, tag) end
         return HTTP.Request(method, url, data, cb)
@@ -1927,24 +1906,40 @@ function Impl.HttpRequest(method, url, data, cb, tag)
     return sent
 end
 
-local Fuse = { Count = {}, Off = {}, Logged = 0 }
+local Fuse = { Count = {}, Off = {}, Logged = 0, Win = {}, Seen = {}, OffAt = {} }
 
-function Fuse.Fail(name, err)
-    local c = (Fuse.Count[name] or 0) + 1
-    Fuse.Count[name] = c
-    if Dbg.On then
-        Dbg.Error(name, err)
-    elseif c <= 3 and Fuse.Logged < 60 then
-        Fuse.Logged = Fuse.Logged + 1
-        Log.Write("[Dynamic Island] " .. name .. ": " .. tostring(err))
+function Fuse.Trace(e)
+    local msg = tostring(e)
+    if Dbg.TB then
+        local ok, tb = pcall(Dbg.TB, msg, 2)
+        if ok and type(tb) == "string" then return tb end
     end
-    if c == 30 then
+    return msg
+end
+
+function Fuse.Fail(name, err, noPause)
+    local now = os.clock()
+    Fuse.Count[name] = (Fuse.Count[name] or 0) + 1
+    local w = Fuse.Win[name]
+    if not w or now - w.t0 > 10 then
+        w = { t0 = now, n = 0 }
+        Fuse.Win[name] = w
+    end
+    w.n = w.n + 1
+    local text = tostring(err)
+    local key = name .. "|" .. (string.match(text, "^[^\n]*") or text)
+    if Dbg.On then Dbg.Error(name, err) end
+    local last = Fuse.Seen[key]
+    if (not last or now - last > 60) and Fuse.Logged < 300 then
+        Fuse.Seen[key] = now
+        Fuse.Logged = Fuse.Logged + 1
+        Log.Write("[Dynamic Island] " .. name .. ": " .. text)
+    end
+    if not noPause and w.n >= 30 and not Fuse.Off[name] then
         Fuse.Off[name] = true
-        if Dbg.On then
-            Dbg.Log("error", name .. " turned off after repeated errors", true)
-        else
-            Log.Write("[Dynamic Island] " .. name .. " turned off after repeated errors")
-        end
+        Fuse.OffAt[name] = now
+        Log.Write("[Dynamic Island] " .. name .. " paused for 30 s after repeated errors")
+        if Dbg.On then Dbg.Log("error", name .. " paused for 30 s after repeated errors", true) end
     end
 end
 
@@ -1954,17 +1949,24 @@ function Fuse.Unwind(depth)
 end
 
 function Fuse.Guard(name, fn, ...)
-    if Fuse.Off[name] then return end
-    local depth = ClipDepth.n
-    local ok, err
-    if Dbg.On and Dbg.TB then
-        ok, err = xpcall(fn, Dbg.Trace, ...)
-    else
-        ok, err = pcall(fn, ...)
+    if Fuse.Off[name] then
+        if os.clock() - (Fuse.OffAt[name] or 0) < 30 then return end
+        Fuse.Off[name] = nil
+        Fuse.Win[name] = nil
+        Log.Write("[Dynamic Island] " .. name .. " resumed")
     end
+    local depth = ClipDepth.n
+    local ok, err = xpcall(fn, Fuse.Trace, ...)
     if not ok then
         Fuse.Unwind(depth)
         Fuse.Fail(name, err)
+    end
+end
+
+function Impl.SafeCallback(name, fn)
+    return function(...)
+        local ok, err = xpcall(fn, Fuse.Trace, ...)
+        if not ok then Fuse.Fail(name, err, true) end
     end
 end
 
@@ -2315,7 +2317,7 @@ local SatelliteBounds = nil
 local MenuStateCandidate = { state = nil, since = 0 }
 
 local Focus = { ClickAt = -10, BumpAt = -10, BannerStart = 0, TileVis = 0, Active = false, Mode = 0, Until = 0, StartedAt = 0, Suppressed = 0, BannerUntil = 0, BannerOn = true, Vis = 0, LastDraw = 0, PressAt = -10, ButtonAt = -10, Accent = Color(94, 92, 230, 255) }
-local Reminders = { Fired = {} }
+local Reminders = { Fired = {}, Items = {}, Cur = 1, Sync = false, Booting = true }
 local Satellite = { S = {}, Right = { kind = nil, notif = nil } }
 local Rampage = { Count = 0, LastKill = -100, Left = 0, SuccessAt = -10, Target = nil, Active = false }
 local Success = { Fired = {} }
@@ -2323,7 +2325,7 @@ local Odometer = { States = {}, Widths = {}, WidthCount = 0, Digit = {}, Layouts
 local SeekDrag = { Active = false, Frac = 0, Grow = 0, GrowVel = 0, HoldUntil = 0, HoldPos = 0, HoldStart = 0 }
 local PlaylistPicker = { Open = false, Loading = false, Busy = false, Items = {}, Selected = {}, Offset = 0, Hits = {}, Error = nil, Track = "", Retries = 0, RetryAt = 0 }
 
-local SCRIPT_VERSION = "2.5.3"
+local SCRIPT_VERSION = "3.0.0"
 
 local BridgeStatus = { FirstPoll = 0, LastPoll = 0, LastOk = 0, Version = "", Latest = "", MediaSessions = "" }
 local SystemState = { LastPoll = 0, Seen = false }
@@ -2631,10 +2633,26 @@ local function RGBtoHue(r, g, b)
     return h
 end
 
+function Impl.ConfigBuffer(path)
+    local probe = Impl.OpenFile(path, "a")
+    if not probe then return nil end
+    probe:close()
+    local parts = {}
+    return {
+        write = function(self, s) parts[#parts + 1] = s end,
+        close = function(self)
+            local f = Impl.OpenFile(path, "w")
+            if not f then return end
+            f:write(table.concat(parts))
+            f:close()
+        end
+    }
+end
+
 local function SaveAllConfig()
     local paths = Impl.ConfigSavePaths
     for _, path in ipairs(paths) do
-        local f = Impl.OpenFile(path, "w")
+        local f = Impl.ConfigBuffer(path)
         if f then
             local activeStr = table.concat(Impl.WgActiveList(), ",")
             f:write("active=" .. activeStr .. "\n")
@@ -2654,6 +2672,16 @@ local function SaveAllConfig()
             if focusApps then f:write("sdk_focus=" .. focusApps .. "\n") end
             local mutedApps = Sdk.SoundLine()
             if mutedApps then f:write("sdk_nosound=" .. mutedApps .. "\n") end
+            local remKeys = {}
+            for k, it in pairs(Reminders.Items) do
+                if it.on or it.text ~= "" then remKeys[#remKeys + 1] = k end
+            end
+            table.sort(remKeys)
+            for _, k in ipairs(remKeys) do
+                local it = Reminders.Items[k]
+                f:write(string.format("rem_%d=%d|%d|%d|%d|%s\n", k, it.on and 1 or 0, it.min, it.sec, it.every, Reminders.Enc(it.text)))
+            end
+            f:write("rem_idx=" .. tostring(Reminders.Cur) .. "\n")
 
             for id, cfg in pairs(HUDCustomizer.WidgetConfigs) do
                 f:write(string.format("cfg_%s=%s,%d,%d,%s,%s\n", id, cfg.bold and "1" or "0", cfg.colorMode or 1, cfg.format or 1, cfg.showIcon and "1" or "0", cfg.customHex or ""))
@@ -2799,6 +2827,12 @@ function Impl.LoadAllConfig()
             Impl.Ly.Open = true
         elseif line == "hello_chat=1" or line == "hello_chat=0" then
             Hello.ChatPending = line == "hello_chat=1"
+        elseif string.match(line, "^rem_%d+=[01]|%d+|%d+|%d+|") then
+            local ri, ro, rm, rs, re, rt = string.match(line, "^rem_(%d+)=([01])|(%d+)|(%d+)|(%d+)|(.*)$")
+            Reminders.Items[tonumber(ri)] = { on = ro == "1", min = tonumber(rm), sec = tonumber(rs), every = tonumber(re), text = Reminders.Dec(rt or "") }
+        elseif string.match(line, "^rem_idx=%d+$") then
+            local ci = tonumber(string.match(line, "^rem_idx=(%d+)$"))
+            if ci and ci >= 1 and ci <= 300 then Reminders.Cur = ci end
         elseif string.match(line, "^hello_stamp=%-?%d+$") then
             Hello.SavedStamp = tonumber(string.match(line, "^hello_stamp=(%-?%d+)$"))
         elseif string.sub(line, 1, 13) == "saved_colors=" then
@@ -2876,8 +2910,8 @@ function Impl.LoadAllConfig()
                     elseif k == "ui_c_fightradius" and UI.Combat and UI.Combat.FightRadius then UI.Combat.FightRadius:Set(tonumber(v) or 1600)
                     elseif k == "ui_c_radarzoom" and UI.Combat and UI.Combat.RadarZoom then UI.Combat.RadarZoom:Set(tonumber(v) or 2000)
                     elseif k == "ui_c_fighttimeout" and UI.Combat and UI.Combat.FightTimeout then UI.Combat.FightTimeout:Set(tonumber(v) or 4)
-                    elseif k == "ui_c_large_w" and UI.Combat and UI.Combat.FightLargeW then UI.Combat.FightLargeW:Set(math.floor(tonumber(v) or 365))
-                    elseif k == "ui_c_large_h" and UI.Combat and UI.Combat.FightLargeH then UI.Combat.FightLargeH:Set(math.floor(tonumber(v) or 148))
+                    elseif k == "ui_c_large_w" and UI.Combat and UI.Combat.FightLargeW then UI.Combat.FightLargeW:Set((function(n) if n == 365 then return 375 end return n end)(math.floor(tonumber(v) or 375)))
+                    elseif k == "ui_c_large_h" and UI.Combat and UI.Combat.FightLargeH then UI.Combat.FightLargeH:Set((function(n) if n == 148 then return 160 end return n end)(math.floor(tonumber(v) or 160)))
                     elseif k == "ui_r_active" and UI.Runes and UI.Runes.ActiveRunes then UI.Runes.ActiveRunes:Set(v == "1")
                     elseif k == "ui_r_water" and UI.Runes and UI.Runes.WaterRunes then UI.Runes.WaterRunes:Set(v == "1")
                     elseif k == "ui_r_bounty" and UI.Runes and UI.Runes.BountyRunes then UI.Runes.BountyRunes:Set(v == "1")
@@ -3180,7 +3214,7 @@ local function HapticPlaySound(appleSoundName, arg2, arg3)
                     end
                 end
             end
-            pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/sound?name=" .. appleSoundName .. "&vol=" .. string.format("%.2f", finalVol) .. forceParam .. duckParam, {}, function() end)
+            Impl.BridgeSend("/sound?name=" .. appleSoundName .. "&vol=" .. string.format("%.2f", finalVol) .. forceParam .. duckParam)
         end
     end
 end
@@ -3527,8 +3561,10 @@ function Impl.InitMenu()
     M.Enabled:ToolTip("di_main_enabled_tip")
     local gMore = M.Enabled:Gear("di_gear_more")
     M.OnlyInGame = gMore:Switch("di_main_only_in_game", false, "\u{f108}")
+    M.IdleWidgets = gMore:Switch("di_main_idle_widgets", false, "\u{f009}")
+    M.IdleWidgets:ToolTip("di_main_idle_widgets_tip")
     M.OnlyInGame:ToolTip("di_main_only_in_game_tip")
-    M.ExpandMode = gMore:Combo("di_main_expand", { "di_main_expand_hover", "di_main_expand_hold" }, 0)
+    M.ExpandMode = gMore:Combo("di_main_expand", { "di_main_expand_hover", "di_main_expand_hold", "di_main_expand_tap" }, 2)
     M.ExpandMode:Icon("\u{f065}")
     M.ExpandMode:ToolTip("di_main_expand_tip")
     M.Demo = gMore:Button("di_main_demo", function() Demo.Start() end)
@@ -3572,6 +3608,7 @@ function Impl.InitMenu()
     M.ExportCfg:ToolTip("di_media_export_cfg_tip")
     M.ImportCfg = gMore:Button("di_media_import_cfg", function()
         Impl.LoadAllConfig()
+        Reminders.Load()
     end)
     M.ImportCfg:ToolTip("di_media_import_cfg_tip")
 
@@ -3633,10 +3670,10 @@ function Impl.InitMenu()
     C.FightTimeout = gRadar:Slider("di_combat_fight_timeout", 2, 10, 4, "%d s")
     C.FightTimeout:ToolTip("di_combat_fight_timeout_tip")
     C.FightTimeout:Icon("\u{f017}")
-    C.FightLargeW = gRadar:Slider("di_combat_fight_large_w", 300, 520, 365, "%d px")
+    C.FightLargeW = gRadar:Slider("di_combat_fight_large_w", 300, 520, 375, "%d px")
     C.FightLargeW:ToolTip("di_combat_fight_large_w_tip")
     C.FightLargeW:Icon("\u{f337}")
-    C.FightLargeH = gRadar:Slider("di_combat_fight_large_h", 110, 220, 148, "%d px")
+    C.FightLargeH = gRadar:Slider("di_combat_fight_large_h", 110, 220, 160, "%d px")
     C.FightLargeH:ToolTip("di_combat_fight_large_h_tip")
     C.FightLargeH:Icon("\u{f338}")
     P.FightSummary = prio(gRadar, "di_priority_fight_summary", 3)
@@ -3810,7 +3847,7 @@ function Impl.InitMenu()
     P.Media = gPlayer:Slider("di_alert_priority", 1, 5, 5, "%d")
     P.Media:Icon("\u{f160}")
     P.Media:ToolTip("di_media_priority_tip")
-    Md.CompactTitle = gPlayer:Switch("di_media_compact_title", true, "\u{f031}")
+    Md.CompactTitle = gPlayer:Switch("di_media_compact_title", false, "\u{f031}")
     Md.CompactTitle:ToolTip("di_media_compact_title_tip")
     Md.CenterShortTitle = gPlayer:Switch("di_media_center_short_title", false, "\u{f036}")
     Md.CenterShortTitle:ToolTip("di_media_center_short_title_tip")
@@ -3876,7 +3913,7 @@ function Impl.InitMenu()
             local userVol = (UI and UI.Haptics and UI.Haptics.Volume) and (UI.Haptics.Volume:Get() / 100.0) or 0.5
             local baseDuckPct = (UI and UI.Haptics and UI.Haptics.DuckingAmount and UI.Haptics.DuckingAmount:Get() or 50) / 100.0
             local finalDuck = string.format("%.2f", baseDuckPct)
-            pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/sound?name=courier_delivered&vol=" .. string.format("%.2f", userVol) .. "&force=1&duck=" .. finalDuck, {}, function() end)
+            Impl.BridgeSend("/sound?name=courier_delivered&vol=" .. string.format("%.2f", userVol) .. "&force=1&duck=" .. finalDuck)
         end
     end)
     H.TestDucking:ToolTip("di_haptics_test_ducking_tip")
@@ -3893,23 +3930,37 @@ function Impl.InitMenu()
     UI.Focus.MoonTint:ToolTip("di_focus_moon_tint_tip")
 
     local RM = UI.Reminders
-    for i, key in ipairs({ "di_rem_1", "di_rem_2", "di_rem_3", "di_rem_4" }) do
-        local sw = gRem:Switch(key, false, "\u{f0f3}")
-        sw:ToolTip("di_rem_on_tip")
-        local g = sw:Gear(({ "di_rem_gear_1", "di_rem_gear_2", "di_rem_gear_3", "di_rem_gear_4" })[i])
-        RM["On" .. i] = sw
-        RM["Text" .. i] = g:Input(({ "di_rem1_text", "di_rem2_text", "di_rem3_text", "di_rem4_text" })[i], "", "\u{f036}")
-        RM["Text" .. i]:ToolTip("di_rem_text_tip")
-        RM["Min" .. i] = g:Slider(({ "di_rem1_min", "di_rem2_min", "di_rem3_min", "di_rem4_min" })[i], 0, 90, 10 * i, "%d")
-        RM["Min" .. i]:Icon("\u{f017}")
-        RM["Min" .. i]:ToolTip("di_rem_time_tip")
-        RM["Sec" .. i] = g:Slider(({ "di_rem1_sec", "di_rem2_sec", "di_rem3_sec", "di_rem4_sec" })[i], 0, 59, 0, "%d")
-        RM["Sec" .. i]:Icon("\u{f017}")
-        RM["Sec" .. i]:ToolTip("di_rem_time_tip")
-        RM["Every" .. i] = g:Slider(({ "di_rem1_every", "di_rem2_every", "di_rem3_every", "di_rem4_every" })[i], 0, 30, 0, "%d")
-        RM["Every" .. i]:Icon("\u{f01e}")
-        RM["Every" .. i]:ToolTip("di_rem_every_tip")
+    RM.Index = gRem:Slider("di_rem_index", 1, 300, 1, function(v)
+        local it = Reminders.Items[v]
+        if it and it.on then return v .. " \u{2022}" end
+        return tostring(v)
+    end)
+    RM.Index:Icon("\u{f0f3}")
+    RM.Index:ToolTip("di_rem_index_tip")
+    RM.On = gRem:Switch("di_rem_on", false, "\u{f0f3}")
+    RM.On:ToolTip("di_rem_on_tip")
+    RM.Text = gRem:Input("di_rem_text", "", "\u{f036}")
+    RM.Text:ToolTip("di_rem_text_tip")
+    RM.Min = gRem:Slider("di_rem_min", 0, 120, 10, "%d")
+    RM.Min:Icon("\u{f017}")
+    RM.Min:ToolTip("di_rem_time_tip")
+    RM.Sec = gRem:Slider("di_rem_sec", 0, 59, 0, "%d")
+    RM.Sec:Icon("\u{f017}")
+    RM.Sec:ToolTip("di_rem_time_tip")
+    RM.Every = gRem:Slider("di_rem_every", 0, 60, 0, "%d")
+    RM.Every:Icon("\u{f01e}")
+    RM.Every:ToolTip("di_rem_every_tip")
+    local function remStore()
+        if Reminders.Sync or Reminders.Booting then return end
+        local txt = RM.Text:Get()
+        Reminders.Items[Reminders.Cur] = { on = RM.On:Get() == true, text = type(txt) == "string" and txt or "", min = RM.Min:Get(), sec = RM.Sec:Get(), every = RM.Every:Get() }
     end
+    for _, w in ipairs({ RM.On, RM.Text, RM.Min, RM.Sec, RM.Every }) do w:SetCallback(remStore) end
+    RM.Index:SetCallback(function()
+        if Reminders.Booting then return end
+        Reminders.Cur = RM.Index:Get()
+        Reminders.Load()
+    end)
     P.Reminder = prio(gRem, "di_priority_reminder", 4)
     D.Reminder = dur(gRem, "di_reminder_duration")
     snd(gRem, "Reminder")
@@ -3942,8 +3993,6 @@ end
 
 function StateMachine.SharedKind(a, b)
     local S = StateMachine.States
-    if (a == S.COMPACT_MEDIA and b == S.LARGE_MEDIA) or (a == S.LARGE_MEDIA and b == S.COMPACT_MEDIA) then return "media" end
-    if (a == S.COMPACT_IDLE and b == S.LARGE_IDLE) or (a == S.LARGE_IDLE and b == S.COMPACT_IDLE) then return "idle" end
     return nil
 end
 
@@ -3977,16 +4026,6 @@ local function TriggerStateTransition(nextState)
     local prev = StateMachine.TargetState
     local shared = StateMachine.SharedKind(prev, nextState)
     local ghosts = StateMachine.Ghosts
-    local quick = tr.Active and not tr.SharedPair and not shared and (os.clock() - tr.StartTime) < 0.25 * AnimScale() and (tr.Reveal or 0) < 0.6
-    if quick then
-        StateMachine.PreviousState = prev
-        StateMachine.TargetState = nextState
-        StateMachine.StateStartTime = os.clock()
-        tr.ToState = nextState
-        tr.Dist0 = nil
-        tr.Shrink = nil
-        return
-    end
     if tr.Active and tr.SharedPair then
         if shared ~= tr.SharedPair then
             table.insert(ghosts, { shared = tr.SharedPair, m = StateMachine.SharedM(tr.SharedPair), a = 1 })
@@ -4043,9 +4082,9 @@ local function TriggerStateTransition(nextState)
     end
 
     tr.SqueezeUntil = nil
-    if not toLarge and not fromLarge and not shared and prev ~= nextState and not MotionEngine.Reduce then
-        tr.SqueezeW = math.max(70, StateMachine.Spring.W.value * 0.58)
-        tr.SqueezeUntil = os.clock() + 0.12 * AnimScale()
+    if not fromLarge and not shared and prev ~= nextState and not MotionEngine.Reduce then
+        tr.SqueezeW = math.max(70, StateMachine.Spring.W.value * 0.86)
+        tr.SqueezeUntil = os.clock() + 0.2 * AnimScale()
         MotionEngine.CurrentProfile = "BOUNCY"
     end
 
@@ -4433,6 +4472,27 @@ function Focus.Tick(nowClk)
     end
 end
 
+function Reminders.Load()
+    local R = UI and UI.Reminders
+    if not R or not R.Index then return end
+    local it = Reminders.Items[Reminders.Cur]
+    Reminders.Sync = true
+    R.On:Set(it and it.on or false)
+    R.Text:Set(it and it.text or "")
+    R.Min:Set(it and it.min or 10)
+    R.Sec:Set(it and it.sec or 0)
+    R.Every:Set(it and it.every or 0)
+    Reminders.Sync = false
+end
+
+function Reminders.Enc(text)
+    return (string.gsub(text or "", "[^%w ]", function(c) return string.format("%%%02X", string.byte(c)) end))
+end
+
+function Reminders.Dec(text)
+    return (string.gsub(text, "%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end))
+end
+
 function Reminders.Tick()
     local R = UI and UI.Reminders
     if not R then return end
@@ -4440,16 +4500,16 @@ function Reminders.Tick()
     if not okS or gs ~= 5 then return end
     local mt = GetActualMatchTime()
     if not mt or mt <= 0 then return end
-    for i = 1, 4 do
-        if R["On" .. i]:Get() then
-            local t0 = R["Min" .. i]:Get() * 60 + R["Sec" .. i]:Get()
-            local every = R["Every" .. i]:Get() * 60
+    for i, it in pairs(Reminders.Items) do
+        if it.on then
+            local t0 = it.min * 60 + it.sec
+            local every = it.every * 60
             if mt >= t0 then
                 local k = every > 0 and math.floor((mt - t0) / every) or 0
                 local target = t0 + k * every
                 if mt - target < 2 and Reminders.Fired[i] ~= target then
                     Reminders.Fired[i] = target
-                    local txt = R["Text" .. i]:Get()
+                    local txt = it.text
                     if type(txt) ~= "string" or txt == "" then txt = string.format(L("di_rem_default"), i) end
                     DynamicIsland.PushNotification({
                         Type = "reminder",
@@ -4477,6 +4537,10 @@ local function SendMediaCommand(cmd, onResult)
         return
     end
     if Dbg.On then Dbg.MediaSent(base, cmd) end
+    if Impl.ChanSend("/media/" .. cmd) then
+        if onResult then onResult(true) end
+        return
+    end
     local sentAt = os.clock()
     local port = 45455
     local url = string.format("http://127.0.0.1:%d/media/%s", port, cmd)
@@ -4621,10 +4685,10 @@ function Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
     local cheatDir = (Engine and Engine.GetCheatDirectory and Engine.GetCheatDirectory() or "C:/Umbrella/") .. "scripts/"
     local vStr = tostring(curVer)
     local paths = {
-        coverPath,
-        coverJpg,
         cheatDir .. "dynamic_island_covers/dynamic_island_cover_" .. vStr .. ".png",
         cheatDir .. "dynamic_island_covers/dynamic_island_cover_" .. vStr .. ".jpg",
+        coverPath,
+        coverJpg,
         cheatDir .. "dynamic_island_cover_" .. vStr .. ".png",
         cheatDir .. "dynamic_island_cover.png"
     }
@@ -4682,6 +4746,7 @@ IsNotifDeferred = function(notif)
     if not (UI.Media and UI.Media.SecondaryBubble and UI.Media.SecondaryBubble:Get()) then return false end
     if HUDCustomizer.IsOpen then return false end
     if not (Engine.IsInGame and Engine.IsInGame()) then return false end
+    if not Impl.MainKind then return false end
     if Impl.Engaged() then return true end
     if FightTracker.Active then return false end
     if not IsMediaActive() or Impl.MainKind ~= "media" then return false end
@@ -4787,6 +4852,111 @@ end
 
 Impl.WaveWeights = { 0.62, 0.86, 1.0, 0.8, 0.58 }
 
+Impl.Chan = { At = 0, Seq = nil, LiveAt = 0, Last = {}, LevelWantAt = 0 }
+
+function Impl.ScriptsDir()
+    if Impl.ScriptsDirCache then return Impl.ScriptsDirCache end
+    local dir = ""
+    if Engine and Engine.GetCheatDirectory then
+        local ok, cd = pcall(Engine.GetCheatDirectory)
+        if ok and cd and cd ~= "" then dir = string.gsub((string.gsub(cd, "/", "\\")), "\\$", "") .. "\\scripts" end
+    end
+    Impl.ScriptsDirCache = dir
+    return dir
+end
+
+function Impl.BridgeQuery()
+    local dir = Impl.ScriptsDir()
+    local q = dir ~= "" and ("?dir=" .. string.gsub(dir, "[^%w%-%._~]", function(c) return string.format("%%%02X", string.byte(c)) end)) or "?"
+    local likes = (UI and UI.Media and UI.Media.SpotifyLike and UI.Media.SpotifyLike:Get()) and "1" or "0"
+    return q .. (dir ~= "" and "&" or "") .. "likes=" .. likes
+end
+
+function Impl.ChanLive()
+    return os.clock() - Impl.Chan.LiveAt < 1.5
+end
+
+function Impl.ChanSend(pq)
+    if not Impl.ChanLive() then return false end
+    local dir = Impl.ScriptsDir()
+    if dir == "" then return false end
+    local f = Impl.OpenFile(dir .. "\\di_bridge\\cmd.txt", "a")
+    if not f then return false end
+    f:write(pq .. "\n")
+    f:close()
+    return true
+end
+
+function Impl.BridgeSend(pq, cb, tag)
+    if Impl.ChanSend(pq) then return true end
+    if cb then return pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455" .. pq, {}, cb, tag) end
+    return pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455" .. pq, {}, function() end, tag)
+end
+
+function Impl.ChanCover(ver)
+    local C = Impl.Chan
+    if C.CoverVer == ver and C.CoverB64 then return C.CoverB64 end
+    local dir = Impl.ScriptsDir()
+    if dir == "" or ver <= 0 then return nil end
+    local f = Impl.OpenFile(dir .. "\\di_bridge\\cover.txt", "rb")
+    if not f then return nil end
+    local text = f:read("a")
+    f:close()
+    local v, b64 = string.match(text or "", "^(%d+)\n(.*)$")
+    if tonumber(v) ~= ver or not b64 or b64 == "" then return nil end
+    C.CoverVer, C.CoverB64 = ver, b64
+    return b64
+end
+
+function Impl.ChanTick()
+    local C = Impl.Chan
+    local now = os.clock()
+    if now - C.At < 0.04 then return end
+    C.At = now
+    local dir = Impl.ScriptsDir()
+    if dir == "" then return end
+    local f = Impl.OpenFile(dir .. "\\di_bridge\\state.txt", "rb")
+    if not f then return end
+    local text = f:read("a")
+    f:close()
+    if not text or text == "" then return end
+    local seq = string.match(text, "^seq\t(%d+)")
+    if not seq then return end
+    if seq == C.Seq then return end
+    C.Seq = seq
+    C.LiveAt = now
+    for key, val in string.gmatch(text, "\n(%a+)\t([^\n]*)") do
+        if val ~= "" and val ~= C.Last[key] then
+            C.Last[key] = val
+            local res = { response = val }
+            if key == "media" then
+                Impl.MediaReply(res)
+            elseif key == "level" then
+                Impl.LevelReply(res)
+            elseif key == "system" then
+                Impl.SystemReply(res)
+            elseif key == "status" then
+                Impl.StatusReply(res)
+            end
+        end
+    end
+end
+
+function Impl.LevelReply(res)
+    MediaData.LevelBusy = nil
+    if not res or not res.response then return end
+    local body = string.match(res.response, '"l"%s*:%s*%[([^%]]*)%]')
+    if not body then return end
+    local lv, i = MediaData.Level or {}, 1
+    for num in string.gmatch(body, "[%d%.eE%-]+") do
+        lv[i] = tonumber(num) or 0
+        i = i + 1
+        if i > 5 then break end
+    end
+    MediaData.Level = lv
+    MediaData.LevelAt = os.clock()
+end
+
 function Impl.PollLevel()
     if not UI or not UI.Media.Enabled:Get() or Demo.Active then return end
     if not MediaData.IsPlaying or not Sheet.BridgeOnline() then return end
@@ -4794,29 +4964,190 @@ function Impl.PollLevel()
     local st = StateMachine.TargetState
     if st ~= S.COMPACT_MEDIA and st ~= S.LARGE_MEDIA and Satellite.Right.kind ~= "combat" and Satellite.Right.kind ~= "media" then return end
     local now = os.clock()
+    if Impl.ChanLive() then
+        if now - Impl.Chan.LevelWantAt > 1.0 then
+            Impl.Chan.LevelWantAt = now
+            Impl.ChanSend("/levelwant")
+        end
+        return
+    end
     if now - (MediaData.LevelPoll or 0) < 0.055 then return end
     if MediaData.LevelBusy and now - MediaData.LevelBusy < 1.5 then return end
     MediaData.LevelPoll = now
     MediaData.LevelBusy = now
-    pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/level", {}, function(res)
-        MediaData.LevelBusy = nil
-        if not res or not res.response then return end
-        local body = string.match(res.response, '"l"%s*:%s*%[([^%]]*)%]')
-        if not body then return end
-        local lv, i = MediaData.Level or {}, 1
-        for num in string.gmatch(body, "[%d%.eE%-]+") do
-            lv[i] = tonumber(num) or 0
-            i = i + 1
-            if i > 5 then break end
+    pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/level", {}, Impl.LevelReply, "di_level")
+end
+
+function Impl.MediaReply(res)
+    MediaData.PollBusy = nil
+    MediaData.PendingSince = nil
+    if not res or not res.response or res.response == "" then return end
+    local body = res.response
+    if string.find(body, '"is_playing"', 1, true) then Impl.BridgeAlive() end
+
+    local isPlaying = string.find(body, '"is_playing"%s*:%s*true') ~= nil
+    local title = string.match(body, '"title"%s*:%s*"([^"]*)"') or ""
+    local artist = string.match(body, '"artist"%s*:%s*"([^"]*)"') or ""
+    local album = string.match(body, '"album"%s*:%s*"([^"]*)"') or ""
+    local app = string.match(body, '"app"%s*:%s*"([^"]*)"') or ""
+
+    local coverPath = string.match(body, '"cover_path"%s*:%s*"([^"]*)"') or ""
+    local coverJpg = string.match(body, '"cover_jpg"%s*:%s*"([^"]*)"') or ""
+    local coverBase64 = ""
+    local b64Pos = string.find(body, '"cover_base64"%s*:%s*"')
+    if b64Pos then
+        local _, vStart = string.find(body, '"cover_base64"%s*:%s*"')
+        local vEnd = string.find(body, '"', vStart + 1, true)
+        if vEnd then
+            coverBase64 = string.sub(body, vStart + 1, vEnd - 1)
         end
-        MediaData.Level = lv
-        MediaData.LevelAt = os.clock()
-    end, "di_level")
+    end
+    local coverVerStr = string.match(body, '"cover_ver"%s*:%s*([%d]+)')
+    local hasCover = string.find(body, '"has_cover"%s*:%s*true') ~= nil
+    if coverBase64 == "" and hasCover and Impl.ChanLive() then
+        coverBase64 = Impl.ChanCover(tonumber(coverVerStr) or 0) or ""
+    end
+    local posStr = string.match(body, '"position"%s*:%s*([%d%.]+)')
+    local durStr = string.match(body, '"duration"%s*:%s*([%d%.]+)')
+    local isShuffle = string.find(body, '"shuffle"%s*:%s*true') ~= nil
+    local repStr = string.match(body, '"repeat"%s*:%s*([%d]+)')
+    local volStr = string.match(body, '"volume"%s*:%s*([%d]+)')
+    local nowClk = os.clock()
+    if volStr and (not VolumeState.Visible or (nowClk - (VolumeState.LastActive or 0)) > 1.2) then
+        local v = tonumber(volStr)
+        if v then
+            VolumeState.Target = v
+            if VolumeState.Alpha <= 0.01 then
+                VolumeState.Current = v
+                VolumeState.CurrentVel = 0.0
+            end
+        end
+    end
+    local manualGrace = (MediaData.LastManualToggle and (nowClk - MediaData.LastManualToggle) < 0.8)
+    if not manualGrace then
+        if isPlaying then
+            MediaData.LastPlayTime = nowClk
+            MediaData.LastPauseTime = 0
+            MediaData.IsPlaying = true
+        else
+            if MediaData.IsPlaying then
+                MediaData.LastPauseTime = nowClk
+            elseif MediaData.LastPauseTime == 0 and MediaData.LastPlayTime > 0 then
+                MediaData.LastPauseTime = nowClk
+            end
+            MediaData.IsPlaying = false
+        end
+    end
+
+    local cleanTitle = CleanUnescapedString(title)
+    local cleanArtist = CleanUnescapedString(artist)
+    local newTrackKey = cleanTitle .. " - " .. cleanArtist
+
+    if cleanTitle ~= "" and newTrackKey ~= MediaData.LastTrackKey and MediaData.LastTrackKey ~= "" then
+        TrackTransition.Active = true
+        TrackTransition.StartTime = nowClk
+        TrackTransition.OldTitle = MediaData.Title
+        TrackTransition.OldArtist = MediaData.Artist
+        TrackTransition.OldCoverHandle = MediaData.CoverImageHandle
+        TrackTransition.OldCoverColor = MediaData.CoverColor
+        MediaData.CoverImageHandle = nil
+        MediaData.CoverVersion = -1
+        MediaData.CoverSig = nil
+    end
+
+    if cleanTitle ~= "" then
+        MediaData.Title = cleanTitle
+        MediaData.LastTrackKey = newTrackKey
+    end
+    if cleanArtist ~= "" then
+        MediaData.Artist = cleanArtist
+    end
+    if album ~= "" then
+        MediaData.Album = CleanUnescapedString(album)
+    end
+    MediaData.App = app
+
+    local newPos = tonumber(posStr) or 0
+    local acceptPos = not SeekDrag.Active
+    if acceptPos and nowClk < SeekDrag.HoldUntil then
+        local expected = SeekDrag.HoldPos + (MediaData.IsPlaying and (nowClk - SeekDrag.HoldStart) or 0)
+        if math.abs(newPos - expected) > 2.5 then
+            acceptPos = false
+        else
+            SeekDrag.HoldUntil = 0
+        end
+    end
+    if acceptPos then
+        MediaData.PosTarget = newPos
+        if math.abs(newPos - MediaData.PosSmooth) > 1.0 then
+            MediaData.PosSmooth = newPos
+        end
+    end
+    MediaData.Duration = tonumber(durStr) or 0
+    MediaData.HasReceivedData = true
+    MediaData.HasCover = hasCover
+    MediaData.CoverPath = coverPath
+    MediaData.CoverJpg = coverJpg
+    MediaData.CoverBase64 = coverBase64
+    MediaData.Shuffle = isShuffle
+    MediaData.RepeatMode = tonumber(repStr) or 0
+
+    if string.find(body, '"is_liked"') then
+        MediaData.IsLiked = (string.find(body, '"is_liked"%s*:%s*true') ~= nil)
+        if cleanTitle ~= "" then
+            MediaData.LikedTracks[newTrackKey] = MediaData.IsLiked
+        end
+    end
+
+    local colorMatch = string.match(body, '"cover_color"%s*:%s*%[([%d, %s]+)%]')
+    if colorMatch then
+        local rgb = {}
+        for num in string.gmatch(colorMatch, "[%d]+") do
+            table.insert(rgb, tonumber(num))
+        end
+        if #rgb >= 3 then
+            MediaData.CoverColor = Color(rgb[1], rgb[2], rgb[3], 255)
+        end
+    end
+
+    if not MediaData.IsPlaying then
+        MediaData.RealBars = { 0, 0, 0, 0, 0 }
+    else
+        local waveMatch = string.match(body, '"waveform"%s*:%s*%[([^%]]*)%]')
+        if waveMatch then
+            local idx = 1
+            for num in string.gmatch(waveMatch, "[%d%.]+") do
+                MediaData.RealBars[idx] = tonumber(num) or 0
+                idx = idx + 1
+                if idx > 5 then break end
+            end
+        end
+    end
+
+    local curVer = tonumber(coverVerStr) or 0
+    local sig = tostring(curVer) .. ":" .. #coverBase64 .. ":" .. (coverBase64 ~= "" and ((string.byte(coverBase64, math.floor(#coverBase64 / 2)) or 0) .. "." .. (string.byte(coverBase64, #coverBase64 - 3) or 0)) or coverPath)
+    if sig ~= MediaData.CoverSig or curVer ~= MediaData.CoverVersion or not MediaData.CoverImageHandle then
+        MediaData.CoverSig = sig
+        MediaData.CoverVersion = curVer
+        if hasCover and curVer > 0 then
+            local img = Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
+            if img then
+                MediaData.CoverImageHandle = img
+                MediaData.CoverHandleSetAt = os.clock()
+            end
+        else
+            MediaData.CoverImageHandle = nil
+        end
+    end
 end
 
 function Impl.PollMediaBridge()
     if not UI or not UI.Media.Enabled:Get() or Demo.Active then return end
     local clk = os.clock()
+    if Impl.ChanLive() then
+        MediaData.PendingSince = nil
+        return
+    end
     if clk - MediaData.LastPollTime < MediaData.PollInterval then return end
     if MediaData.PollBusy and clk - MediaData.PollBusy < 2.0 then return end
     MediaData.LastPollTime = clk
@@ -4835,165 +5166,7 @@ function Impl.PollMediaBridge()
     local likes = (UI.Media.SpotifyLike and UI.Media.SpotifyLike:Get()) and "1" or "0"
     local url = string.format("http://127.0.0.1:%d/media", port) .. Impl.MediaQuery .. (Impl.MediaQuery == "" and "?" or "&") .. "likes=" .. likes
 
-    pcall(Impl.HttpRequest, "GET", url, {}, function(res)
-        MediaData.PollBusy = nil
-        MediaData.PendingSince = nil
-        if not res or not res.response or res.response == "" then return end
-        local body = res.response
-        if string.find(body, '"is_playing"', 1, true) then Impl.BridgeAlive() end
-
-        local isPlaying = string.find(body, '"is_playing"%s*:%s*true') ~= nil
-        local title = string.match(body, '"title"%s*:%s*"([^"]*)"') or ""
-        local artist = string.match(body, '"artist"%s*:%s*"([^"]*)"') or ""
-        local album = string.match(body, '"album"%s*:%s*"([^"]*)"') or ""
-        local app = string.match(body, '"app"%s*:%s*"([^"]*)"') or ""
-
-        local coverPath = string.match(body, '"cover_path"%s*:%s*"([^"]*)"') or ""
-        local coverJpg = string.match(body, '"cover_jpg"%s*:%s*"([^"]*)"') or ""
-        local coverBase64 = ""
-        local b64Pos = string.find(body, '"cover_base64"%s*:%s*"')
-        if b64Pos then
-            local _, vStart = string.find(body, '"cover_base64"%s*:%s*"')
-            local vEnd = string.find(body, '"', vStart + 1, true)
-            if vEnd then
-                coverBase64 = string.sub(body, vStart + 1, vEnd - 1)
-            end
-        end
-        local coverVerStr = string.match(body, '"cover_ver"%s*:%s*([%d]+)')
-        local hasCover = string.find(body, '"has_cover"%s*:%s*true') ~= nil
-        local posStr = string.match(body, '"position"%s*:%s*([%d%.]+)')
-        local durStr = string.match(body, '"duration"%s*:%s*([%d%.]+)')
-        local isShuffle = string.find(body, '"shuffle"%s*:%s*true') ~= nil
-        local repStr = string.match(body, '"repeat"%s*:%s*([%d]+)')
-        local volStr = string.match(body, '"volume"%s*:%s*([%d]+)')
-        local nowClk = os.clock()
-        if volStr and (not VolumeState.Visible or (nowClk - (VolumeState.LastActive or 0)) > 1.2) then
-            local v = tonumber(volStr)
-            if v then
-                VolumeState.Target = v
-                if VolumeState.Alpha <= 0.01 then
-                    VolumeState.Current = v
-                    VolumeState.CurrentVel = 0.0
-                end
-            end
-        end
-        local manualGrace = (MediaData.LastManualToggle and (nowClk - MediaData.LastManualToggle) < 0.8)
-        if not manualGrace then
-            if isPlaying then
-                MediaData.LastPlayTime = nowClk
-                MediaData.LastPauseTime = 0
-                MediaData.IsPlaying = true
-            else
-                if MediaData.IsPlaying then
-                    MediaData.LastPauseTime = nowClk
-                elseif MediaData.LastPauseTime == 0 and MediaData.LastPlayTime > 0 then
-                    MediaData.LastPauseTime = nowClk
-                end
-                MediaData.IsPlaying = false
-            end
-        end
-
-        local cleanTitle = CleanUnescapedString(title)
-        local cleanArtist = CleanUnescapedString(artist)
-        local newTrackKey = cleanTitle .. " - " .. cleanArtist
-
-        if cleanTitle ~= "" and newTrackKey ~= MediaData.LastTrackKey and MediaData.LastTrackKey ~= "" then
-            TrackTransition.Active = true
-            TrackTransition.StartTime = nowClk
-            TrackTransition.OldTitle = MediaData.Title
-            TrackTransition.OldArtist = MediaData.Artist
-            TrackTransition.OldCoverHandle = MediaData.CoverImageHandle
-            TrackTransition.OldCoverColor = MediaData.CoverColor
-            MediaData.CoverImageHandle = nil
-            MediaData.CoverVersion = -1
-            MediaData.CoverSig = nil
-        end
-
-        if cleanTitle ~= "" then
-            MediaData.Title = cleanTitle
-            MediaData.LastTrackKey = newTrackKey
-        end
-        if cleanArtist ~= "" then
-            MediaData.Artist = cleanArtist
-        end
-        if album ~= "" then
-            MediaData.Album = CleanUnescapedString(album)
-        end
-        MediaData.App = app
-
-        local newPos = tonumber(posStr) or 0
-        local acceptPos = not SeekDrag.Active
-        if acceptPos and nowClk < SeekDrag.HoldUntil then
-            local expected = SeekDrag.HoldPos + (MediaData.IsPlaying and (nowClk - SeekDrag.HoldStart) or 0)
-            if math.abs(newPos - expected) > 2.5 then
-                acceptPos = false
-            else
-                SeekDrag.HoldUntil = 0
-            end
-        end
-        if acceptPos then
-            MediaData.PosTarget = newPos
-            if math.abs(newPos - MediaData.PosSmooth) > 1.0 then
-                MediaData.PosSmooth = newPos
-            end
-        end
-        MediaData.Duration = tonumber(durStr) or 0
-        MediaData.HasReceivedData = true
-        MediaData.HasCover = hasCover
-        MediaData.CoverPath = coverPath
-        MediaData.CoverJpg = coverJpg
-        MediaData.CoverBase64 = coverBase64
-        MediaData.Shuffle = isShuffle
-        MediaData.RepeatMode = tonumber(repStr) or 0
-
-        if string.find(body, '"is_liked"') then
-            MediaData.IsLiked = (string.find(body, '"is_liked"%s*:%s*true') ~= nil)
-            if cleanTitle ~= "" then
-                MediaData.LikedTracks[newTrackKey] = MediaData.IsLiked
-            end
-        end
-
-        local colorMatch = string.match(body, '"cover_color"%s*:%s*%[([%d, %s]+)%]')
-        if colorMatch then
-            local rgb = {}
-            for num in string.gmatch(colorMatch, "[%d]+") do
-                table.insert(rgb, tonumber(num))
-            end
-            if #rgb >= 3 then
-                MediaData.CoverColor = Color(rgb[1], rgb[2], rgb[3], 255)
-            end
-        end
-
-        if not MediaData.IsPlaying then
-            MediaData.RealBars = { 0, 0, 0, 0, 0 }
-        else
-            local waveMatch = string.match(body, '"waveform"%s*:%s*%[([^%]]*)%]')
-            if waveMatch then
-                local idx = 1
-                for num in string.gmatch(waveMatch, "[%d%.]+") do
-                    MediaData.RealBars[idx] = tonumber(num) or 0
-                    idx = idx + 1
-                    if idx > 5 then break end
-                end
-            end
-        end
-
-        local curVer = tonumber(coverVerStr) or 0
-        local sig = tostring(curVer) .. ":" .. #coverBase64 .. ":" .. (coverBase64 ~= "" and ((string.byte(coverBase64, math.floor(#coverBase64 / 2)) or 0) .. "." .. (string.byte(coverBase64, #coverBase64 - 3) or 0)) or coverPath)
-        if sig ~= MediaData.CoverSig or curVer ~= MediaData.CoverVersion or not MediaData.CoverImageHandle then
-            MediaData.CoverSig = sig
-            MediaData.CoverVersion = curVer
-            if hasCover and curVer > 0 then
-                local img = Impl.TryLoadAlbumImage(coverPath, coverJpg, coverBase64, curVer)
-                if img then
-                    MediaData.CoverImageHandle = img
-                    MediaData.CoverHandleSetAt = os.clock()
-                end
-            else
-                MediaData.CoverImageHandle = nil
-            end
-        end
-    end, "media_poll")
+    pcall(Impl.HttpRequest, "GET", url, {}, Impl.MediaReply, "media_poll")
 end
 
 function Impl.BridgeAlive()
@@ -5006,6 +5179,7 @@ end
 
 function Impl.BridgeLagging()
     local clk = os.clock()
+    if Impl.ChanLive() then return false end
     local m, b = MediaData.PendingSince, BridgeStatus.PendingSince
     return (m ~= nil and clk - m > 1.0) or (b ~= nil and clk - b > 1.0)
 end
@@ -5025,32 +5199,34 @@ function Impl.BridgeFail(what, res)
     end
 end
 
+function Impl.StatusReply(res)
+    BridgeStatus.Busy = nil
+    BridgeStatus.PendingSince = nil
+    local body = res and res.response or ""
+    if not string.find(body, '"status"', 1, true) then
+        Impl.BridgeFail("/status", res)
+        return
+    end
+    Impl.BridgeAlive()
+    BridgeStatus.Version = string.match(body, '"version"%s*:%s*"([^"]*)"') or ""
+    BridgeStatus.Latest = string.match(body, '"latest_version"%s*:%s*"([^"]*)"') or ""
+    BridgeStatus.MediaSessions = string.match(body, '"media_sessions"%s*:%s*"([^"]*)"') or ""
+    BridgeStatus.SpotifyDebug = string.match(body, '"spotify_debug"%s*:%s*"([^"]*)"') or ""
+    BridgeStatus.YandexDebug = string.match(body, '"yandex_debug"%s*:%s*"([^"]*)"') or ""
+    local fontsOk = string.match(body, '"fonts_ok"%s*:%s*(%a+)')
+    if fontsOk then BridgeStatus.FontsOk = fontsOk == "true" end
+end
+
 function Impl.PollBridgeStatus()
     local clk = os.clock()
     local online = BridgeStatus.LastOk > 0 and clk - BridgeStatus.LastOk < 10
-    if clk - BridgeStatus.LastPoll < (online and 3.0 or 1.0) then return end
+    if clk - BridgeStatus.LastPoll < (Impl.ChanLive() and 5.0 or (online and 3.0 or 1.0)) then return end
     if BridgeStatus.Busy and clk - BridgeStatus.Busy < 4.0 then return end
     BridgeStatus.LastPoll = clk
     BridgeStatus.Busy = clk
     BridgeStatus.PendingSince = BridgeStatus.PendingSince or clk
     if BridgeStatus.FirstPoll == 0 then BridgeStatus.FirstPoll = clk end
-    pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/status", {}, function(res)
-        BridgeStatus.Busy = nil
-        BridgeStatus.PendingSince = nil
-        local body = res and res.response or ""
-        if not string.find(body, '"status"', 1, true) then
-            Impl.BridgeFail("/status", res)
-            return
-        end
-        Impl.BridgeAlive()
-        BridgeStatus.Version = string.match(body, '"version"%s*:%s*"([^"]*)"') or ""
-        BridgeStatus.Latest = string.match(body, '"latest_version"%s*:%s*"([^"]*)"') or ""
-        BridgeStatus.MediaSessions = string.match(body, '"media_sessions"%s*:%s*"([^"]*)"') or ""
-        BridgeStatus.SpotifyDebug = string.match(body, '"spotify_debug"%s*:%s*"([^"]*)"') or ""
-        BridgeStatus.YandexDebug = string.match(body, '"yandex_debug"%s*:%s*"([^"]*)"') or ""
-        local fontsOk = string.match(body, '"fonts_ok"%s*:%s*(%a+)')
-        if fontsOk then BridgeStatus.FontsOk = fontsOk == "true" end
-    end, "bridge_status")
+    pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/status" .. Impl.BridgeQuery(), {}, Impl.StatusReply, "bridge_status")
 end
 
 function Impl.SystemNotif(glyph, accent, tag, title)
@@ -5067,53 +5243,58 @@ function Impl.SystemNotif(glyph, accent, tag, title)
     })
 end
 
+function Impl.SystemReply(res)
+    local sys = UI and UI.System
+    if not sys then return end
+    SystemState.Busy = nil
+    if not res or not res.response or res.response == "" then return end
+    local body = res.response
+    local id = string.match(body, '"device_id"%s*:%s*"([^"]*)"')
+    if not id then return end
+    Impl.BridgeAlive()
+    local cur = {
+        id = id,
+        name = string.match(body, '"device"%s*:%s*"(.-)"%s*,%s*"device_id"') or "",
+        kind = string.match(body, '"device_kind"%s*:%s*"([^"]*)"') or "",
+        muted = string.match(body, '"muted"%s*:%s*(%a+)') == "true",
+        battery = tonumber(string.match(body, '"battery"%s*:%s*(%-?%d+)') or "-1") or -1,
+        ac = string.match(body, '"on_ac"%s*:%s*(%a+)') == "true"
+    }
+    local prev = SystemState.Last
+    SystemState.Last = cur
+    if not prev then return end
+    local C = Config.Colors
+    if cur.id ~= prev.id and cur.id ~= "" and prev.id ~= "" and ToggleOn(sys.Output) then
+        local glyph, tag = "volume", L("di_sys_speakers")
+        if cur.kind == "headphones" then glyph, tag = "headphones", L("di_sys_headphones")
+        elseif cur.kind == "display" then glyph, tag = "display", L("di_sys_display") end
+        Impl.SystemNotif(glyph, C.Blue, tag, cur.name ~= "" and cur.name or tag)
+    elseif cur.muted ~= prev.muted and cur.id == prev.id and ToggleOn(sys.Mute) then
+        if cur.muted then
+            Impl.SystemNotif("mute", C.Red, L("di_sys_sound"), L("di_sys_muted"))
+        else
+            Impl.SystemNotif("volume", C.Blue, L("di_sys_sound"), L("di_sys_unmuted"))
+        end
+    end
+    if cur.battery >= 0 and prev.battery >= 0 and ToggleOn(sys.Battery) then
+        if cur.ac and not prev.ac then
+            Impl.SystemNotif("bolt", C.Green, L("di_sys_battery_tag"), string.format(L("di_sys_charging"), cur.battery))
+        elseif not cur.ac and ((cur.battery <= 20 and prev.battery > 20) or (cur.battery <= 10 and prev.battery > 10)) then
+            Impl.SystemNotif("battery_low", C.Red, L("di_sys_battery_tag"), string.format(L("di_sys_low"), cur.battery))
+        end
+    end
+end
+
 function Impl.PollSystem()
     local sys = UI and UI.System
     if not sys or not (ToggleOn(sys.Output) or ToggleOn(sys.Mute) or ToggleOn(sys.Battery)) then return end
     local clk = os.clock()
+    if Impl.ChanLive() then return end
     if clk - SystemState.LastPoll < 0.6 then return end
     if SystemState.Busy and clk - SystemState.Busy < 3.0 then return end
     SystemState.LastPoll = clk
     SystemState.Busy = clk
-    pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/system", {}, function(res)
-        SystemState.Busy = nil
-        if not res or not res.response or res.response == "" then return end
-        local body = res.response
-        local id = string.match(body, '"device_id"%s*:%s*"([^"]*)"')
-        if not id then return end
-        Impl.BridgeAlive()
-        local cur = {
-            id = id,
-            name = string.match(body, '"device"%s*:%s*"(.-)"%s*,%s*"device_id"') or "",
-            kind = string.match(body, '"device_kind"%s*:%s*"([^"]*)"') or "",
-            muted = string.match(body, '"muted"%s*:%s*(%a+)') == "true",
-            battery = tonumber(string.match(body, '"battery"%s*:%s*(%-?%d+)') or "-1") or -1,
-            ac = string.match(body, '"on_ac"%s*:%s*(%a+)') == "true"
-        }
-        local prev = SystemState.Last
-        SystemState.Last = cur
-        if not prev then return end
-        local C = Config.Colors
-        if cur.id ~= prev.id and cur.id ~= "" and prev.id ~= "" and ToggleOn(sys.Output) then
-            local glyph, tag = "volume", L("di_sys_speakers")
-            if cur.kind == "headphones" then glyph, tag = "headphones", L("di_sys_headphones")
-            elseif cur.kind == "display" then glyph, tag = "display", L("di_sys_display") end
-            Impl.SystemNotif(glyph, C.Blue, tag, cur.name ~= "" and cur.name or tag)
-        elseif cur.muted ~= prev.muted and cur.id == prev.id and ToggleOn(sys.Mute) then
-            if cur.muted then
-                Impl.SystemNotif("mute", C.Red, L("di_sys_sound"), L("di_sys_muted"))
-            else
-                Impl.SystemNotif("volume", C.Blue, L("di_sys_sound"), L("di_sys_unmuted"))
-            end
-        end
-        if cur.battery >= 0 and prev.battery >= 0 and ToggleOn(sys.Battery) then
-            if cur.ac and not prev.ac then
-                Impl.SystemNotif("bolt", C.Green, L("di_sys_battery_tag"), string.format(L("di_sys_charging"), cur.battery))
-            elseif not cur.ac and ((cur.battery <= 20 and prev.battery > 20) or (cur.battery <= 10 and prev.battery > 10)) then
-                Impl.SystemNotif("battery_low", C.Red, L("di_sys_battery_tag"), string.format(L("di_sys_low"), cur.battery))
-            end
-        end
-    end, "system_state")
+    pcall(Impl.HttpRequest, "GET", "http://127.0.0.1:45455/system", {}, Impl.SystemReply, "system_state")
 end
 
 function Impl.ParseVersion(s)
@@ -5163,6 +5344,9 @@ function Impl.CollectStatusHints()
 end
 
 function Impl.ProcessFightDetector()
+    local fnow = os.clock()
+    if fnow - (Impl.FightScanAt or 0) < 0.066 then return end
+    Impl.FightScanAt = fnow
     if not UI or not UI.Combat or not UI.Combat.FightHUD:Get() then
         if FightTracker.Active then
             FightTracker.Active = false
@@ -5173,7 +5357,12 @@ function Impl.ProcessFightDetector()
     local my = HeroData.Local or Heroes.GetLocal()
     if not my then return end
 
-    local allHeroes = Heroes.GetAll()
+    local allHeroes = {}
+    for _, h in ipairs(Heroes.GetAll() or {}) do
+        if not (NPC.IsIllusion and NPC.IsIllusion(h)) and not (NPC.IsMeepoClone and NPC.IsMeepoClone(h)) then
+            allHeroes[#allHeroes + 1] = h
+        end
+    end
     local nowTime = GameRules.GetGameTime()
     local myTeam = Entity.GetTeamNum(my)
     local scope = UI.Combat.FightScope:Get()
@@ -6254,10 +6443,11 @@ local function GetIslandLayout()
     local manualY = (UI and UI.Main and UI.Main.OffsetY) and UI.Main.OffsetY:Get() or 20
 
     local squishOffset = StateMachine.Spring.Squish.value * 2.5 * scale
-    local rawW = math.max(60, StateMachine.Spring.W.value * scale)
+    local press = StateMachine.Spring.Press and StateMachine.Spring.Press.value or 0
+    local rawW = math.max(60, (StateMachine.Spring.W.value + press * math.min(12, StateMachine.Spring.W.value * 0.07)) * scale)
     local w = math.floor(rawW + 0.5)
     if w % 2 ~= 0 then w = w + 1 end
-    local rawH = (StateMachine.Spring.H.value + squishOffset) * scale
+    local rawH = (StateMachine.Spring.H.value + squishOffset + press * 3) * scale
     local h = math.floor(math.max(Config.Dimensions.FloorHeight * scale, rawH) + 0.5)
     if h % 2 ~= 0 then h = h + 1 end
     local r = math.floor(math.min(h * 0.5, StateMachine.Spring.Radius.value * scale) + 0.5)
@@ -6637,6 +6827,7 @@ function Impl.CourierBegin(nowClk, viaStash, source)
     T.Source = source
     T.DeliveryOrderedTime = nowClk
     T.Delivering = true
+    T.View = nil
     T.Delivered = false
     T.Progress = 0.0
     T.ETA = 0
@@ -7194,14 +7385,15 @@ function DynamicIsland.OnKeyEvent(data)
 
     if isUp or isDown then
         local st = StateMachine.TargetState
-        if st == StateMachine.States.LARGE_IDLE or st == StateMachine.States.NOTIF_CENTER then
+        local idleBase = Impl.IdleWidgets() and StateMachine.States.LARGE_IDLE or StateMachine.States.COMPACT_IDLE
+        if st == idleBase or st == StateMachine.States.NOTIF_CENTER then
             local lay = GetIslandLayout()
             local mx, my = Input.GetCursorPos()
             if lay and mx >= lay.x - 12 and mx <= lay.x + lay.w + 12 and my >= lay.y - 12 and my <= lay.y + lay.h + 12 then
-                if isDown and st == StateMachine.States.LARGE_IDLE then
+                if isDown and st == idleBase and #(NotifCenter.Items or {}) > 0 then
                     TriggerStateTransition(StateMachine.States.NOTIF_CENTER)
                 elseif isUp and st == StateMachine.States.NOTIF_CENTER then
-                    TriggerStateTransition(StateMachine.States.LARGE_IDLE)
+                    TriggerStateTransition(idleBase)
                 end
                 return false
             end
@@ -7566,6 +7758,7 @@ function Impl.HandleInteractions()
         isHoverSatellite = true
     end
     FightTracker.SatelliteHover = isHoverSatellite
+    if isHoverSatellite then isHover = false end
 
     if isMenuOpen and isCtrlOnly then
         if isHover and isLMouseDown and not DragState.IsDragging then
@@ -7607,10 +7800,8 @@ function Impl.HandleInteractions()
                 rawY = ly2 + Gesture.Rubber(rawY - ly2, rb)
             end
             DragState.Bounds = { lx1, lx2, ly1, ly2 }
-            local snap = math.abs(rawX - mid) <= 14 * layout.scale
-            if snap and not DragState.SnapX then Haptic.Silent(Haptic.Types.RATCHET_NOTCH) end
-            DragState.SnapX = snap
-            DragState.CustomX = math.floor(snap and mid or rawX)
+            DragState.SnapX = true
+            DragState.CustomX = math.floor(mid)
             DragState.CustomY = math.floor(rawY)
             if UI.Main.Preset:Get() ~= 1 then
                 UI.Main.Preset:Set(1)
@@ -8052,7 +8243,7 @@ function Impl.HandleInteractions()
         if not engaged and Sdk.AskInGame(inCombat, nowClk) then
             Sheet.Kind = "sdk_perm"
             desired = S.SHEET
-        elseif notif and not IsNotifDeferred(notif) and not engaged then
+        elseif notif and not IsNotifDeferred(notif) and (not engaged or not mainKind) then
             desired = S.NOTIFICATION
         elseif mainKind == "pause" then
             desired = S.GAME_PAUSED
@@ -8091,7 +8282,7 @@ function Impl.HandleInteractions()
     if StateMachine.TargetState == StateMachine.States.COMPACT_IDLE then
         local contentW = CalculateIdleContentWidth(layout.scale)
         local targetUnscaled = (contentW / layout.scale) + 26
-        Config.Dimensions.CompactTargetW = math.max(80, targetUnscaled)
+        Config.Dimensions.CompactTargetW = Impl.IdleWidgets() and math.max(80, targetUnscaled) or 126
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.MENU_IDLE
@@ -8105,16 +8296,24 @@ function Impl.HandleInteractions()
         else
             label = Journey.Accepted and L("di_ui_accepted") or L("di_ui_match_found")
         end
-        local contentW = Journey.LineWidth(layout.scale, label, right, true)
-
-        local w = math.ceil(((contentW / layout.scale) + 32) / 4) * 4
-        Config.Dimensions.CompactTargetW = math.max(150, w)
-        Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
+        local ts = StateMachine.TargetState
+        if ts == StateMachine.States.MENU_MATCH_FOUND then
+            Config.Dimensions.CompactTargetW = 375
+            Config.Dimensions.CompactTargetH = 84
+        elseif ts == StateMachine.States.MENU_SEARCHING then
+            Config.Dimensions.CompactTargetW = 168
+            Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
+        elseif not Impl.IdleWidgets() then
+            Config.Dimensions.CompactTargetW = 126
+            Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
+        else
+            Config.Dimensions.CompactTargetW = math.max(150, math.ceil((Impl.BannerLineW(layout.scale, label, right) / layout.scale) / 4) * 4)
+            Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
+        end
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.FOCUS_BANNER then
         local right = Focus.BannerOn and L("di_focus_on") or L("di_focus_off")
-        local contentW = Journey.LineWidth(layout.scale, L("di_focus_name"), right, true)
-        Config.Dimensions.CompactTargetW = math.max(170, math.ceil(((contentW / layout.scale) + 32) / 4) * 4)
+        Config.Dimensions.CompactTargetW = math.max(170, math.ceil((Impl.BannerLineW(layout.scale, L("di_focus_name"), right) / layout.scale) / 2) * 2)
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactRadius
     elseif StateMachine.TargetState == StateMachine.States.FACE_ID then
@@ -8129,16 +8328,16 @@ function Impl.HandleInteractions()
         local fH, sH = TF("Headline", layout.scale)
         local lm = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_fight")
         local fw = Odometer.Width(fH, sH, string.format("%d vs %d \u{2022} %s", FightTracker.AllyCount, FightTracker.EnemyCount, lm)) / layout.scale
-        Config.Dimensions.CompactTargetW = math.max(Config.Dimensions.CompactFightW, math.min(320, math.ceil((fw + 48) / 4) * 4))
+        Config.Dimensions.CompactTargetW = 168
         Config.Dimensions.CompactTargetH = Config.Dimensions.CompactFightH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CompactFightRadius
     elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION and Sdk.Expanded then
-        Config.Dimensions.CompactTargetW = 360
+        Config.Dimensions.CompactTargetW = 375
         Config.Dimensions.CompactTargetH = Sdk.ExpandH(layout.scale)
         Config.Dimensions.CompactTargetR = 28
     elseif StateMachine.TargetState == StateMachine.States.NOTIFICATION then
         Config.Dimensions.CompactTargetW = Config.Dimensions.NotificationW
-        Config.Dimensions.CompactTargetH = Config.Dimensions.NotificationH
+        Config.Dimensions.CompactTargetH = Impl.NotifH()
         Config.Dimensions.CompactTargetR = Config.Dimensions.NotificationRadius
     elseif StateMachine.TargetState == StateMachine.States.LARGE_MEDIA then
         Config.Dimensions.CompactTargetW = Config.Dimensions.LargeMediaW
@@ -8171,7 +8370,7 @@ function Impl.HandleInteractions()
         local wDot = Render.TextSize(fB, sB, " \u{2022} ").x
         local w2 = Odometer.Width(fH, sH, timeText)
         local totalContentW = 12 * layout.scale + 16 * layout.scale + 8 * layout.scale + w1 + wDot + w2 + 16 * layout.scale
-        Config.Dimensions.CompactTargetW = math.max(120, math.floor(totalContentW / layout.scale))
+        Config.Dimensions.CompactTargetW = 168
         Config.Dimensions.CompactTargetH = Config.Dimensions.GamePausedH
         Config.Dimensions.CompactTargetR = Config.Dimensions.GamePausedRadius
     elseif StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY then
@@ -8182,7 +8381,7 @@ function Impl.HandleInteractions()
         local fH, sH = TF("Headline", layout.scale)
         local txt = L("di_courier_delivered")
         local tSize = Render.TextSize(fH, sH, txt)
-        Config.Dimensions.CompactTargetW = math.max(160, (tSize.x / layout.scale) + 60)
+        Config.Dimensions.CompactTargetW = 168
         Config.Dimensions.CompactTargetH = Config.Dimensions.CourierDeliveredH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierDeliveredRadius
     elseif StateMachine.TargetState == StateMachine.States.ACTIVITY then
@@ -8190,13 +8389,16 @@ function Impl.HandleInteractions()
         Config.Dimensions.CompactTargetH = Config.Dimensions.CourierDeliveryH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierDeliveryRadius
     elseif StateMachine.TargetState == StateMachine.States.ACTIVITY_LARGE then
-        Config.Dimensions.CompactTargetW = 340
+        Config.Dimensions.CompactTargetW = 375
         Config.Dimensions.CompactTargetH = Sdk.LargeH()
         Config.Dimensions.CompactTargetR = 28
     elseif StateMachine.TargetState == StateMachine.States.COURIER_LARGE then
         Config.Dimensions.CompactTargetW = Config.Dimensions.CourierLargeW
         Config.Dimensions.CompactTargetH = Config.Dimensions.CourierLargeH
         Config.Dimensions.CompactTargetR = Config.Dimensions.CourierLargeRadius
+    end
+    if StateMachine.TargetState ~= StateMachine.States.FACE_ID and Config.Dimensions.CompactTargetH then
+        Config.Dimensions.CompactTargetR = math.min(Config.Dimensions.CompactTargetH / 2, 50)
     end
 
     if isLeftClicked and not isCtrlOnly and not Demo.Active then
@@ -8220,18 +8422,17 @@ function Impl.HandleInteractions()
     if HUDCustomizer.IsOpen or Demo.Active or DragState.IsDragging then return end
 
     local holdMode = UI.Main.ExpandMode and UI.Main.ExpandMode:Get() == 1
-    local openOnHover = not holdMode
+    local tapMode = UI.Main.ExpandMode and UI.Main.ExpandMode:Get() == 2
+    local openOnHover = not holdMode and not tapMode
     local hoverDelaySec = 0.10
     local expandable = StateMachine.TargetState == StateMachine.States.COMPACT_FIGHT or StateMachine.TargetState == StateMachine.States.COURIER_DELIVERY
-        or StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA
+        or (StateMachine.TargetState == StateMachine.States.COMPACT_IDLE and (mediaActive or Impl.IdleWidgets())) or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA
         or StateMachine.TargetState == StateMachine.States.ACTIVITY
         or (StateMachine.TargetState == StateMachine.States.NOTIFICATION and Sdk.CanExpand() and not Sdk.Expanded)
 
     if holdMode then
         if isLeftClicked and isHover and not isCtrlOnly and expandable then
             StateMachine.PressAt = nowClk
-            StateMachine.Spring.Squish.value = -0.12
-            StateMachine.Spring.Squish.vel = -0.8
             Haptic.Silent(Haptic.Types.TAP_LIGHT)
         end
         if StateMachine.PressAt and (not isLMouseDown or not isHover or not expandable) then
@@ -8245,11 +8446,49 @@ function Impl.HandleInteractions()
         end
     end
 
+    if tapMode then
+        if isLeftClicked and isHover and not isCtrlOnly then
+            StateMachine.TapAt = nowClk
+        end
+        if StateMachine.TapAt then
+            local moved = Swipe.G and Swipe.G.moved
+            if moved then
+                StateMachine.TapAt = nil
+            elseif isLMouseDown then
+                if expandable and nowClk - StateMachine.TapAt >= 0.35 then
+                    StateMachine.TapAt = nil
+                    openOnHover, hoverDelaySec = true, 0
+                    StateMachine.HoverStartTime = nowClk
+                end
+            else
+                if isHover and expandable then
+                    openOnHover, hoverDelaySec = true, 0
+                    StateMachine.HoverStartTime = nowClk
+                end
+                StateMachine.TapAt = nil
+            end
+        end
+        if isLeftClicked and not isHover and not isHoverSatellite then
+            local S = StateMachine.States
+            local ts = StateMachine.TargetState
+            if Sdk.Expanded then Sdk.Expanded = false end
+            if ts == S.LARGE_FIGHT then
+                TriggerStateTransition(S.COMPACT_FIGHT)
+            elseif ts == S.COURIER_LARGE then
+                TriggerStateTransition(S.COURIER_DELIVERY)
+            elseif ts == S.ACTIVITY_LARGE then
+                TriggerStateTransition(S.ACTIVITY)
+            elseif ts == S.LARGE_MEDIA or ts == S.LARGE_IDLE or ts == S.NOTIF_CENTER then
+                TriggerStateTransition(mediaActive and S.COMPACT_MEDIA or S.COMPACT_IDLE)
+            end
+        end
+    end
+
     if isHover and not isCtrlOnly then
         if not StateMachine.IsHovered then
             StateMachine.IsHovered = true
             StateMachine.HoverStartTime = nowClk
-            if not holdMode and Haptic and Haptic.Trigger then
+            if not holdMode and not tapMode and Haptic and Haptic.Trigger then
                 Haptic.Trigger(Haptic.Types.TAP_LIGHT)
             end
         end
@@ -8274,7 +8513,7 @@ function Impl.HandleInteractions()
                     Sdk.ExpandedAt = nowClk
                 end
             elseif StateMachine.TargetState == StateMachine.States.COMPACT_IDLE or StateMachine.TargetState == StateMachine.States.COMPACT_MEDIA then
-                if (nowClk - StateMachine.HoverStartTime) >= hoverDelaySec then
+                if (nowClk - StateMachine.HoverStartTime) >= hoverDelaySec and (mediaActive or Impl.IdleWidgets()) then
                     local nextL = mediaActive and StateMachine.States.LARGE_MEDIA or StateMachine.States.LARGE_IDLE
                     TriggerStateTransition(nextL)
                 end
@@ -8288,11 +8527,11 @@ function Impl.HandleInteractions()
         StateMachine.HoverStartTime = 0
         StateMachine.NoExpand = nil
 
-        if Sdk.Expanded and StateMachine.UnhoverStartTime > 0 and (nowClk - StateMachine.UnhoverStartTime) >= 0.22 then
+        if not tapMode and Sdk.Expanded and StateMachine.UnhoverStartTime > 0 and (nowClk - StateMachine.UnhoverStartTime) >= 0.22 then
             Sdk.Expanded = false
         end
 
-        do
+        if not tapMode then
             if StateMachine.TargetState == StateMachine.States.LARGE_FIGHT then
                 if StateMachine.UnhoverStartTime > 0 and (nowClk - StateMachine.UnhoverStartTime) >= 0.22 then
                     TriggerStateTransition(StateMachine.States.COMPACT_FIGHT)
@@ -8504,6 +8743,7 @@ local function Glyph(name, cx, cy, sz, col)
 end
 
 local function SoftShadow(p1, p2, r, col, thick, off)
+    if Impl.FxOn then return end
     local w, h = p2.x - p1.x, p2.y - p1.y
     if w <= 0 or h <= 0 then return end
     local flags = Enum.DrawFlags.ShadowCutOutShapeBackground
@@ -8712,47 +8952,107 @@ function Journey.Spinner(cx, cy, r, col, aMul)
     end
 end
 
+function Impl.BannerLineW(scale, label, right)
+    local f = Config.Fonts.Semibold or TF("Headline", scale)
+    local s = 15 * scale
+    local w = 14 * scale + 18 * scale + 8 * scale + Render.TextSize(f, s, label).x + 15 * scale
+    if right and right ~= "" then w = w + 22 * scale + Odometer.Width(f, s, right) end
+    return w
+end
+
+function Impl.BannerLine(layout, aMul, yOff, drawIcon, label, labelCol, right, rightCol, rightId)
+    local scale = layout.scale
+    local f = Config.Fonts.Semibold or TF("Headline", scale)
+    local s = 15 * scale
+    local midY = math.floor(layout.y + layout.h / 2 + (yOff or 0))
+    local isz = math.floor(18 * scale)
+    local x = math.floor(layout.x + 14 * scale)
+    drawIcon(x, midY, isz)
+    local th = Render.TextSize(f, s, "Ag").y
+    local ty = math.floor(midY - th / 2)
+    Render.Text(f, s, label, Vec2(x + isz + math.floor(8 * scale), ty), FadeColor(labelCol, aMul))
+    if right and right ~= "" then
+        local rw = Odometer.Width(f, s, right)
+        Odometer.Text(rightId or "bl_right", f, s, right, Vec2(math.floor(layout.x + layout.w - 15 * scale - rw), ty), FadeColor(rightCol, aMul))
+    end
+end
+
 function Journey.RenderIdle(layout, alphaMul, yOffset)
+    if not Impl.IdleWidgets() then return end
     local aMul = alphaMul or 1.0
     local label, right = Journey.IdleTexts()
-    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+    Impl.BannerLine(layout, aMul, yOffset or 0, function(x, midY, sz)
         local h = GetVectorIcon("home")
-        if h then
-            Impl.Img(h, Vec2(x, math.floor(midY - sz / 2 + MenuIconOffsetY * layout.scale)), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, aMul), 0)
-        end
+        if h then Impl.Img(h, Vec2(x, math.floor(midY - sz / 2)), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, aMul), 0) end
     end, label, Config.Colors.TextSecondary, right, Config.Colors.TextPrimary, "journey_clock")
 end
 
 function Journey.RenderSearching(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
-    local label, right = Journey.SearchTexts()
-    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
-        Journey.Spinner(x + sz / 2, midY, sz * 0.5, Config.Colors.TextPrimary, aMul)
-    end, label, Config.Colors.TextPrimary, right, Config.Colors.Blue, "journey_search")
+    local scale = layout.scale
+    local _, right = Journey.SearchTexts()
+    local cy = math.floor(layout.y + layout.h / 2 + (yOffset or 0))
+    local sz = 18 * scale
+    Journey.Spinner(math.floor(layout.x + layout.h / 2 + 2 * scale), cy, sz * 0.5, Config.Colors.Blue, aMul)
+    local f = Config.Fonts.Semibold or TF("Headline", scale)
+    local s = 15 * scale
+    local w = Odometer.Width(f, s, right)
+    local th = Render.TextSize(f, s, "0").y
+    Odometer.Text("journey_search", f, s, right, Vec2(math.floor(layout.x + layout.w - 15 * scale - w), math.floor(cy - th / 2)), FadeColor(Config.Colors.Blue, aMul))
 end
 
 function Journey.RenderMatchFound(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
+    local a = alphaMul or 1.0
     local scale = layout.scale
-    local sucT = Journey.AcceptedAt and (os.clock() - Journey.AcceptedAt) or 99
-    local label = Journey.Accepted and L("di_ui_accepted") or L("di_ui_match_found")
-    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
-        local c = Vec2(x + sz / 2, midY)
-        local r = sz / 2 + 1 * scale
-        if sucT < 1.2 and not Journey.FaceUsed then
-            Success.Draw("accept" .. tostring(Journey.AcceptedAt), c, r, sucT, aMul, scale)
-            return
-        end
-        Render.FilledCircle(c, r, FadeColor(Config.Colors.Green, aMul), 0, 1.0, 32)
+    local function P(v) return math.floor(v * scale + 0.5) end
+    local C = Config.Colors
+    local now = os.clock()
+    if not Journey.FoundAt or (Journey.FoundSeen and now - Journey.FoundSeen > 1) then Journey.FoundAt = now end
+    Journey.FoundSeen = now
+    local X, Y, W, H = layout.x, layout.y + (yOffset or 0), layout.w, layout.h
+    local midY = math.floor(Y + H / 2)
+    local bs = P(48)
+    local bx = X + P(18)
+    Render.FilledCircle(Vec2(bx + bs / 2, midY), bs / 2, FadeColor(Color(58, 58, 60, 255), a), 0, 1, 40)
+    local sw = GetVectorIcon("swords")
+    if sw then
+        local iz = P(24)
+        Impl.Img(sw, Vec2(bx + bs / 2 - iz / 2, midY - iz / 2), Vec2(iz, iz), FadeColor(Color(255, 255, 255, 255), a), 0)
+    end
+    local f = Config.Fonts.Semibold or TF("Headline", scale)
+    local fr = Config.Fonts.Regular or TF("Body", scale)
+    local sT, sS = 17 * scale, 14 * scale
+    local hT, hS = Render.TextSize(f, sT, "Ag").y, Render.TextSize(fr, sS, "Ag").y
+    local tx = bx + bs + P(14)
+    local ty = math.floor(midY - (hT + P(1) + hS) / 2)
+    local accepted = Journey.Accepted
+    Render.Text(f, sT, accepted and L("di_ui_accepted") or L("di_ui_match_found"), Vec2(tx, ty), FadeColor(C.TextPrimary, a))
+    local el = math.floor(now - Journey.FoundAt)
+    Odometer.Text("match_found_t", fr, sS, string.format("Dota 2  \u{2022}  %d:%02d", math.floor(el / 60), el % 60), Vec2(tx, ty + hT + P(1)), FadeColor(C.TextSecondary, a))
+
+    local r = P(25)
+    local cx = X + W - P(18) - r
+    local c = Vec2(cx, midY)
+    if accepted then
+        local sucT = Journey.AcceptedAt and (now - Journey.AcceptedAt) or 99
+        Success.Draw("accept" .. tostring(Journey.AcceptedAt), c, r, sucT, a, scale)
+    else
+        local breathe = 1 + 0.04 * math.sin(now * 3.2)
+        local _, pk = Pointer.Button("match_accept", X, Y, X + W, Y + H)
+        local rr = r * breathe * (1 - 0.08 * pk)
+        Render.FilledCircle(c, rr, FadeColor(C.Green, a), 0, 1, 48)
         local h = GetVectorIcon("check")
-        local isz = math.floor(r * 1.3)
-        if h then
-            Impl.Img(h, Vec2(math.floor(c.x - isz / 2), math.floor(c.y - isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), aMul), 0)
-        end
-    end, label, Config.Colors.TextPrimary)
+        local iz = math.floor(rr * 1.05)
+        if h then Impl.Img(h, Vec2(math.floor(c.x - iz / 2), math.floor(c.y - iz / 2)), Vec2(iz, iz), FadeColor(Color(255, 255, 255, 255), a), 0) end
+    end
+end
+
+function Impl.IdleWidgets()
+    return UI and UI.Main and UI.Main.IdleWidgets and UI.Main.IdleWidgets:Get() or false
 end
 
 local function RenderModularIdlePill(layout, alphaMul, yOffset)
+    if not Impl.IdleWidgets() then return end
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
@@ -8834,10 +9134,6 @@ local function IslandSurface(p1, p2, radius, borderCol, thickness, aMul)
         Render.FilledRect(p1, p2, Color(bg.r, bg.g, bg.b, math.floor((bg.a or 255) * opacity * a)), radius)
     end
     local curBorder = borderCol
-    if StateMachine.TargetState == StateMachine.States.MENU_MATCH_FOUND then
-        local g = Config.Colors.Green
-        curBorder = Color(g.r, g.g, g.b, 150)
-    end
     Render.Rect(p1, p2, FadeColor(curBorder, a), radius, Enum.DrawFlags.None, thickness or 1.0)
 end
 
@@ -9225,6 +9521,9 @@ function Satellite.Step(id, want, wide)
     end
     local dt = math.min(0.05, math.max(0.001, now - st.clk)) / AnimScale()
     st.clk = now
+    local D = Config.Dimensions
+    if (D.CompactTargetH or D.CompactH) > D.CompactH * 1.4 or StateMachine.Spring.H.value > D.CompactH * 1.6 then want = false end
+    wide = false
     local keep = want or st.w > 0.2
     st.p, st.pv = SolveDampedSpring(st.p, st.pv, keep and 1 or 0, dt, 11.0, 0.64)
     local wideT = (want and wide and st.p > 0.55) and 1 or 0
@@ -9285,7 +9584,7 @@ function Focus.SatRow(layout)
     if targetH <= compactH * 1.4 then
         refH, parityH = layout.h, targetH
     end
-    local bh = math.floor(compactH * 0.88)
+    local bh = compactH
     if (parityH - bh) % 2 == 1 then bh = bh - 1 end
     return math.floor(layout.y + refH / 2 - bh / 2 + 0.5), bh
 end
@@ -9336,7 +9635,7 @@ end
 function Focus.RenderBanner(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local on = Focus.BannerOn
-    Journey.DrawLine(layout, aMul, yOffset or 0, function(x, midY, sz)
+    Impl.BannerLine(layout, aMul, yOffset or 0, function(x, midY, sz)
         local h = GetVectorIcon("moon")
         if h then
             local t = math.max(0, os.clock() - Focus.BannerStart)
@@ -10556,13 +10855,13 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local waveCol = MediaTint()
 
-    local thumbSize = math.floor(20 * scale)
-    local thumbX = math.floor(layout.x + (layout.h - thumbSize) / 2)
+    local thumbSize = math.floor(23 * scale)
+    local thumbX = math.floor(layout.x + 8 * scale)
     local thumbY = math.floor(layout.y + (layout.h - thumbSize) / 2 + yOff)
 
     local waveCount = 5
     local waveW = math.floor(waveCount * (2.4 * scale) + (waveCount - 1) * (1.8 * scale))
-    local waveX = math.floor(layout.x + layout.w - waveW - 10 * scale)
+    local waveX = math.floor(layout.x + layout.w - waveW - 14 * scale)
     local waveY = math.floor(layout.y + (layout.h - 18 * scale) / 2 + yOff)
 
     local textStartX = math.floor(thumbX + thumbSize + 8 * scale)
@@ -10590,11 +10889,11 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
             local oldStr = TrackTransition.OldTitle .. (UI.Media.ShowArtist:Get() and TrackTransition.OldArtist ~= "" and (" • " .. TrackTransition.OldArtist) or "")
             if showTitle then RenderMarqueeText(fontBold, headSize, oldStr, Impl.CompactTitleX(layout, textStartX, textAvailW, fontBold, headSize, oldStr) + outOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, outAlpha), scale) end
-            DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
+            DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 6.5 * scale, outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
         end
         if inAlpha > 0.02 then
             if showTitle then RenderMarqueeText(fontBold, headSize, displayStr, Impl.CompactTitleX(layout, textStartX, textAvailW, fontBold, headSize, displayStr) + inOffset, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, inAlpha), scale) end
-            DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, inAlpha, 0.85 + t * 0.15)
+            DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 6.5 * scale, inAlpha, 0.85 + t * 0.15)
         end
         if t >= 1.0 then
             TrackTransition.Active = false
@@ -10603,49 +10902,25 @@ local function RenderCompactMedia(layout, alphaMul, yOffset)
         if CompactMediaTitle() and not (Impl.LyCompactOn() and Impl.LyCompactDraw(textStartX, textY, textAvailW, fontBold, headSize, aMul, scale, displayStr)) then
             RenderMarqueeText(fontBold, headSize, displayStr, Impl.CompactTitleX(layout, textStartX, textAvailW, fontBold, headSize, displayStr), textY, textAvailW, textCol, scale)
         end
-        DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 5 * scale, aMul)
+        DrawAlbumThumbnail(thumbX, thumbY, thumbSize, 6.5 * scale, aMul)
     end
 
     DrawAppleWaveform(waveX, waveY, 18, waveCount, MediaData.IsPlaying, scale, waveCol, aMul)
 end
 
 function Impl.RenderFightCompact(layout, alphaMul, yOffset)
-    local aMul = alphaMul or 1.0
-    local yOff = yOffset or 0
-    local scale = layout.scale
-    local f, s = TF("Headline", scale)
-
-    local iconSz = math.floor(16 * scale)
-    local iconX = math.floor(layout.x + 12 * scale)
-    local iconY = math.floor(layout.y + (layout.h - iconSz) / 2 + yOff)
-
-    local swordsSvg = GetVectorIcon("swords")
-    if swordsSvg then
-        Impl.Img(swordsSvg, Vec2(iconX, iconY), Vec2(iconSz, iconSz), FadeColor(Config.Colors.Red, aMul), 0)
-    else
-        Render.FilledCircle(Vec2(iconX + iconSz / 2, iconY + iconSz / 2), iconSz / 2, FadeColor(Config.Colors.Red, aMul), 0, 1.0, 18)
-    end
-
-    local scoreStr = string.format("%d vs %d", FightTracker.AllyCount, FightTracker.EnemyCount)
-    local lmarkStr = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_fight")
-    local fullText = scoreStr .. " \u{2022} " .. lmarkStr
-
-    local textStartX = math.floor(iconX + iconSz + 8 * scale)
-    local textAvailW = math.max(10, math.floor(layout.x + layout.w - textStartX - 12 * scale))
-    local tH = Render.TextSize(f, s, "Ag").y
-    local textY = math.floor(layout.y + (layout.h - tH) / 2 + yOff)
-
-    RenderMarqueeText(f, s, fullText, textStartX, textY, textAvailW, FadeColor(Config.Colors.TextPrimary, aMul), scale)
+    Impl.CompactSlots(layout, alphaMul, yOffset, "swords", Config.Colors.Red, string.format("%d:%d", FightTracker.AllyCount, FightTracker.EnemyCount), Config.Colors.Red, "fight_score")
 end
 
-local CachedDotaMapHandle = nil
-local DotaMapFailed = false
-local DotaMapNextRetry = 0
-local LastMapWarmCheck = 0
+Impl.MapFailed = false
+Impl.MapRetry = 0
+Impl.MapWarm = 0
 function Impl.GetDotaMapTexture()
-    if CachedDotaMapHandle ~= nil then return CachedDotaMapHandle end
-    if DotaMapFailed and os.clock() < DotaMapNextRetry then return nil end
+    if Impl.MapH ~= nil then return Impl.MapH end
+    if Impl.MapFailed and os.clock() < Impl.MapRetry then return nil end
+    local cdir = Engine.GetCheatDirectory and Engine.GetCheatDirectory() or ""
     local mapCandidates = {
+        cdir .. "scripts/dota_map.png",
         "dota_map.png",
         "scripts/dota_map.png",
         "C:/Umbrella/scripts/dota_map.png",
@@ -10660,223 +10935,134 @@ function Impl.GetDotaMapTexture()
         if ImageCache[mp] == false then ImageCache[mp] = nil end
         local h = GetCachedImage(mp)
         if h and h > 0 then
-            CachedDotaMapHandle = h
-            DotaMapFailed = false
+            Impl.MapH = h
+            Impl.MapFailed = false
             return h
         end
     end
 
-    DotaMapFailed = true
-    DotaMapNextRetry = os.clock() + 30.0
+    Impl.MapFailed = true
+    Impl.MapRetry = os.clock() + 30.0
     return nil
+end
+
+function Impl.MapPane(layout, x1, y1, cx, cy, halfSpan, aMul, fadeW)
+    local X, W = layout.x, layout.w
+    x1 = math.floor(x1 + 0.5)
+    y1 = math.floor(y1 + 0.5)
+    local x2, y2 = math.floor(X + W + 0.5), math.floor(y1 + layout.h + 0.5)
+    local mapW, mapH = x2 - x1, y2 - y1
+    local wpp = (halfSpan * 2) / math.max(1, mapH)
+    local hwx, hwy = mapW / 2 * wpp, mapH / 2 * wpp
+    local u0 = (cx - hwx + 8000) / 16000
+    local u1 = (cx + hwx + 8000) / 16000
+    local v0 = 1 - (cy + hwy + 8000) / 16000
+    local v1 = 1 - (cy - hwy + 8000) / 16000
+    local tex = Impl.GetDotaMapTexture()
+    local tint = Color(150, 150, 150, 255)
+    local fw = math.floor(math.min(fadeW, mapW * 0.6))
+    local function U(px) return u0 + (px - x1) / mapW * (u1 - u0) end
+    local function Part(px1, px2, k, flags, r)
+        if px2 <= px1 then return end
+        if tex and tex > 0 then
+            Impl.Img(tex, Vec2(px1, y1), Vec2(px2 - px1, mapH), FadeColor(tint, aMul * k), r, flags, Vec2(U(px1), v0), Vec2(U(px2), v1))
+        else
+            Render.FilledRect(Vec2(px1, y1), Vec2(px2, y1 + mapH / 2), FadeColor(Color(30, 14, 16, 255), aMul * k), r, flags)
+            Render.FilledRect(Vec2(px1, y1 + mapH / 2), Vec2(px2, y2), FadeColor(Color(12, 30, 20, 255), aMul * k), r, flags)
+        end
+    end
+    local step = math.max(2, math.floor(layout.scale * 2 + 0.5))
+    local px = x1
+    while px < x1 + fw do
+        local nx = math.min(x1 + fw, px + step)
+        local t = ((px + nx) / 2 - x1) / math.max(1, fw)
+        local k = t * t * t * (t * (t * 6 - 15) + 10)
+        if k > 0.004 then Part(px, nx, k, Enum.DrawFlags.None, 0) end
+        px = nx
+    end
+    Part(x1 + fw, x2, 1, Enum.DrawFlags.RoundCornersRight, layout.r)
+    local midX, midY = x1 + mapW / 2, y1 + mapH / 2
+    return function(wx, wy)
+        return midX + (wx - cx) / wpp, midY - (wy - cy) / wpp
+    end, { x1 = x1 + fw * 0.7, x2 = x2, y1 = y1, y2 = y2 }
 end
 
 function Impl.RenderFightLarge(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
-    local yOff = yOffset or 0
     local scale = layout.scale
-    local fTitle, sTitle = TF("Title", scale)
-    local fSub, sSub = TF("Subhead", scale)
-    local fName, sName = TF("Headline", scale)
-    local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
-    local subCol = FadeColor(Config.Colors.TextSecondary, aMul)
+    local function P(v) return math.floor(v * scale + 0.5) end
+    local X, Y, W, H = layout.x, layout.y + (yOffset or 0), layout.w, layout.h
+    local white = Color(255, 255, 255, 255)
+    local green, red = Config.Colors.Green, Config.Colors.Red
 
-    local padX = math.floor(16 * scale)
-    local padY = math.floor(14 * scale)
-
-    local inset = math.floor(12 * scale)
-    local radarAvail = math.min(124 * scale, layout.h - inset * 2)
-    local radarSz = math.max(math.floor(34 * scale), math.floor(radarAvail))
-    local radarR = math.max(6 * scale, math.min(radarSz / 2, layout.r - inset))
-    local radarX = math.floor(layout.x + layout.w - inset - radarSz)
-    local radarY = math.floor(layout.y + (layout.h - radarSz) / 2 + yOff)
-
-    local headerScore = string.format("%d vs %d", FightTracker.AllyCount, FightTracker.EnemyCount)
-    local lmark = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_map")
-
-    local hdrSize = Render.TextSize(fTitle, sTitle, headerScore)
-    local hdrY = math.floor(layout.y + padY + yOff - 2 * scale)
-    local swords = GetVectorIcon("swords")
-    local swSz = math.floor(15 * scale)
-    local hdrX = layout.x + padX
-    if swords then
-        Impl.Img(swords, Vec2(hdrX, math.floor(hdrY + hdrSize.y / 2 - swSz / 2)), Vec2(swSz, swSz), FadeColor(Config.Colors.Red, aMul), 0)
-        hdrX = hdrX + swSz + math.floor(7 * scale)
-    end
-    Odometer.Draw(fTitle, sTitle, headerScore, Vec2(hdrX, hdrY), textCol)
-    local fightW = Odometer.Width(fTitle, sTitle, headerScore)
-    Render.Text(fSub, sSub, L("di_ui_fight"), Vec2(math.floor(hdrX + fightW + 6 * scale), math.floor(hdrY + hdrSize.y - Render.TextSize(fSub, sSub, "Ag").y - 1 * scale)), subCol)
-    Render.Text(fSub, sSub, TruncateToWidth(fSub, sSub, lmark, math.floor(radarX - 12 * scale - layout.x - padX)), Vec2(layout.x + padX, math.floor(hdrY + hdrSize.y + 1 * scale)), subCol)
-
-    local function PickPriorityCombatant(list)
-        local best, bestPct = nil, nil
-        for _, h in ipairs(list) do
-            local hp = Entity.GetHealth(h)
-            local maxHp = math.max(1, Entity.GetMaxHealth(h))
-            local pct = hp / maxHp
-            if not best or pct < bestPct then
-                best, bestPct = h, pct
-            end
-        end
-        return best
-    end
-
-    local combatants = {}
-    local priorityAlly = PickPriorityCombatant(FightTracker.Allies)
-    local priorityEnemy = PickPriorityCombatant(FightTracker.Enemies)
-    if priorityAlly then table.insert(combatants, { hero = priorityAlly, isAlly = true }) end
-    if priorityEnemy then table.insert(combatants, { hero = priorityEnemy, isAlly = false }) end
-
-    local rowY = math.floor(layout.y + padY + 42 * scale + yOff)
-    local rowPitch = math.floor(44 * scale)
-
-    for idx = 1, math.min(2, #combatants) do
-        local c = combatants[idx]
-        local h = c.hero
-        local rawName = NPC.GetUnitName(h)
-        local hName = GetPlayerDisplayName(h)
-        if not hName or hName == "" then hName = CleanHeroName(rawName) end
-
-        local curHp = Entity.GetHealth(h)
-        local maxHp = math.max(1, Entity.GetMaxHealth(h))
-        local hpPct = math.min(1.0, math.max(0.0, curHp / maxHp))
-
-        local curMana = NPC.GetMana(h) or 0
-        local maxMana = math.max(1, NPC.GetMaxMana(h) or 1)
-        local manaPct = math.min(1.0, math.max(0.0, curMana / maxMana))
-
-        local avatarSz = math.floor(24 * scale)
-        local ax = math.floor(layout.x + padX)
-        local ay = math.floor(rowY + (idx - 1) * rowPitch)
-
-        if idx > 1 then
-            local divY = math.floor(ay - 7 * scale)
-            Render.Line(Vec2(layout.x + padX + 2 * scale, divY), Vec2(radarX - 10 * scale, divY), FadeColor(Config.Colors.Separator, aMul), 1.0)
-        end
-
-        local heroIconPath = "panorama/images/heroes/icons/" .. rawName .. "_png.vtex_c"
-        local hHandle = GetCachedImage(heroIconPath)
-        if hHandle then
-            Impl.Img(hHandle, Vec2(ax, ay), Vec2(avatarSz, avatarSz), FadeColor(Color(255, 255, 255, 255), aMul), avatarSz / 2)
-        else
-            local dotCol = c.isAlly and Config.Colors.Green or Config.Colors.Red
-            Render.FilledCircle(Vec2(ax + avatarSz / 2, ay + avatarSz / 2), avatarSz / 2, FadeColor(dotCol, aMul), 0, 1.0, 18)
-        end
-
-        local nameX = math.floor(ax + avatarSz + 10 * scale)
-        local barW = math.floor(radarX - 14 * scale - nameX)
-
-        Render.Text(fName, sName, TruncateToWidth(fName, sName, hName, math.floor(radarX - 10 * scale - nameX)), Vec2(nameX, math.floor(ay - 2 * scale)), textCol)
-
-        local barY = math.floor(ay + 18 * scale)
-        local barH = math.max(3, math.floor(4 * scale))
-        local barR = barH / 2
-        local gapB = math.floor(4 * scale)
-        local hpW = math.floor((barW - gapB) * 0.62)
-        local manaW = barW - gapB - hpW
-        local manaX = nameX + hpW + gapB
-
-        Render.FilledRect(Vec2(nameX, barY), Vec2(nameX + hpW, barY + barH), FadeColor(Config.Colors.FillTertiary, aMul), barR)
-        if hpPct > 0 then
-            local hpCol = c.isAlly and Config.Colors.Green or Config.Colors.Red
-            Render.FilledRect(Vec2(nameX, barY), Vec2(nameX + math.max(barH, hpW * hpPct), barY + barH), FadeColor(hpCol, aMul), barR)
-        end
-
-        Render.FilledRect(Vec2(manaX, barY), Vec2(manaX + manaW, barY + barH), FadeColor(Config.Colors.FillTertiary, aMul), barR)
-        if manaPct > 0 then
-            Render.FilledRect(Vec2(manaX, barY), Vec2(manaX + math.max(barH, manaW * manaPct), barY + barH), FadeColor(Config.Colors.Blue, aMul), barR)
-        end
-    end
-
-    local rP1 = Vec2(radarX, radarY)
-    local rP2 = Vec2(radarX + radarSz, radarY + radarSz)
-
+    local mapX1 = X + P(112)
+    local fadeW = P(130)
     local zoomRange = (UI and UI.Combat and UI.Combat.RadarZoom) and UI.Combat.RadarZoom:Get() or 2000
-    local fightCenterX = FightTracker.Center.x or 0
-    local fightCenterY = FightTracker.Center.y or 0
-
-    local worldMin = -8000
-    local worldMax = 8000
-    local worldSpan = 16000
-
-    local uC = math.max(0.0, math.min(1.0, (fightCenterX - worldMin) / worldSpan))
-    local vC = math.max(0.0, math.min(1.0, 1.0 - ((fightCenterY - worldMin) / worldSpan)))
-    local uHalf = math.max(0.04, (zoomRange / worldSpan))
-    local vHalf = math.max(0.04, (zoomRange / worldSpan))
-
-    local uvMin = Vec2(math.max(0.0, uC - uHalf), math.max(0.0, vC - vHalf))
-    local uvMax = Vec2(math.min(1.0, uC + uHalf), math.min(1.0, vC + vHalf))
-
-    local mapH = Impl.GetDotaMapTexture()
-
-    Render.FilledRect(rP1, rP2, FadeColor(Config.Colors.FillQuaternary, aMul), radarR)
-
-    Render.PushClip(rP1, rP2)
-
-    if mapH and mapH > 0 then
-        Impl.Img(mapH, rP1, Vec2(radarSz, radarSz), FadeColor(Color(255, 255, 255, 255), aMul), radarR, Enum.DrawFlags.None, uvMin, uvMax)
-        Render.FilledRect(rP1, rP2, FadeColor(Color(0, 0, 0, 70), aMul), radarR)
-    else
-        local riverP1 = Vec2(radarX, radarY + radarSz * 0.75)
-        local riverP2 = Vec2(radarX + radarSz, radarY + radarSz * 0.25)
-        Render.FilledRect(Vec2(radarX, radarY + radarSz * 0.5), rP2, FadeColor(Color(20, 50, 32, 90), aMul), 0)
-        Render.FilledRect(rP1, Vec2(radarX + radarSz, radarY + radarSz * 0.5), FadeColor(Color(48, 22, 26, 90), aMul), 0)
-        Render.Line(riverP1, riverP2, FadeColor(Color(24, 100, 175, 110), aMul), 8 * scale)
-    end
-
-    local midRx = radarX + radarSz / 2
-    local midRy = radarY + radarSz / 2
-
-    for _, c in ipairs(combatants) do
-        local h = c.hero
-        if Entity.IsAlive(h) then
-            local hPos = Entity.GetAbsOrigin(h)
-            local dx = hPos.x - fightCenterX
-            local dy = hPos.y - fightCenterY
-
-            local nx = (dx / zoomRange) * (radarSz / 2 * 0.84)
-            local ny = -(dy / zoomRange) * (radarSz / 2 * 0.84)
-
-            local hX = math.floor(midRx + nx)
-            local hY = math.floor(midRy + ny)
-
-            local tSz = math.floor(18 * scale)
-            local edge = tSz / 2 + 3 * scale
-            hX = math.max(radarX + edge, math.min(radarX + radarSz - edge, hX))
-            hY = math.max(radarY + edge, math.min(radarY + radarSz - edge, hY))
-            local rawName = NPC.GetUnitName(h)
-            local hIcon = GetCachedImage("panorama/images/heroes/icons/" .. rawName .. "_png.vtex_c")
-            local isAlly = c.isAlly
-            local arrowCol = isAlly and Config.Colors.Green or Config.Colors.Red
-
-            if Entity.GetRotationPYR then
-                local _, yaw, _ = Entity.GetRotationPYR(h)
-                if yaw then
-                    local rad = math.rad(-yaw)
-                    local dirX = math.cos(rad)
-                    local dirY = math.sin(rad)
-
-                    local base = tSz / 2 + 1 * scale
-                    local tip = Vec2(hX + dirX * (base + 5 * scale), hY + dirY * (base + 5 * scale))
-                    local s1 = Vec2(hX + dirX * base - dirY * 4 * scale, hY + dirY * base + dirX * 4 * scale)
-                    local s2 = Vec2(hX + dirX * base + dirY * 4 * scale, hY + dirY * base - dirX * 4 * scale)
-
-                    Render.FilledTriangle({ tip, s1, s2 }, FadeColor(arrowCol, aMul))
-                end
-            end
-
-            Render.FilledCircle(Vec2(hX, hY), tSz / 2 + 2 * scale, FadeColor(arrowCol, aMul), 0, 1.0, 24)
-            if hIcon then
-                Impl.Img(hIcon, Vec2(math.floor(hX - tSz / 2), math.floor(hY - tSz / 2)), Vec2(tSz, tSz), FadeColor(Color(255, 255, 255, 255), aMul), tSz / 2)
-            else
-                Render.FilledCircle(Vec2(hX, hY), tSz / 2, FadeColor(Config.Colors.TextPrimary, aMul), 0, 1.0, 16)
+    local fcx, fcy = FightTracker.Center.x or 0, FightTracker.Center.y or 0
+    local project, box = Impl.MapPane(layout, mapX1, Y, fcx - zoomRange * 0.08, fcy, zoomRange, aMul, fadeW)
+    local function Marker(h, isAlly)
+        if not Entity.IsAlive(h) then return end
+        local pos = Entity.GetAbsOrigin(h)
+        local hx, hy = project(pos.x, pos.y)
+        local tSz = P(22)
+        local edge = tSz / 2 + P(4)
+        hx = math.max(box.x1 + edge, math.min(box.x2 - edge - P(8), hx))
+        hy = math.max(box.y1 + edge, math.min(box.y2 - edge, hy))
+        local col = isAlly and green or red
+        if Entity.GetRotationPYR then
+            local _, yaw = Entity.GetRotationPYR(h)
+            if yaw then
+                local rad = math.rad(-yaw)
+                local dx, dy = math.cos(rad), math.sin(rad)
+                local base = tSz / 2 + P(2)
+                Render.FilledTriangle({ Vec2(hx + dx * (base + P(5)), hy + dy * (base + P(5))), Vec2(hx + dx * base - dy * P(4), hy + dy * base + dx * P(4)), Vec2(hx + dx * base + dy * P(4), hy + dy * base - dx * P(4)) }, FadeColor(col, aMul))
             end
         end
+        local hp = Entity.GetHealth(h) / math.max(1, Entity.GetMaxHealth(h))
+        Render.FilledCircle(Vec2(hx, hy), tSz / 2 + P(3), FadeColor(Color(0, 0, 0, 200), aMul), 0, 1.0, 24)
+        Render.Circle(Vec2(hx, hy), tSz / 2 + P(1.5), FadeColor(Color(255, 255, 255, 50), aMul), 2.2 * scale, 0, 1, false, 32)
+        Render.Circle(Vec2(hx, hy), tSz / 2 + P(1.5), FadeColor(col, aMul), 2.2 * scale, -90, math.max(0.03, math.min(1, hp)), true, 32)
+        local icon = GetCachedImage("panorama/images/heroes/icons/" .. NPC.GetUnitName(h) .. "_png.vtex_c")
+        if icon then
+            Impl.Img(icon, Vec2(math.floor(hx - tSz / 2), math.floor(hy - tSz / 2)), Vec2(tSz, tSz), FadeColor(white, aMul), tSz / 2)
+        else
+            Render.FilledCircle(Vec2(hx, hy), tSz / 2, FadeColor(Color(60, 60, 64, 255), aMul), 0, 1.0, 16)
+        end
     end
+    for _, h in ipairs(FightTracker.Enemies) do Marker(h, false) end
+    for _, h in ipairs(FightTracker.Allies) do Marker(h, true) end
 
-    Render.PopClip()
+    local lx = X + P(24)
+    local fSemi = Config.Fonts.Semibold or TF("Headline", scale)
+    local fNum = Config.Fonts.Display or fSemi
+    local sLbl, sN = 13 * scale, 32 * scale
+    local hLbl = Render.TextSize(fSemi, sLbl, "Ag").y
+    local hN = Render.TextSize(fNum, sN, "0").y
+    local block = hLbl + P(6) + hN + P(2) + hLbl
+    local ty = math.floor(Y + (H - block) / 2)
+    local sw = GetVectorIcon("swords")
+    local iz = P(14)
+    if sw then Impl.Img(sw, Vec2(lx, math.floor(ty + hLbl / 2 - iz / 2)), Vec2(iz, iz), FadeColor(red, aMul), 0) end
+    local now = GameRules.GetGameTime and GameRules.GetGameTime() or 0
+    local el = FightTracker.StartTime > 0 and math.max(0, math.floor(now - FightTracker.StartTime)) or 0
+    Odometer.Text("fight_l_timer", fSemi, sLbl, string.format("%d:%02d", math.floor(el / 60), el % 60), Vec2(lx + iz + P(6), ty), FadeColor(red, aMul))
 
-    Render.Rect(rP1, rP2, FadeColor(Config.Colors.Border, aMul), radarR, Enum.DrawFlags.None, 1.0)
+    local a, e = tostring(FightTracker.AllyCount), tostring(FightTracker.EnemyCount)
+    local ny = ty + hLbl + P(6)
+    local aw = Odometer.Width(fNum, sN, a)
+    local cw = Render.TextSize(fNum, sN, " : ").x
+    Odometer.Text("fight_l_a", fNum, sN, a, Vec2(lx, ny), FadeColor(green, aMul))
+    Render.Text(fNum, sN, " : ", Vec2(lx + aw, ny), FadeColor(Config.Colors.TextSecondary, aMul))
+    Odometer.Text("fight_l_e", fNum, sN, e, Vec2(lx + aw + cw, ny), FadeColor(red, aMul))
+
+    local lmark = FightTracker.Landmark ~= "" and FightTracker.Landmark or L("di_ui_map")
+    Render.Text(fSemi, sLbl, TruncateToWidth(fSemi, sLbl, lmark, math.floor(mapX1 + fadeW * 0.4 - lx)), Vec2(lx, ny + hN + P(2)), FadeColor(Config.Colors.TextSecondary, aMul))
+end
+
+function Impl.NotifH()
+    local n = NotificationQueue.Active or NotificationQueue.LastDismissed
+    if n and type(n.Subtitle) == "string" and n.Subtitle ~= "" then return 84 end
+    return Config.Dimensions.NotificationH
 end
 
 function Impl.RenderNotificationState(layout, alphaMul, yOffset)
@@ -10900,19 +11086,12 @@ function Impl.RenderNotificationState(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fTag, sTag = TF("Caption", scale)
-    local fTitle, sTitle = TF("Headline", scale)
-    local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
+    local function P(v) return math.floor(v * scale + 0.5) end
+    local fSemi = TF("Headline", scale)
+    local fReg = TF("Body", scale)
+    local sTag, sTitle, sSub = 13 * scale, 15 * scale, 14 * scale
     local now = os.clock()
-
-    local function TwoLines(textX, maxW, tagStr, tagCol, titleStr)
-        local tagSize = Render.TextSize(fTag, sTag, tagStr)
-        local titleSize = Render.TextSize(fTitle, sTitle, "Ag")
-        local totalH = tagSize.y + titleSize.y
-        local startY = math.floor(layout.y + (layout.h - totalH) / 2 + yOff)
-        Render.Text(fTag, sTag, TruncateToWidth(fTag, sTag, tagStr, maxW), Vec2(textX, startY), FadeColor(Impl.OnLight(tagCol), aMul))
-        Render.Text(fTitle, sTitle, TruncateToWidth(fTitle, sTitle, titleStr or "", maxW), Vec2(textX, math.floor(startY + tagSize.y)), textCol)
-    end
+    local midY = layout.y + layout.h / 2 + yOff
 
     local function QueueBadge()
         local n = (notif == NotificationQueue.Active) and #NotificationQueue.List or 0
@@ -10922,86 +11101,74 @@ function Impl.RenderNotificationState(layout, alphaMul, yOffset)
         local txt = "+" .. n
         local tw = Odometer.Width(fB, sB, txt)
         local th = Render.TextSize(fB, sB, txt).y
-        local h = math.floor(18 * scale)
+        local h = P(20)
         local w = math.floor(math.max(h, tw + 12 * scale))
-        local bx = math.floor(layout.x + layout.w - 14 * scale - w)
-        local by = math.floor(layout.y + (layout.h - h) / 2 + yOff)
+        local bx = math.floor(layout.x + layout.w - P(20) - w)
+        local by = math.floor(midY - h / 2)
         Render.FilledRect(Vec2(bx, by), Vec2(bx + w, by + h), FadeColor(Config.Colors.Fill, aMul), h / 2)
         Odometer.Draw(fB, sB, txt, Vec2(math.floor(bx + (w - tw) / 2), math.floor(by + (h - th) / 2)), FadeColor(Config.Colors.TextSecondary, aMul))
-        return math.floor(w + 8 * scale)
+        return math.floor(w + 10 * scale)
     end
 
     local accent = notif.AccentColor or GetPrimaryThemeColor()
-    local iconH = math.floor(24 * scale)
-    local iconW = math.floor(24 * scale)
-    local iconRadius = math.floor(math.max(5 * scale, layout.r - (layout.h - iconH) / 2))
-    local iconHandle = nil
+    local bs = P(44)
+    local bx = math.floor(layout.x + P(18))
+    local by = math.floor(midY - bs / 2)
+    local white = Color(255, 255, 255, 255)
 
-    local isPowerRuneRoll = (notif.Type == "power_rune_cycle")
-
-    if isPowerRuneRoll then
-        local cycleSpeed = 1.8
-        local cycleTime = now * cycleSpeed
+    if notif.Type == "power_rune_cycle" then
+        local cycleTime = now * 1.8
         local idxA = math.floor(cycleTime) % #PowerRunesCycleList + 1
         local idxB = (idxA % #PowerRunesCycleList) + 1
         local frac = cycleTime - math.floor(cycleTime)
-        local smoothFrac = frac * frac * (3.0 - 2.0 * frac)
-
-        accent = LerpColor(PowerRunesCycleList[idxA].col, PowerRunesCycleList[idxB].col, smoothFrac)
-
-        local iconX = math.floor(layout.x + 12 * scale)
-        local iconY = math.floor(layout.y + (layout.h - iconH) / 2 + yOff)
-
-        Render.PushClip(Vec2(iconX - 2, iconY - 2), Vec2(iconX + iconW + 2, iconY + iconH + 2))
-
+        local sf = frac * frac * (3.0 - 2.0 * frac)
+        accent = LerpColor(PowerRunesCycleList[idxA].col, PowerRunesCycleList[idxB].col, sf)
+        Render.PushClip(Vec2(bx, by), Vec2(bx + bs, by + bs))
         local hA = GetCachedImage(PowerRunesCycleList[idxA].path, PowerRunesCycleList[idxA].svg)
         local hB = GetCachedImage(PowerRunesCycleList[idxB].path, PowerRunesCycleList[idxB].svg)
-        local offA = -smoothFrac * 16 * scale
-        local offB = (1.0 - smoothFrac) * 16 * scale
-
-        if hA then Impl.Img(hA, Vec2(iconX, iconY + offA), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), (1.0 - smoothFrac) * aMul), math.floor(iconW / 2)) end
-        if hB then Impl.Img(hB, Vec2(iconX, iconY + offB), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), smoothFrac * aMul), math.floor(iconW / 2)) end
-
+        if hA then Impl.Img(hA, Vec2(bx, by - sf * bs * 0.6), Vec2(bs, bs), FadeColor(white, (1.0 - sf) * aMul), math.floor(bs / 2)) end
+        if hB then Impl.Img(hB, Vec2(bx, by + (1.0 - sf) * bs * 0.6), Vec2(bs, bs), FadeColor(white, sf * aMul), math.floor(bs / 2)) end
         Render.PopClip()
     else
-        if notif.IconType == "rune" or notif.FallbackSvg == "bounty" or notif.FallbackSvg == "rune_wisdom" or notif.FallbackSvg == "rune_water" or notif.FallbackSvg == "lotus" then
-            iconRadius = math.floor(iconW / 2)
-            iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
-        elseif notif.IconType == "item" then
-            iconW = math.floor(30 * scale)
-            iconH = math.floor(22 * scale)
-            iconRadius = math.floor(5 * scale)
-            iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
-        elseif notif.IconType == "hero" then
-            iconW = math.floor(26 * scale)
-            iconH = math.floor(26 * scale)
-            iconRadius = math.floor(13 * scale)
-            iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
-        else
-            iconHandle = GetCachedImage(notif.Icon, notif.FallbackSvg)
-        end
-
-        local iconX = math.floor(layout.x + 12 * scale)
-        local iconY = math.floor(layout.y + (layout.h - iconH) / 2 + yOff)
-
         local fb = notif.FallbackSvg
         local mono = fb and (NotifGlyphs[fb] or notif.Mono)
         local realImg = notif.Icon and GetCachedImage(notif.Icon) or nil
-        if realImg or (iconHandle and not mono) then
-            Impl.Img(realImg or iconHandle, Vec2(iconX, iconY), Vec2(iconW, iconH), FadeColor(Color(255, 255, 255, 255), aMul), iconRadius)
+        local handle = realImg or GetCachedImage(notif.Icon, fb)
+        local round = notif.IconType == "rune" or notif.IconType == "hero" or fb == "bounty" or fb == "rune_wisdom" or fb == "rune_water" or fb == "lotus"
+        if realImg or (handle and not mono) then
+            if notif.IconType == "item" then
+                local iw, ih = bs, math.floor(bs * 64 / 88)
+                Impl.Img(handle, Vec2(bx, math.floor(midY - ih / 2)), Vec2(iw, ih), FadeColor(white, aMul), P(8))
+            else
+                Impl.Img(handle, Vec2(bx, by), Vec2(bs, bs), FadeColor(white, aMul), round and math.floor(bs / 2) or P(12))
+            end
         else
-            local cx, cy = iconX + iconW / 2, iconY + iconH / 2
-            Render.FilledCircle(Vec2(cx, cy), iconH / 2, FadeColor(accent, aMul), 0, 1.0, 24)
-            Glyph(fb or "bell", cx, cy, math.floor(iconH * 0.58), FadeColor(Color(255, 255, 255, 255), aMul))
+            Render.FilledRect(Vec2(bx, by), Vec2(bx + bs, by + bs), FadeColor(accent, aMul), P(12))
+            Glyph(fb or "bell", bx + bs / 2, by + bs / 2, math.floor(bs * 0.56), FadeColor(white, aMul))
         end
     end
 
-    local textX = math.floor(layout.x + 12 * scale + iconW + 10 * scale)
+    local textX = math.floor(bx + bs + P(14))
     local qW = QueueBadge()
     if notif.Trailing then
         qW = qW + Sdk.DrawPill(layout, notif, qW, yOff, aMul)
     end
-    TwoLines(textX, math.floor(layout.x + layout.w - textX - 16 * scale - qW), notif.Tag or L("di_ui_notification"), accent, notif.Title)
+    local maxW = math.max(10, math.floor(layout.x + layout.w - P(20) - qW - textX))
+    local tagStr = notif.Tag or L("di_ui_notification")
+    local sub = notif.Subtitle
+    if type(sub) ~= "string" or sub == "" then sub = nil end
+    local hTag = Render.TextSize(fSemi, sTag, "Ag").y
+    local hTitle = Render.TextSize(fSemi, sTitle, "Ag").y
+    local hSub = sub and Render.TextSize(fReg, sSub, "Ag").y or 0
+    local total = hTag + P(1) + hTitle + (sub and (P(1) + hSub) or 0)
+    local ty = math.floor(midY - total / 2)
+    Render.Text(fSemi, sTag, TruncateToWidth(fSemi, sTag, tagStr, maxW), Vec2(textX, ty), FadeColor(Impl.OnLight(accent), aMul))
+    ty = ty + hTag + P(1)
+    Render.Text(fSemi, sTitle, TruncateToWidth(fSemi, sTitle, notif.Title or "", maxW), Vec2(textX, ty), FadeColor(Config.Colors.TextPrimary, aMul))
+    if sub then
+        ty = ty + hTitle + P(1)
+        Render.Text(fReg, sSub, TruncateToWidth(fReg, sSub, sub, maxW), Vec2(textX, ty), FadeColor(Config.Colors.TextSecondary, aMul))
+    end
 end
 
 Impl.Ly = { Key = nil, Status = "idle", Lines = {}, Open = false, Btn = 0, Scroll = 0, ScrollV = 0, Target = 0, ChangedAt = 0, RetryAt = 0, Idx = 0, Hits = {}, WrapW = 0, WrapS = 0 }
@@ -11229,28 +11396,35 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
     local aMul = alphaMul or 1.0
     local yOff = yOffset or 0
     local scale = layout.scale
-    local fontBold, titleSz = TF("Title", scale)
-    local fontMain, artistSz = TF("Body", scale)
-    local fTime, sTime = TF("Footnote", scale)
+    local fontBold = TF("Title", scale)
+    local fontMain = TF("Body", scale)
+    local titleSz = 17 * scale
+    local artistSz = 17 * scale
+    local fTime = TF("FootnoteEm", scale)
+    local sTime = 11.5 * scale
     local fontTiny, tinySz = TF("Caption2", scale)
     local textCol = FadeColor(Config.Colors.TextPrimary, aMul)
     local subCol = FadeColor(Config.Colors.TextSecondary, aMul)
     local waveCol = MediaTint()
+    local X, Y = layout.x, layout.y + yOff
+    local function P(v) return math.floor(v * scale + 0.5) end
 
-    local pad = math.floor(16 * scale)
-    local artSize = math.floor(48 * scale)
-    local artX = math.floor(layout.x + pad)
-    local artY = math.floor(layout.y + pad + yOff)
+    local pad = P(22)
+    local artSize = P(66)
+    local artR = P(14)
+    local artX = X + pad
+    local artY = Y + P(24)
 
     local waveCount = 5
     local waveW = math.floor(waveCount * (2.4 * scale) + (waveCount - 1) * (1.8 * scale))
-    local waveX = math.floor(layout.x + layout.w - pad - waveW)
-    local waveY = math.floor(artY + 4 * scale)
-    DrawAppleWaveform(waveX, waveY, 20, waveCount, MediaData.IsPlaying, scale, waveCol, aMul)
+    local waveX = math.floor(X + layout.w - pad - waveW)
+    local waveY = math.floor(artY + P(12))
+    DrawAppleWaveform(waveX, waveY, 18, waveCount, MediaData.IsPlaying, scale, waveCol, aMul)
 
-    local infoX = math.floor(artX + artSize + 13 * scale)
-    local infoY = math.floor(artY + 4 * scale)
-    local maxInfoW = math.max(10, math.floor(waveX - infoX - 8 * scale))
+    local infoX = artX + artSize + P(20)
+    local titleY = artY + P(12)
+    local artistY = titleY + P(21)
+    local maxInfoW = math.max(10, math.floor(waveX - infoX - P(12)))
 
     local titleStr = MediaData.Title ~= "" and MediaData.Title or L("di_ui_track")
     local artistStr = MediaData.Artist ~= "" and MediaData.Artist or ""
@@ -11264,183 +11438,156 @@ function Impl.RenderLargeMedia(layout, alphaMul, yOffset)
         local outAlpha = (1.0 - t) * aMul
         local inOffset = dir * ((1.0 - e) * 8 * scale)
         local inAlpha = t * aMul
-
         if outAlpha > 0.02 and TrackTransition.OldTitle ~= "" then
-            Render.Text(fontBold, titleSz, TrackTransition.OldTitle, Vec2(infoX + outOffset, infoY), FadeColor(Config.Colors.TextPrimary, outAlpha))
-            Render.Text(fontMain, artistSz, TrackTransition.OldArtist, Vec2(infoX + outOffset, infoY + 22 * scale), FadeColor(Config.Colors.TextSecondary, outAlpha))
-            DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
+            Render.Text(fontBold, titleSz, TrackTransition.OldTitle, Vec2(infoX + outOffset, titleY), FadeColor(Config.Colors.TextPrimary, outAlpha))
+            Render.Text(fontMain, artistSz, TrackTransition.OldArtist, Vec2(infoX + outOffset, artistY), FadeColor(Config.Colors.TextSecondary, outAlpha))
+            DrawAlbumThumbnail(artX, artY, artSize, artR, outAlpha, 1.0 - t * 0.15, TrackTransition.OldCoverHandle, TrackTransition.OldCoverColor)
         end
         if inAlpha > 0.02 then
-            Render.Text(fontBold, titleSz, titleStr, Vec2(infoX + inOffset, infoY), FadeColor(Config.Colors.TextPrimary, inAlpha))
-            if artistStr ~= "" then Render.Text(fontMain, artistSz, artistStr, Vec2(infoX + inOffset, infoY + 22 * scale), FadeColor(Config.Colors.TextSecondary, inAlpha)) end
-            DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), inAlpha, (0.85 + t * 0.15) * (MediaData.ArtK or 1))
+            Render.Text(fontBold, titleSz, titleStr, Vec2(infoX + inOffset, titleY), FadeColor(Config.Colors.TextPrimary, inAlpha))
+            if artistStr ~= "" then Render.Text(fontMain, artistSz, artistStr, Vec2(infoX + inOffset, artistY), FadeColor(Config.Colors.TextSecondary, inAlpha)) end
+            DrawAlbumThumbnail(artX, artY, artSize, artR, inAlpha, (0.85 + t * 0.15) * (MediaData.ArtK or 1))
         end
     else
         local titleSize = Render.TextSize(fontBold, titleSz, titleStr)
         if titleSize.x > maxInfoW then
-            RenderMarqueeText(fontBold, titleSz, titleStr, infoX, infoY, maxInfoW, textCol, scale)
+            RenderMarqueeText(fontBold, titleSz, titleStr, infoX, titleY, maxInfoW, textCol, scale)
         else
-            Render.Text(fontBold, titleSz, titleStr, Vec2(infoX, infoY), textCol)
+            Render.Text(fontBold, titleSz, titleStr, Vec2(infoX, titleY), textCol)
         end
-
         if artistStr ~= "" then
-            local artSizeText = Render.TextSize(fontMain, artistSz, artistStr)
-            local artYPos = math.floor(infoY + titleSize.y + 2 * scale)
-            local artistW = UI.Media.SpotifyLike:Get() and math.max(10, math.floor(layout.x + layout.w - pad - 16 * scale - 10 * scale - infoX - (Impl.Ly.Btn > 0.01 and 28 * scale or 0))) or maxInfoW
-            if artSizeText.x > artistW then
-                RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artYPos, artistW, subCol, scale)
+            local artistW = math.max(10, math.floor(X + layout.w - pad - infoX))
+            if Render.TextSize(fontMain, artistSz, artistStr).x > artistW then
+                RenderMarqueeText(fontMain, artistSz, artistStr, infoX, artistY, artistW, subCol, scale)
             else
-                Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artYPos), subCol)
+                Render.Text(fontMain, artistSz, artistStr, Vec2(infoX, artistY), subCol)
             end
         end
-
         local ak = MediaData.ArtK or 1
         local sh = math.max(0, math.min(1, (ak - 0.84) / 0.16))
         if sh > 0.02 then
             local isz = artSize * ak
             local ix, iy = artX + (artSize - isz) / 2, artY + (artSize - isz) / 2
-            SoftShadow(Vec2(ix, iy), Vec2(ix + isz, iy + isz), 12 * scale * ak, Color(0, 0, 0, math.floor(120 * sh * aMul)), 12, Vec2(0, 3))
+            SoftShadow(Vec2(ix, iy), Vec2(ix + isz, iy + isz), artR * ak, Color(0, 0, 0, math.floor(120 * sh * aMul)), 12, Vec2(0, 3))
         end
-        DrawAlbumThumbnail(artX, artY, artSize, math.floor(12 * scale), aMul, ak)
+        DrawAlbumThumbnail(artX, artY, artSize, artR, aMul, ak)
     end
 
-    local progressY = math.floor(artY + artSize + 14 * scale)
     local lyK = math.max(0, math.min(1, (StateMachine.Spring.H.value - Config.Dimensions.LargeMediaH) / Impl.LyH))
     local lyExtra = math.floor(lyK * Impl.LyH * scale)
     if lyExtra > 1 and #Impl.Ly.Lines > 0 then
-        Impl.LyDraw(layout.x + pad, math.floor(artY + artSize + 12 * scale), layout.w - pad * 2, math.max(0, lyExtra - 8 * scale), scale, aMul * math.min(1, lyK * 1.3))
+        Impl.LyDraw(X + pad, math.floor(artY + artSize + P(10)), layout.w - pad * 2, math.max(0, lyExtra - 8 * scale), scale, aMul * math.min(1, lyK * 1.3))
     else
         Impl.Ly.Hits = {}
     end
-    progressY = progressY + lyExtra
-    local progressW = math.floor(layout.w - pad * 2)
-    local progressH = math.floor(4.5 * scale)
+    local rowY = Y + P(115) + lyExtra
+    local ctrlY = Y + P(158) + lyExtra
 
     local duration = math.max(1, MediaData.Duration)
     local curPos = MediaData.PosSmooth
-    local barX1 = layout.x + pad
-    local barX2 = layout.x + pad + progressW
+    local slotW = Odometer.Width(fTime, sTime, duration >= 600 and "-00:00" or "-0:00")
+    local barX1 = math.floor(X + pad + slotW + P(9))
+    local barX2 = math.floor(X + layout.w - pad - slotW - P(9))
+    local progressW = math.max(1, barX2 - barX1)
     if SeekDrag.Active then
         local mx = Input.GetCursorPos()
-        SeekDrag.Frac = math.max(0.0, math.min(1.0, (mx - barX1) / math.max(1, progressW)))
+        SeekDrag.Frac = math.max(0.0, math.min(1.0, (mx - barX1) / progressW))
         curPos = SeekDrag.Frac * duration
     end
+    local posText = FormatTrackTime(curPos)
+    local remText = FormatTrackTime(math.max(0, duration - curPos), true)
     local progressPct = math.min(1.0, math.max(0.0, curPos / duration))
-
-    local barH = progressH + 3.5 * scale * SeekDrag.Grow
-    local barY = progressY + progressH / 2 - barH / 2
+    local barH = 7 * scale + 3 * scale * SeekDrag.Grow
+    local barY = rowY - barH / 2
     local barR = barH / 2
     Render.FilledRect(Vec2(barX1, barY), Vec2(barX2, barY + barH), FadeColor(Config.Colors.TrackProgressBg, aMul), barR)
     if progressPct > 0 then
-        Render.FilledRect(Vec2(barX1, barY), Vec2(barX1 + progressW * progressPct, barY + barH), FadeColor(Config.Colors.TextPrimary, aMul), barR)
+        local fillCol = SeekDrag.Active and Config.Colors.TextPrimary or Color(255, 255, 255, 150)
+        Render.FilledRect(Vec2(barX1, barY), Vec2(barX1 + math.max(barH, progressW * progressPct), barY + barH), FadeColor(fillCol, aMul), barR)
     end
-    ButtonHits.MediaSeek = { x1 = barX1, y1 = progressY - 8 * scale, x2 = barX2, y2 = progressY + progressH + 8 * scale }
+    ButtonHits.MediaSeek = { x1 = barX1 - P(4), y1 = rowY - P(12), x2 = barX2 + P(4), y2 = rowY + P(12) }
 
-    local posText = FormatTrackTime(curPos)
-    local remSec = math.max(0, duration - curPos)
-    local remText = FormatTrackTime(remSec, true)
-
-    local timeY = math.floor(progressY + 8 * scale)
-    Odometer.Draw(fTime, sTime, posText, Vec2(layout.x + pad, timeY), subCol)
+    local tH = Render.TextSize(fTime, sTime, "0").y
+    local timeY = math.floor(rowY - tH / 2)
+    Odometer.Draw(fTime, sTime, posText, Vec2(X + pad, timeY), subCol)
     local remW = Odometer.Width(fTime, sTime, remText)
-    Odometer.Draw(fTime, sTime, remText, Vec2(math.floor(layout.x + layout.w - pad - remW), timeY), subCol)
+    Odometer.Draw(fTime, sTime, remText, Vec2(math.floor(X + layout.w - pad - remW), timeY), subCol)
 
-    local ctrlY = math.floor(timeY + 16 * scale)
-    local midX = math.floor(layout.x + layout.w / 2)
-
-    local playX = midX
-    local playY = math.floor(ctrlY + 16 * scale)
+    local midX = math.floor(X + layout.w / 2)
+    local playX, playY = midX, ctrlY
     local ctrlCol = FadeColor(Config.Colors.TextPrimary, aMul)
-    local prevX = math.floor(playX - 54 * scale)
-    local nextX = math.floor(playX + 54 * scale)
-    local shufX = math.floor(layout.x + pad + 12 * scale)
-    local repX = math.floor(layout.x + layout.w - pad - 12 * scale)
-    local hb = 20 * scale
-    local sb2 = 14 * scale
-    ButtonHits.MediaPlay = { x1 = playX - 22 * scale, y1 = playY - 22 * scale, x2 = playX + 22 * scale, y2 = playY + 22 * scale }
+    local prevX = midX - P(71)
+    local nextX = midX + P(71)
+    local leftX = math.floor(X + P(46))
+    local rightX = math.floor(X + layout.w - P(46))
+    local hb = P(24)
+    ButtonHits.MediaPlay = { x1 = playX - hb, y1 = playY - hb, x2 = playX + hb, y2 = playY + hb }
     ButtonHits.MediaPrev = { x1 = prevX - hb, y1 = playY - hb, x2 = prevX + hb, y2 = playY + hb }
     ButtonHits.MediaNext = { x1 = nextX - hb, y1 = playY - hb, x2 = nextX + hb, y2 = playY + hb }
-    ButtonHits.MediaShuffle = { x1 = shufX - sb2, y1 = playY - sb2, x2 = shufX + sb2, y2 = playY + sb2 }
-    ButtonHits.MediaRepeat = { x1 = repX - sb2, y1 = playY - sb2, x2 = repX + sb2, y2 = playY + sb2 }
 
-    local k, d = Impl.PointerBlob("m_play", playX, playY, 22 * scale, ButtonHits.MediaPlay, aMul)
-    Glyph(MediaData.IsPlaying and "media_pause" or "media_play", playX, playY, math.floor(26 * scale * ButtonSprings.MediaPlay.scale * k), FadeColor(ctrlCol, d))
-    k, d = Impl.PointerBlob("m_prev", prevX, playY, 19 * scale, ButtonHits.MediaPrev, aMul)
-    Glyph("media_prev", prevX, playY, math.floor(24 * scale * ButtonSprings.MediaPrev.scale * k), FadeColor(ctrlCol, d))
-    k, d = Impl.PointerBlob("m_next", nextX, playY, 19 * scale, ButtonHits.MediaNext, aMul)
-    Glyph("media_next", nextX, playY, math.floor(24 * scale * ButtonSprings.MediaNext.scale * k), FadeColor(ctrlCol, d))
+    local k, d = Impl.PointerBlob("m_play", playX, playY, 26 * scale, ButtonHits.MediaPlay, aMul)
+    Glyph(MediaData.IsPlaying and "media_pause" or "media_play", playX, playY, math.floor(34 * scale * ButtonSprings.MediaPlay.scale * k), FadeColor(ctrlCol, d))
+    k, d = Impl.PointerBlob("m_prev", prevX, playY, 24 * scale, ButtonHits.MediaPrev, aMul)
+    Glyph("media_prev", prevX, playY, math.floor(36 * scale * ButtonSprings.MediaPrev.scale * k), FadeColor(ctrlCol, d))
+    k, d = Impl.PointerBlob("m_next", nextX, playY, 24 * scale, ButtonHits.MediaNext, aMul)
+    Glyph("media_next", nextX, playY, math.floor(36 * scale * ButtonSprings.MediaNext.scale * k), FadeColor(ctrlCol, d))
 
-    local shufH = GetVectorIcon("shuffle")
-    k, d = Impl.PointerBlob("m_shuf", shufX, playY, 15 * scale, ButtonHits.MediaShuffle, aMul)
-    if shufH then
-        local shufCol = MediaData.Shuffle and Config.Colors.TextPrimary or Config.Colors.TextSecondary
-        local sSz = 14 * scale * ButtonSprings.MediaShuffle.scale * k
-        Impl.Img(shufH, Vec2(shufX - sSz / 2, playY - sSz / 2), Vec2(sSz, sSz), FadeColor(shufCol, aMul * d), 0)
+    local sb = P(18)
+    ButtonHits.MediaLike, ButtonHits.MediaShuffle, ButtonHits.MediaLyrics, ButtonHits.MediaRepeat = nil, nil, nil, nil
+    if UI.Media.SpotifyLike:Get() then
+        local isLiked = (MediaData.IsLiked == true)
+        ButtonHits.MediaLike = { x1 = leftX - sb, y1 = playY - sb, x2 = leftX + sb, y2 = playY + sb }
+        local lk, ld = Impl.PointerBlob("m_like", leftX, playY, 18 * scale, ButtonHits.MediaLike, aMul)
+        local heartH = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
+        if heartH then
+            local sz = 22 * scale * ButtonSprings.MediaLike.scale * lk
+            Impl.Img(heartH, Vec2(leftX - sz / 2, playY - sz / 2), Vec2(sz, sz), FadeColor(isLiked and Config.Colors.Red or Config.Colors.TextSecondary, aMul * ld), 0)
+        end
+    else
+        ButtonHits.MediaShuffle = { x1 = leftX - sb, y1 = playY - sb, x2 = leftX + sb, y2 = playY + sb }
+        local sk, sd = Impl.PointerBlob("m_shuf", leftX, playY, 18 * scale, ButtonHits.MediaShuffle, aMul)
+        local h = GetVectorIcon("shuffle")
+        if h then
+            local sz = 20 * scale * ButtonSprings.MediaShuffle.scale * sk
+            Impl.Img(h, Vec2(leftX - sz / 2, playY - sz / 2), Vec2(sz, sz), FadeColor(MediaData.Shuffle and Config.Colors.TextPrimary or Config.Colors.TextSecondary, aMul * sd), 0)
+        end
     end
-
-    local repH = GetVectorIcon("repeat")
-    k, d = Impl.PointerBlob("m_rep", repX, playY, 15 * scale, ButtonHits.MediaRepeat, aMul)
-    if repH then
-        local repCol = (MediaData.RepeatMode > 0) and Config.Colors.TextPrimary or Config.Colors.TextSecondary
-        local rSz = 14 * scale * ButtonSprings.MediaRepeat.scale * k
-        Impl.Img(repH, Vec2(repX - rSz / 2, playY - rSz / 2), Vec2(rSz, rSz), FadeColor(repCol, aMul * d), 0)
-        if MediaData.RepeatMode == 2 then
-            Render.Text(fontTiny, tinySz, "1", Vec2(repX + 5 * scale, playY - 8 * scale), FadeColor(Config.Colors.TextPrimary, aMul * d))
+    if Impl.Ly.Btn > 0.01 then
+        ButtonHits.MediaLyrics = { x1 = rightX - sb, y1 = playY - sb, x2 = rightX + sb, y2 = playY + sb }
+        local lk, ld = Impl.PointerBlob("m_lyr", rightX, playY, 18 * scale, ButtonHits.MediaLyrics, aMul)
+        local icon = GetVectorIcon("lyrics")
+        if icon then
+            local sz = 22 * scale * lk * ButtonSprings.MediaLyrics.scale
+            Impl.Img(icon, Vec2(rightX - sz / 2, playY - sz / 2), Vec2(sz, sz), FadeColor(Impl.Ly.Open and Config.Colors.TextPrimary or Config.Colors.TextSecondary, aMul * ld * Impl.Ly.Btn), 0)
+        end
+    else
+        ButtonHits.MediaRepeat = { x1 = rightX - sb, y1 = playY - sb, x2 = rightX + sb, y2 = playY + sb }
+        local rk, rd = Impl.PointerBlob("m_rep", rightX, playY, 18 * scale, ButtonHits.MediaRepeat, aMul)
+        local h = GetVectorIcon("repeat")
+        if h then
+            local sz = 20 * scale * ButtonSprings.MediaRepeat.scale * rk
+            local col = (MediaData.RepeatMode > 0) and Config.Colors.TextPrimary or Config.Colors.TextSecondary
+            Impl.Img(h, Vec2(rightX - sz / 2, playY - sz / 2), Vec2(sz, sz), FadeColor(col, aMul * rd), 0)
+            if MediaData.RepeatMode == 2 then
+                Render.Text(fontTiny, tinySz, "1", Vec2(rightX + 6 * scale, playY - 10 * scale), FadeColor(Config.Colors.TextPrimary, aMul * rd))
+            end
         end
     end
 
     local playlistActive = UI.Media.Playlist:Get() and string.find(string.lower(MediaData.App or ""), "yandex", 1, true) ~= nil
         and string.find(string.lower(MediaData.App or ""), "music", 1, true) ~= nil
-    local playlistX = math.floor(layout.x + layout.w - pad - 8 * scale - (UI.Media.SpotifyLike:Get() and 28 * scale or 0))
-    local playlistY = math.floor(artY + artSize - 10 * scale)
     if playlistActive then
-        ButtonHits.MediaPlaylist = { x1 = playlistX - 14 * scale, y1 = playlistY - 14 * scale, x2 = playlistX + 14 * scale, y2 = playlistY + 14 * scale }
-        local pk, pd = Impl.PointerBlob("m_playlist", playlistX, playlistY, 14 * scale, ButtonHits.MediaPlaylist, aMul)
+        local plX = math.floor(X + layout.w - pad - P(9))
+        local plY = math.floor(artY + artSize - P(10))
+        ButtonHits.MediaPlaylist = { x1 = plX - P(14), y1 = plY - P(14), x2 = plX + P(14), y2 = plY + P(14) }
+        local pk, pd = Impl.PointerBlob("m_playlist", plX, plY, 14 * scale, ButtonHits.MediaPlaylist, aMul)
         local plusH = GetVectorIcon("plus")
         if plusH then
             local sz = 16 * scale * ButtonSprings.MediaPlaylist.scale * pk
-            Impl.Img(plusH, Vec2(playlistX - sz / 2, playlistY - sz / 2), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, aMul * pd), 0)
+            Impl.Img(plusH, Vec2(plX - sz / 2, plY - sz / 2), Vec2(sz, sz), FadeColor(Config.Colors.TextSecondary, aMul * pd), 0)
         end
     else
         ButtonHits.MediaPlaylist = nil
-    end
-
-    local lyB = Impl.Ly.Btn
-    if lyB > 0.01 then
-        local lyX = math.floor(layout.x + layout.w - pad - 8 * scale - (UI.Media.SpotifyLike:Get() and 28 * scale or 0) - (playlistActive and 28 * scale or 0))
-        local lyY = math.floor(artY + artSize - 10 * scale)
-        ButtonHits.MediaLyrics = { x1 = lyX - 14 * scale, y1 = lyY - 14 * scale, x2 = lyX + 14 * scale, y2 = lyY + 14 * scale }
-        local lk, ld = Impl.PointerBlob("m_lyr", lyX, lyY, 14 * scale, ButtonHits.MediaLyrics, aMul)
-        local icon = GetVectorIcon("lyrics")
-        if icon then
-            local sz = 16 * scale * lk * ButtonSprings.MediaLyrics.scale
-            local col = Impl.Ly.Open and Config.Colors.TextPrimary or Config.Colors.TextSecondary
-            Impl.Img(icon, Vec2(lyX - sz / 2, lyY - sz / 2), Vec2(sz, sz), FadeColor(col, aMul * ld * lyB), 0)
-        end
-    else
-        ButtonHits.MediaLyrics = nil
-    end
-
-    if UI.Media.SpotifyLike:Get() then
-        local likeScale = ButtonSprings.MediaLike.scale
-        local isLiked = (MediaData.IsLiked == true)
-        local likeX = math.floor(layout.x + layout.w - pad - 8 * scale)
-        local likeY = math.floor(artY + artSize - 10 * scale)
-        local heartH = GetVectorIcon(isLiked and "heart_fill" or "heart_outline")
-        ButtonHits.MediaLike = {
-            x1 = likeX - 14 * scale,
-            y1 = likeY - 14 * scale,
-            x2 = likeX + 14 * scale,
-            y2 = likeY + 14 * scale
-        }
-        local lk, ld = Impl.PointerBlob("m_like", likeX, likeY, 14 * scale, ButtonHits.MediaLike, aMul)
-        if heartH then
-            local heartCol = isLiked and Config.Colors.Red or Config.Colors.TextSecondary
-            local lSz = 16 * scale * likeScale * lk
-            Impl.Img(heartH, Vec2(likeX - lSz / 2, likeY - lSz / 2), Vec2(lSz, lSz), FadeColor(heartCol, aMul * ld), 0)
-        end
-    else
-        ButtonHits.MediaLike = nil
     end
 end
 
@@ -11448,17 +11595,17 @@ local function IdleGeo(layout, yOff)
     local scale = layout.scale
     local oy = yOff or 0
     local g = {}
-    g.pad = math.floor(16 * scale)
+    g.pad = math.floor(26 * scale)
     g.leftX = math.floor(layout.x + g.pad)
     local fN, sN = TF("LargeNum", scale)
     local fF, sF = TF("Footnote", scale)
     local block = Render.TextSize(fN, sN, "0").y + 2 * scale + Render.TextSize(fF, sF, "Ag").y
     g.leftY = math.floor(layout.y + (Config.Dimensions.LargeH * scale - block) / 2 + oy)
-    g.divX = math.floor(layout.x + 140 * scale)
-    g.rightX = math.floor(g.divX + 14 * scale)
-    g.col2X = math.floor(g.rightX + 92 * scale)
-    g.row1Y = math.floor(layout.y + 16 * scale + oy)
-    g.row2Y = math.floor(layout.y + 42 * scale + oy)
+    g.divX = math.floor(layout.x + 152 * scale)
+    g.rightX = math.floor(g.divX + 18 * scale)
+    g.col2X = math.floor(g.rightX + 98 * scale)
+    g.row1Y = math.floor(layout.y + 26 * scale + oy)
+    g.row2Y = math.floor(layout.y + 54 * scale + oy)
     g.icon = math.floor(13 * scale)
     g.textDX = math.floor(18 * scale)
     return g
@@ -11492,7 +11639,7 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     local subInfo = (matchTime and matchTime > 0) and (L("di_ui_match") .. FormatTime(matchTime)) or L("di_ui_main_menu")
     Odometer.Draw(fFoot, sFoot, subInfo, Vec2(g.leftX, math.floor(g.leftY + hmH + 2 * scale)), subCol)
 
-    Render.Line(Vec2(g.divX, layout.y + 14 * scale + yOff), Vec2(g.divX, layout.y + layout.h - 14 * scale + yOff), FadeColor(Config.Colors.Separator, aMul), 1.0)
+    Render.Line(Vec2(g.divX, layout.y + 24 * scale + yOff), Vec2(g.divX, layout.y + layout.h - 24 * scale + yOff), FadeColor(Config.Colors.Separator, aMul), 1.0)
 
     local function Row(id, svg, txt, x, y, f, s, col, soft)
         local h = GetVectorIcon(svg)
@@ -11505,152 +11652,170 @@ local function RenderLargeIdle(layout, alphaMul, yOffset)
     Row("large_fps", "fps", string.format("%d FPS", PerformanceData.FPS), g.rightX, g.row2Y, fSec, sSec, FadeColor(PerfTint("fps", Config.Colors.TextSecondary), aMul), true)
     Row("large_ping", "ping", string.format("%d ms", PerformanceData.Ping), g.col2X, g.row2Y, fSec, sSec, FadeColor(PerfTint("ping", Config.Colors.TextSecondary), aMul), true)
 
-    Focus.RenderTile(layout, g.rightX, math.floor(layout.x + layout.w - 14 * scale), math.floor(layout.y + layout.h - 12 * scale - 26 * scale + yOff), aMul)
+    Focus.RenderTile(layout, g.rightX, math.floor(layout.x + layout.w - 26 * scale), math.floor(layout.y + layout.h - 20 * scale - 26 * scale + yOff), aMul)
+end
+
+function Impl.CompactSlots(layout, alphaMul, yOffset, icon, iconCol, value, valueCol, valueId)
+    local scale = layout.scale
+    local yOff = (yOffset or 0) * scale
+    local cy = math.floor(layout.y + layout.h / 2 + yOff)
+    local iconSz = math.floor(18 * scale)
+    local lx = math.floor(layout.x + layout.h / 2 - iconSz / 2 + 2 * scale)
+    local h = icon and GetVectorIcon(icon)
+    if h then
+        Impl.Img(h, Vec2(lx, cy - math.floor(iconSz / 2)), Vec2(iconSz, iconSz), FadeColor(iconCol, alphaMul), 0)
+    end
+    if value and value ~= "" then
+        local f = Config.Fonts.Semibold or TF("Headline", scale)
+        local sz = 15 * scale
+        local w = Odometer.Width(f, sz, value)
+        local th = Render.TextSize(f, sz, "0").y
+        Odometer.Text(valueId or ("cs_" .. tostring(icon)), f, sz, value, Vec2(math.floor(layout.x + layout.w - 15 * scale - w), math.floor(cy - th / 2)), FadeColor(valueCol, alphaMul))
+    end
 end
 
 function Impl.RenderGamePausedPill(layout, alphaMul, yOffset)
-    local scale = layout.scale
-    local yOff = (yOffset or 0) * scale
-    local centerY = math.floor(layout.y + layout.h / 2 + yOff)
-    local fB, sB = TF("Body", scale)
-    local fH, sH = TF("Headline", scale)
     local elapsed = PauseTracker.PauseStartTime > 0 and math.floor(os.clock() - PauseTracker.PauseStartTime) or 0
-    local pText = L("di_island_paused")
-    local timeText = string.format("%d:%02d", math.floor(elapsed / 60), elapsed % 60)
-    local dotStr = " \u{2022} "
-
-    local badgeSize = math.floor(16 * scale)
-    local badgeX = math.floor(layout.x + 12 * scale)
-    local badgeY = math.floor(centerY - badgeSize / 2)
-
-    local pauseSvg = GetVectorIcon("pause")
-    if pauseSvg then
-        Impl.Img(pauseSvg, Vec2(badgeX, badgeY), Vec2(badgeSize, badgeSize), FadeColor(Config.Colors.Orange, alphaMul), 0)
-    end
-
-    local w1 = Render.TextSize(fB, sB, pText).x
-    local wDot = Render.TextSize(fB, sB, dotStr).x
-    local hB = Render.TextSize(fB, sB, "Ag").y
-    local hH = Render.TextSize(fH, sH, "Ag").y
-
-    local textStartX = math.floor(badgeX + badgeSize + 8 * scale)
-    local textY1 = math.floor(centerY - hB / 2)
-    local textY2 = math.floor(centerY - hH / 2)
-
-    Render.Text(fB, sB, pText, Vec2(textStartX, textY1), FadeColor(Config.Colors.TextSecondary, alphaMul))
-    Render.Text(fB, sB, dotStr, Vec2(textStartX + w1, textY1), FadeColor(Config.Colors.TextMuted, alphaMul))
-    Odometer.Text("pause_time", fH, sH, timeText, Vec2(textStartX + w1 + wDot, textY2), FadeColor(Config.Colors.TextPrimary, alphaMul))
+    Impl.CompactSlots(layout, alphaMul, yOffset, "pause", Config.Colors.Orange, string.format("%d:%02d", math.floor(elapsed / 60), elapsed % 60), Config.Colors.Orange, "pause_time")
 end
 
 function Impl.RenderCourierDeliveryPill(layout, alphaMul, yOffset)
-    local scale = layout.scale
-    local yOff = (yOffset or 0) * scale
-    local centerY = math.floor(layout.y + layout.h / 2 + yOff)
-    local fH, sH = TF("Headline", scale)
-
-    local courierSvg = GetVectorIcon("courier")
-    local iconSize = math.floor(16 * scale)
-    local leftX = math.floor(layout.x + 12 * scale)
-    if courierSvg then
-        Impl.Img(courierSvg, Vec2(leftX, centerY - math.floor(iconSize / 2)), Vec2(iconSize, iconSize), FadeColor(Config.Colors.Yellow, alphaMul), 0)
-    end
-
-    local etaStr = (CourierTracker.ETA > 0) and (L("di_courier_eta") .. " " .. FormatTime(CourierTracker.ETA)) or L("di_ui_courier_delivering_short")
-    local etaW = Odometer.Width(fH, sH, etaStr)
-    local etaH = Render.TextSize(fH, sH, "Ag").y
-    local rightX = math.floor(layout.x + layout.w - 14 * scale - etaW)
-    Odometer.Text("courier_eta", fH, sH, etaStr, Vec2(rightX, math.floor(centerY - etaH / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
-
-    local trackStartX = math.floor(leftX + iconSize + 10 * scale)
-    local trackEndX = math.floor(rightX - 10 * scale)
-    local trackW = trackEndX - trackStartX
-    if trackW > 20 * scale then
-        local trackH = math.max(3, math.floor(4 * scale))
-        local trackY = math.floor(centerY - trackH / 2)
-        local trackR = math.floor(trackH / 2)
-        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Config.Colors.Fill, alphaMul), trackR)
-
-        local fillW = math.floor(trackW * math.max(0, math.min(1.0, CourierTracker.Progress)))
-        if fillW > 0 then
-            Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackStartX + fillW, trackY + trackH), FadeColor(Config.Colors.Green, alphaMul), trackR)
-        end
-    end
+    local eta = CourierTracker.ETA > 0 and FormatTime(CourierTracker.ETA) or ""
+    Impl.CompactSlots(layout, alphaMul, yOffset, "courier", Config.Colors.Yellow, eta, Config.Colors.Yellow, "courier_eta")
 end
 
 function Impl.RenderCourierDeliveredPill(layout, alphaMul, yOffset)
     local scale = layout.scale
-    local yOff = (yOffset or 0) * scale
-    local centerY = math.floor(layout.y + layout.h / 2 + yOff)
-    local fH, sH = TF("Headline", scale)
-
-    local nowClk = os.clock()
-    local elapsed = math.max(0, nowClk - CourierTracker.DeliveredStartTime)
+    local cy = math.floor(layout.y + layout.h / 2 + (yOffset or 0) * scale)
+    local elapsed = math.max(0, os.clock() - CourierTracker.DeliveredStartTime)
     if CourierTracker.FaceFor == CourierTracker.DeliveredStartTime then elapsed = 99 end
-    local iconSize = math.floor(18 * scale)
-    local delivText = L("di_courier_delivered")
-    local tSize = Render.TextSize(fH, sH, delivText)
-    local gap = 8 * scale
-    local totalW = iconSize + gap + tSize.x
-    local startX = math.floor(layout.x + (layout.w - totalW) / 2)
-
-    Success.Draw("courier" .. CourierTracker.DeliveredStartTime, Vec2(startX + iconSize / 2, centerY), iconSize / 2, elapsed, alphaMul, scale)
-    Render.Text(fH, sH, delivText, Vec2(math.floor(startX + iconSize + gap), math.floor(centerY - tSize.y / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
+    local r = 9.5 * scale
+    Success.Draw("courier" .. CourierTracker.DeliveredStartTime, Vec2(math.floor(layout.x + layout.h / 2 + 2 * scale), cy), r, elapsed, alphaMul, scale)
+    local f = Config.Fonts.Semibold or TF("Headline", scale)
+    local s = 15 * scale
+    local txt = L("di_courier_delivered")
+    local w = Render.TextSize(f, s, txt).x
+    local th = Render.TextSize(f, s, "Ag").y
+    Render.Text(f, s, txt, Vec2(math.floor(layout.x + layout.w - 15 * scale - w), math.floor(cy - th / 2)), FadeColor(Config.Colors.Green, alphaMul))
 end
 
 function Impl.RenderCourierLarge(layout, alphaMul, yOffset)
     local scale = layout.scale
-    local yOff = (yOffset or 0) * scale
-    local fH, sH = TF("Headline", scale)
-    local fF, sF = TF("Footnote", scale)
+    local function P(v) return math.floor(v * scale + 0.5) end
+    local X, Y, W, H = layout.x, layout.y + (yOffset or 0) * scale, layout.w, layout.h
+    local a = alphaMul or 1
+    local fSemi = Config.Fonts.Semibold or TF("Headline", scale)
+    local fReg = Config.Fonts.Regular or TF("Body", scale)
+    local fNum = Config.Fonts.Display or fSemi
+    local yellow = Config.Colors.Yellow
+    local white = Color(255, 255, 255, 255)
 
-    local leftX = math.floor(layout.x + 18 * scale)
-    local row1Y = math.floor(layout.y + 14 * scale + yOff)
-    local iconSz = math.floor(16 * scale)
-
-    local courierSvg = GetVectorIcon("courier")
-    if courierSvg then
-        Impl.Img(courierSvg, Vec2(leftX, row1Y), Vec2(iconSz, iconSz), FadeColor(Config.Colors.Yellow, alphaMul), 0)
+    local c = CourierTracker.CachedCourier
+    local hero = HeroData.Local
+    local cpos = c and Entity.GetAbsOrigin(c) or nil
+    local hpos = hero and Entity.GetAbsOrigin(hero) or nil
+    local mapX1 = X + P(112)
+    local fadeW = P(130)
+    local V = CourierTracker.View
+    local visW = math.max(1, W - P(112) - fadeW * 0.7)
+    local function Want(p1, p2)
+        local dx, dy = math.abs(p1.x - p2.x), math.abs(p1.y - p2.y)
+        return (p1.x + p2.x) / 2, (p1.y + p2.y) / 2, math.max(1000, math.max(dy, dx * H / visW) * 0.7)
     end
-    local titleTxt = L("di_courier_delivering")
-    local hH = Render.TextSize(fH, sH, "Ag").y
-    Render.Text(fH, sH, titleTxt, Vec2(leftX + 22 * scale, math.floor(row1Y + iconSz / 2 - hH / 2)), FadeColor(Config.Colors.TextPrimary, alphaMul))
-
-    local infoTxt = string.format("%s %d  \u{2022}  %s %d%%", L("di_courier_speed"), math.floor(CourierTracker.Speed), L("di_courier_hp"), math.floor(CourierTracker.HpPercent * 100))
-    local infoW = Odometer.Width(fF, sF, infoTxt)
-    local fH2 = Render.TextSize(fF, sF, "Ag").y
-    local rightX = math.floor(layout.x + layout.w - 18 * scale - infoW)
-    Odometer.Draw(fF, sF, infoTxt, Vec2(rightX, math.floor(row1Y + iconSz / 2 - fH2 / 2)), FadeColor(Config.Colors.TextSecondary, alphaMul))
-
-    local trackStartX = math.floor(layout.x + 18 * scale)
-    local trackEndX = math.floor(layout.x + layout.w - 18 * scale)
-    local trackW = trackEndX - trackStartX
-    local trackY = math.floor(layout.y + 40 * scale + yOff)
-    local trackH = math.max(3, math.floor(4 * scale))
-    Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackEndX, trackY + trackH), FadeColor(Config.Colors.Fill, alphaMul), math.floor(trackH / 2))
-    local fillW = math.floor(trackW * math.max(0, math.min(1.0, CourierTracker.Progress)))
-    if fillW > 0 then
-        Render.FilledRect(Vec2(trackStartX, trackY), Vec2(trackStartX + fillW, trackY + trackH), FadeColor(Config.Colors.Green, alphaMul), math.floor(trackH / 2))
-    end
-
-    local slotW = math.floor(40 * scale)
-    local slotH = math.floor(28 * scale)
-    local slotGap = math.floor(8 * scale)
-    local totalSlotsW = 6 * slotW + 5 * slotGap
-    local slotsStartX = math.floor(layout.x + (layout.w - totalSlotsW) / 2)
-    local slotsY = math.floor(layout.y + 56 * scale + yOff)
-
-    for i = 1, 6 do
-        local sx = math.floor(slotsStartX + (i - 1) * (slotW + slotGap))
-        local sy = slotsY
-        local it = CourierTracker.Inventory[i]
-        if it and it.icon then
-            Render.FilledRect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Config.Colors.FillTertiary, alphaMul), 6 * scale)
-            local itHandle = GetCachedImage(it.icon)
-            if itHandle and itHandle > 0 then
-                Impl.Img(itHandle, Vec2(sx + 2 * scale, sy + 2 * scale), Vec2(slotW - 4 * scale, slotH - 4 * scale), FadeColor(Color(255, 255, 255, 255), alphaMul), 4 * scale)
-            end
+    if cpos and hpos then
+        local wx, wy, ws = Want(cpos, hpos)
+        if not V then
+            V = { cx = wx, cy = wy, span = ws }
+            CourierTracker.View = V
         else
-            Render.FilledRect(Vec2(sx, sy), Vec2(sx + slotW, sy + slotH), FadeColor(Config.Colors.FillQuaternary, alphaMul), 6 * scale)
+            local function Out(p)
+                return math.abs(p.x - V.cx) > V.span * visW / H * 0.92 or math.abs(p.y - V.cy) > V.span * 0.85
+            end
+            if Out(cpos) or Out(hpos) or ws < V.span * 0.45 then
+                local f = math.min(1, (Pointer.dt or 0.016) * 2.5)
+                V.cx, V.cy, V.span = V.cx + (wx - V.cx) * f, V.cy + (wy - V.cy) * f, V.span + (ws - V.span) * f
+            end
+        end
+    elseif hpos and not V then
+        V = { cx = hpos.x, cy = hpos.y, span = 1400 }
+    end
+    V = V or { cx = 0, cy = 0, span = 1400 }
+    local cx, cy, span = V.cx, V.cy, V.span
+    local project, box = Impl.MapPane(layout, mapX1, Y, cx - span * 0.18, cy, span, a, fadeW)
+
+    local function Clamp(x, y, e)
+        return math.max(box.x1 + e, math.min(box.x2 - e - P(8), x)), math.max(box.y1 + e, math.min(box.y2 - e, y))
+    end
+    local hx, hy, kx, ky
+    if hpos then hx, hy = project(hpos.x, hpos.y) hx, hy = Clamp(hx, hy, P(16)) end
+    if cpos then kx, ky = project(cpos.x, cpos.y) kx, ky = Clamp(kx, ky, P(14)) end
+
+    if hx and kx then
+        local segs = 14
+        local t0 = (os.clock() * 0.9) % 1
+        for i = 0, segs - 1 do
+            local s0 = (i + t0) / segs
+            local s1 = math.min(1, s0 + 0.5 / segs)
+            if s0 < 1 then
+                Render.Line(Vec2(kx + (hx - kx) * s0, ky + (hy - ky) * s0), Vec2(kx + (hx - kx) * s1, ky + (hy - ky) * s1), FadeColor(Color(yellow.r, yellow.g, yellow.b, 200), a), 2.5 * scale)
+            end
+        end
+    end
+    if hx then
+        local av = P(26)
+        local icon = HeroData.HeroName ~= "" and GetCachedImage("panorama/images/heroes/icons/" .. HeroData.HeroName .. "_png.vtex_c") or nil
+        Render.FilledCircle(Vec2(hx, hy), av / 2 + P(3), FadeColor(Color(0, 0, 0, 200), a), 0, 1, 24)
+        Render.Circle(Vec2(hx, hy), av / 2 + P(1.5), FadeColor(Config.Colors.Green, a), 2.2 * scale, 0, 1, false, 32)
+        if icon then
+            Impl.Img(icon, Vec2(hx - av / 2, hy - av / 2), Vec2(av, av), FadeColor(white, a), av / 2)
+        else
+            Render.FilledCircle(Vec2(hx, hy), av / 2, FadeColor(Color(58, 58, 60, 255), a), 0, 1, 24)
+        end
+    end
+    if kx then
+        local pulse = 0.5 + 0.5 * math.sin(os.clock() * 4)
+        local mr = P(12)
+        Render.FilledCircle(Vec2(kx, ky), mr + P(3) + P(4) * pulse, FadeColor(Color(yellow.r, yellow.g, yellow.b, 45), a), 0, 1, 24)
+        Render.FilledCircle(Vec2(kx, ky), mr, FadeColor(yellow, a), 0, 1, 24)
+        local g = GetVectorIcon("courier")
+        if g then
+            local gz = P(14)
+            Impl.Img(g, Vec2(kx - gz / 2, ky - gz / 2), Vec2(gz, gz), FadeColor(Color(0, 0, 0, 255), a), 0)
+        end
+    end
+
+    local lx = X + P(24)
+    local sL = 13 * scale
+    local hL = Render.TextSize(fSemi, sL, "Ag").y
+    local sE = 40 * scale
+    local hE = Render.TextSize(fNum, sE, "0").y
+    local items = {}
+    for i = 1, 6 do
+        local it = CourierTracker.Inventory[i]
+        if it and it.icon then items[#items + 1] = it end
+    end
+    local iw, ih = P(28), P(21)
+    local block = hL + P(2) + hE + (#items > 0 and (P(8) + ih) or 0)
+    local ty = math.floor(Y + (H - block) / 2)
+    local g = GetVectorIcon("courier")
+    local iz = P(14)
+    if g then Impl.Img(g, Vec2(lx, math.floor(ty + hL / 2 - iz / 2)), Vec2(iz, iz), FadeColor(yellow, a), 0) end
+    Render.Text(fSemi, sL, L("di_courier_delivering"), Vec2(lx + iz + P(6), ty), FadeColor(yellow, a))
+    local eta = CourierTracker.ETA > 0 and FormatTime(CourierTracker.ETA) or "--"
+    local ey = ty + hL + P(2)
+    Odometer.Text("courier_eta_l", fNum, sE, eta, Vec2(lx - P(1), ey), FadeColor(Config.Colors.TextPrimary, a))
+    if #items > 0 then
+        local sx = lx
+        local sy = ey + hE + P(8)
+        for _, it in ipairs(items) do
+            local h = GetCachedImage(it.icon)
+            Render.FilledRect(Vec2(sx - P(1.5), sy - P(1.5)), Vec2(sx + iw + P(1.5), sy + ih + P(1.5)), FadeColor(Color(0, 0, 0, 255), a), P(6))
+            if h and h > 0 then
+                Impl.Img(h, Vec2(sx, sy), Vec2(iw, ih), FadeColor(white, a), P(5))
+            else
+                Render.FilledRect(Vec2(sx, sy), Vec2(sx + iw, sy + ih), FadeColor(Config.Colors.FillTertiary, a), P(5))
+            end
+            sx = sx + iw - P(9)
         end
     end
 end
@@ -12049,7 +12214,7 @@ function Impl.RenderIdleSharedTransition(fromState, toState, layout, progress)
 
     local tileA = math.max(0, (elemT - 0.5) / 0.5) ^ 1.5
     if tileA > 0.01 then
-        Focus.RenderTile(lL, g.rightX, math.floor(lL.x + lL.w - 14 * scale), math.floor(lL.y + lL.h - 12 * scale - 26 * scale), tileA)
+        Focus.RenderTile(lL, g.rightX, math.floor(lL.x + lL.w - 26 * scale), math.floor(lL.y + lL.h - 20 * scale - 26 * scale), tileA)
     end
 end
 
@@ -12062,6 +12227,7 @@ function Sheet.BridgeMissing(now)
 end
 
 function Sheet.UpdateInfo()
+    if true then return nil end
     if not Sheet.BridgeOnline() then return nil end
     local mine = Impl.ParseVersion(SCRIPT_VERSION)
     local bridge = Impl.ParseVersion(BridgeStatus.Version)
@@ -12108,10 +12274,11 @@ function Sheet.Pick(now)
 end
 
 Sheet.News = {
-    { glyph = "stack", color = "Orange", t = "di_wn_1_t", d = "di_wn_1_d" },
-    { glyph = "lyrics", color = "Pink", t = "di_wn_2_t", d = "di_wn_2_d" },
-    { glyph = "appearance", color = "Blue", t = "di_wn_3_t", d = "di_wn_3_d" },
-    { glyph = "plus", color = "Purple", t = "di_wn_4_t", d = "di_wn_4_d" }
+    { glyph = "display", color = "Orange", t = "di_wn_1_t", d = "di_wn_1_d" },
+    { glyph = "appearance", color = "Blue", t = "di_wn_2_t", d = "di_wn_2_d" },
+    { glyph = "hold", color = "Purple", t = "di_wn_3_t", d = "di_wn_3_d" },
+    { glyph = "swords", color = "Green", t = "di_wn_4_t", d = "di_wn_4_d" },
+    { glyph = "bolt", color = "Yellow", t = "di_wn_5_t", d = "di_wn_5_d" }
 }
 
 function Sheet.Desc()
@@ -12151,7 +12318,7 @@ end
 
 function Sheet.Size()
     if Sheet.Kind == "whatsnew" then
-        return 360, 18 + 30 + #Sheet.News * 46 + 6 + 36 + 18
+        return 375, 186
     end
     return 340, Sheet.Desc().buttons and 126 or 80
 end
@@ -12247,7 +12414,13 @@ function Sheet.Action(action, now)
     elseif action == "bridge_seen" then
         Sheet.BridgeHintSeen = true
         SaveAllConfig()
+    elseif action == "wn_next" then
+        Sheet.PagePrev = Sheet.Page or 1
+        Sheet.Page = (Sheet.Page or 1) + 1
+        Sheet.PageAt = now
     elseif action == "seen" then
+        Sheet.Page = 1
+        Sheet.PagePrev = nil
         Sheet.SeenVer = SCRIPT_VERSION
         Sheet.Forced = nil
         SaveAllConfig()
@@ -12355,33 +12528,80 @@ function Sheet.RenderNews(layout, alphaMul, yOffset)
     local a = alphaMul or 1
     local s = layout.scale
     local C = Config.Colors
-    local pad = math.floor(18 * s)
-    local y = math.floor(layout.y + pad + (yOffset or 0))
-    local fT, sT = TF("Title", s)
-    Render.Text(fT, sT, L("di_wn_title"), Vec2(layout.x + pad, y), FadeColor(C.TextPrimary, a))
-    local fV, sV = TF("Footnote", s)
-    local ver = SCRIPT_VERSION
-    local vw = Odometer.Width(fV, sV, ver)
-    local vy = math.floor(y + (Render.TextSize(fT, sT, "Ag").y - Render.TextSize(fV, sV, "Ag").y) / 2)
-    Odometer.Draw(fV, sV, ver, Vec2(math.floor(layout.x + layout.w - pad - vw), vy), FadeColor(C.TextSecondary, a))
+    local function P(v) return math.floor(v * s + 0.5) end
+    local X, Y, W, H = layout.x, layout.y + (yOffset or 0), layout.w, layout.h
+    local pad = P(24)
+    local n = #Sheet.News
+    Sheet.Page = math.max(1, math.min(n, Sheet.Page or 1))
+    local fSemi = Config.Fonts.Semibold or TF("Headline", s)
+    local fReg = Config.Fonts.Regular or TF("Body", s)
 
-    local fH, sH = TF("Headline", s)
-    local fD, sD = TF("Footnote", s)
-    local isz = math.floor(30 * s)
-    local rowY = y + math.floor(30 * s)
-    for i, n in ipairs(Sheet.News) do
-        local ry = rowY + (i - 1) * math.floor(46 * s)
-        local cx, cy = layout.x + pad + isz / 2, ry + isz / 2 + math.floor(2 * s)
-        Render.FilledCircle(Vec2(cx, cy), isz / 2, FadeColor(C[n.color] or C.Blue, a), 0, 1.0, 28)
-        Glyph(n.glyph, cx, cy, math.floor(isz * 0.56), FadeColor(Color(255, 255, 255, 255), a))
-        local tx = layout.x + pad + isz + math.floor(12 * s)
-        local maxW = layout.x + layout.w - pad - tx
-        local hh = Render.TextSize(fH, sH, "Ag").y
-        Render.Text(fH, sH, TruncateToWidth(fH, sH, L(n.t), maxW), Vec2(tx, ry), FadeColor(C.TextPrimary, a))
-        Render.Text(fD, sD, TruncateToWidth(fD, sD, L(n.d), maxW), Vec2(tx, math.floor(ry + hh + 1 * s)), FadeColor(C.TextSecondary, a))
+    local sCap = 13 * s
+    Render.Text(fSemi, sCap, L("di_wn_title") .. "  \u{2022}  " .. SCRIPT_VERSION, Vec2(X + pad, Y + P(22)), FadeColor(C.TextSecondary, a))
+
+    local function Wrap(f, sz, text, maxW, maxLines)
+        local lines, cur = {}, ""
+        for word in string.gmatch(text, "%S+") do
+            local try = cur == "" and word or (cur .. " " .. word)
+            if Render.TextSize(f, sz, try).x <= maxW or cur == "" then
+                cur = try
+            else
+                lines[#lines + 1] = cur
+                cur = word
+            end
+        end
+        if cur ~= "" then lines[#lines + 1] = cur end
+        while #lines > maxLines do
+            lines[maxLines] = lines[maxLines] .. " " .. table.remove(lines)
+        end
+        if #lines == maxLines then lines[maxLines] = TruncateToWidth(f, sz, lines[maxLines], maxW) end
+        return lines
     end
-    local by = rowY + #Sheet.News * math.floor(46 * s) + math.floor(6 * s)
-    Sheet.Buttons(layout, by, a, s, { L("di_wn_continue"), true, "seen" })
+
+    local function Page(i, dx, pa)
+        local it = Sheet.News[i]
+        if not it or pa <= 0.01 then return end
+        local isz = P(56)
+        local ix, iy = X + pad + dx, Y + P(52)
+        local col = C[it.color] or C.Blue
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(col, a * pa), P(14))
+        Glyph(it.glyph, ix + isz / 2, iy + isz / 2, math.floor(isz * 0.5), FadeColor(Color(255, 255, 255, 255), a * pa))
+        local tx = ix + isz + P(16)
+        local maxW = X + W - pad - (tx - dx)
+        local sT, sD = 20 * s, 14 * s
+        local hT = Render.TextSize(fSemi, sT, "Ag").y
+        local hD = Render.TextSize(fReg, sD, "Ag").y
+        local lines = Wrap(fReg, sD, L(it.d), maxW, 2)
+        local block = hT + P(3) + #lines * hD
+        local ty = math.floor(iy + isz / 2 - block / 2)
+        Render.Text(fSemi, sT, TruncateToWidth(fSemi, sT, L(it.t), maxW), Vec2(tx, ty), FadeColor(C.TextPrimary, a * pa))
+        for li, ln in ipairs(lines) do
+            Render.Text(fReg, sD, ln, Vec2(tx, ty + hT + P(3) + (li - 1) * hD), FadeColor(C.TextSecondary, a * pa))
+        end
+    end
+
+    local t = math.min(1, (os.clock() - (Sheet.PageAt or -10)) / (0.38 * AnimScale()))
+    local e = EaseOutCubic(t)
+    local dir = (Sheet.PagePrev or 0) < Sheet.Page and 1 or -1
+    if t < 1 and Sheet.PagePrev then
+        Page(Sheet.PagePrev, -dir * P(28) * e, math.max(0, 1 - t * 3.2))
+    end
+    local tin = math.max(0, math.min(1, (t - 0.22) / 0.78))
+    Page(Sheet.Page, dir * P(28) * (1 - EaseOutCubic(tin)), t < 1 and Sheet.PagePrev and tin or 1)
+
+    local by = Y + H - P(22) - P(34)
+    local dotY = by + P(17)
+    local dr = P(3.5)
+    local dx = X + pad + dr
+    for i = 1, n do
+        local on = i == Sheet.Page
+        local w = on and P(18) or dr * 2
+        Render.FilledRect(Vec2(dx - dr, dotY - dr), Vec2(dx - dr + w, dotY + dr), FadeColor(on and C.TextPrimary or C.FillSecondary, a), dr)
+        dx = dx + w + P(6)
+    end
+    local last = Sheet.Page >= n
+    local bw = P(124)
+    Sheet.Button(X + W - pad - bw, by, bw, P(34), last and L("di_wn_continue") or L("di_wn_next"), true, last and "seen" or "wn_next", a, s)
 end
 
 function Sheet.RenderBadge(layout)
@@ -13640,24 +13860,26 @@ end
 
 function Sdk.CompactW(scale)
     local a = Sdk.Shown()
-    if not a then return 150 end
-    if a.progress then return 230 end
+    if not a then return 168 end
     local txt = Sdk.Trailing(a)
-    local tw = 0
+    local f = Config.Fonts.Semibold or TF("Headline", scale)
+    local tw
     if txt then
-        local fH, sH = TF("Headline", scale)
-        tw = Odometer.Width(fH, sH, txt) / scale
+        tw = Odometer.Width(f, 15 * scale, txt) / scale
+    elseif a.progress then
+        tw = 20
     elseif a.title then
-        local fS, sS = TF("Subhead", scale)
-        tw = math.min(180, Render.TextSize(fS, sS, a.title).x / scale) - 18
+        tw = math.min(110, Render.TextSize(f, 14 * scale, a.title).x / scale)
+    else
+        tw = 0
     end
-    return math.max(150, math.ceil((12 + 18 + 28 + tw + 14) / 4) * 4)
+    return math.max(168, math.ceil((37 + 56 + tw + 15) / 2) * 2)
 end
 
 function Sdk.LargeH()
     local a = Sdk.Shown()
-    if not a then return 64 end
-    return 60 + (a.subtitle and 22 or 0) + (a.progress and 16 or 0)
+    if not a then return 88 end
+    return 88 + (a.subtitle and 22 or 0) + (a.progress and 20 or 0)
 end
 
 function Sdk.Track(x1, x2, y, s, frac, col, am)
@@ -13681,33 +13903,32 @@ function Sdk.RenderCompact(layout, alphaMul, yOffset)
     local cy = math.floor(layout.y + layout.h / 2 + (yOffset or 0) * s)
     local tint = Impl.OnLight(a.tint or Config.Colors.Blue)
     local isz = math.floor(18 * s)
-    local ix = math.floor(layout.x + 12 * s)
+    local ix = math.floor(layout.x + layout.h / 2 - isz / 2 + 2 * s)
     local img = a.image and GetCachedImage(a.image) or nil
     if img then
         Impl.Img(img, Vec2(ix, cy - math.floor(isz / 2)), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), am), math.floor(isz / 2))
     else
         Glyph(a.glyph or "bell", ix + isz / 2, cy, isz, FadeColor(tint, am))
     end
-    local rightX = math.floor(layout.x + layout.w - 14 * s)
+    local rightX = math.floor(layout.x + layout.w - 15 * s)
+    local f = Config.Fonts.Semibold or TF("Headline", s)
     local txt = Sdk.Trailing(a)
     if txt then
-        local fH, sH = TF("Headline", s)
-        local tw = Odometer.Width(fH, sH, txt)
-        local th = Render.TextSize(fH, sH, "Ag").y
-        rightX = math.floor(rightX - tw)
-        Odometer.Text("sdk_trail", fH, sH, txt, Vec2(rightX, math.floor(cy - th / 2)), FadeColor(tint, am))
-    elseif a.title and not a.progress then
-        local fS, sS = TF("Subhead", s)
-        local tx = math.floor(ix + isz + 10 * s)
-        local th = Render.TextSize(fS, sS, "Ag").y
-        Render.Text(fS, sS, TruncateToWidth(fS, sS, a.title, rightX - tx), Vec2(tx, math.floor(cy - th / 2)), FadeColor(Config.Colors.TextPrimary, am))
-    end
-    if a.progress then
-        local x1 = math.floor(ix + isz + 10 * s)
-        local x2 = math.floor(rightX - 10 * s)
-        if x2 - x1 > 20 * s then
-            Sdk.Track(x1, x2, math.floor(cy - math.max(3, math.floor(4 * s)) / 2), s, a.progress, tint, am)
-        end
+        local sz = 15 * s
+        local tw = Odometer.Width(f, sz, txt)
+        local th = Render.TextSize(f, sz, "0").y
+        Odometer.Text("sdk_trail", f, sz, txt, Vec2(math.floor(rightX - tw), math.floor(cy - th / 2)), FadeColor(tint, am))
+    elseif a.progress then
+        local r = 8.5 * s
+        local c = Vec2(math.floor(rightX - r), cy)
+        Render.Circle(c, r, FadeColor(Config.Colors.FillSecondary, am), 2.6 * s, 0, 1, false, 32)
+        Render.Circle(c, r, FadeColor(tint, am), 2.6 * s, -90, math.max(0.02, math.min(1, a.progress)), true, 32)
+    elseif a.title then
+        local sz = 14 * s
+        local t = TruncateToWidth(f, sz, a.title, math.floor(110 * s))
+        local tw = Render.TextSize(f, sz, t).x
+        local th = Render.TextSize(f, sz, "Ag").y
+        Render.Text(f, sz, t, Vec2(math.floor(rightX - tw), math.floor(cy - th / 2)), FadeColor(Config.Colors.TextPrimary, am))
     end
 end
 
@@ -13718,46 +13939,53 @@ function Sdk.RenderLarge(layout, alphaMul, yOffset)
         return
     end
     local s = layout.scale
+    local function P(v) return math.floor(v * s + 0.5) end
     local am = alphaMul or 1
     local C = Config.Colors
     local tint = a.tint or C.Blue
-    local pad = math.floor(16 * s)
-    local isz = math.floor(30 * s)
-    local ix = layout.x + pad
-    local iy = math.floor(layout.y + 14 * s + (yOffset or 0) * s)
-    local icx, icy = ix + isz / 2, iy + isz / 2
+    local pad = P(22)
+    local X, Y, W = layout.x, layout.y + (yOffset or 0) * s, layout.w
+    local isz = P(44)
+    local ix, iy = X + pad, Y + P(22)
     local img = a.image and GetCachedImage(a.image) or nil
     if img then
-        Impl.Img(img, Vec2(ix, iy), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), am), math.floor(isz / 2))
+        Impl.Img(img, Vec2(ix, iy), Vec2(isz, isz), FadeColor(Color(255, 255, 255, 255), am), P(12))
     else
-        Render.FilledCircle(Vec2(icx, icy), isz / 2, FadeColor(tint, am), 0, 1.0, 28)
-        Glyph(a.glyph or "bell", icx, icy, math.floor(isz * 0.56), FadeColor(Color(255, 255, 255, 255), am))
+        Render.FilledRect(Vec2(ix, iy), Vec2(ix + isz, iy + isz), FadeColor(tint, am), P(12))
+        Glyph(a.glyph or "bell", ix + isz / 2, iy + isz / 2, math.floor(isz * 0.54), FadeColor(Color(255, 255, 255, 255), am))
     end
-    local right = layout.x + layout.w - pad
+    local fS = Config.Fonts.Semibold or TF("Headline", s)
+    local fR = Config.Fonts.Regular or TF("Body", s)
+    local fN = Config.Fonts.Display or fS
+    local right = X + W - pad
     local trail = Sdk.Trailing(a)
     if trail then
-        local fT, sT = TF("Title", s)
-        local tw = Odometer.Width(fT, sT, trail)
-        local th = Render.TextSize(fT, sT, "Ag").y
-        Odometer.Draw(fT, sT, trail, Vec2(math.floor(right - tw), math.floor(icy - th / 2)), FadeColor(Impl.OnLight(tint), am))
-        right = right - tw - 10 * s
+        local sz = 28 * s
+        local tw = Odometer.Width(fN, sz, trail)
+        local th = Render.TextSize(fN, sz, "0").y
+        Odometer.Draw(fN, sz, trail, Vec2(math.floor(right - tw), math.floor(iy + isz / 2 - th / 2)), FadeColor(Impl.OnLight(tint), am))
+        right = right - tw - P(12)
     end
-    local fC, sC = TF("Caption", s)
-    local fH, sH = TF("Headline", s)
-    local ch = Render.TextSize(fC, sC, "Ag").y
-    local hh = Render.TextSize(fH, sH, "Ag").y
-    local tx = math.floor(ix + isz + 10 * s)
-    local ty = math.floor(icy - (ch + hh) / 2)
-    Render.Text(fC, sC, TruncateToWidth(fC, sC, a.app, right - tx), Vec2(tx, ty), FadeColor(C.TextSecondary, am))
-    Render.Text(fH, sH, TruncateToWidth(fH, sH, a.title or a.app, right - tx), Vec2(tx, math.floor(ty + ch)), FadeColor(C.TextPrimary, am))
-    local y = math.floor(iy + isz + 10 * s)
+    local sA, sT = 13 * s, 17 * s
+    local hA, hT = Render.TextSize(fS, sA, "Ag").y, Render.TextSize(fS, sT, "Ag").y
+    local tx = ix + isz + P(14)
+    local ty = math.floor(iy + isz / 2 - (hA + P(1) + hT) / 2)
+    Render.Text(fS, sA, TruncateToWidth(fS, sA, a.app or "", right - tx), Vec2(tx, ty), FadeColor(C.TextSecondary, am))
+    Render.Text(fS, sT, TruncateToWidth(fS, sT, a.title or a.app or "", right - tx), Vec2(tx, ty + hA + P(1)), FadeColor(C.TextPrimary, am))
+    local y = iy + isz + P(12)
     if a.subtitle then
-        local fS, sS = TF("Subhead", s)
-        Render.Text(fS, sS, TruncateToWidth(fS, sS, a.subtitle, layout.w - pad * 2), Vec2(layout.x + pad, y), FadeColor(C.TextSecondary, am))
-        y = y + math.floor(22 * s)
+        local sz = 14 * s
+        Render.Text(fR, sz, TruncateToWidth(fR, sz, a.subtitle, W - pad * 2), Vec2(X + pad, y), FadeColor(C.TextSecondary, am))
+        y = y + P(22)
     end
     if a.progress then
-        Sdk.Track(layout.x + pad, layout.x + layout.w - pad, y + math.floor(2 * s), s, a.progress, Impl.OnLight(tint), am)
+        local th = P(6)
+        local x1, x2 = X + pad, X + W - pad
+        Render.FilledRect(Vec2(x1, y + P(4)), Vec2(x2, y + P(4) + th), FadeColor(C.FillTertiary, am), th / 2)
+        local p = math.max(0, math.min(1, a.progress))
+        if p > 0 then
+            Render.FilledRect(Vec2(x1, y + P(4)), Vec2(x1 + math.max(th, (x2 - x1) * p), y + P(4) + th), FadeColor(Impl.OnLight(tint), am), th / 2)
+        end
     end
 end
 
@@ -14506,7 +14734,7 @@ local function RenderStateLayer(state, layout, alphaMul, yOffset)
     Fuse.Guard("state_" .. tostring(state), RenderStateLayerRaw, state, layout, alphaMul, yOffset)
 end
 
-local ContentFx = { k = 1, alpha = 1, cx = 0, cy = 0, top = 0, h = 1, stagger = 0, reveal = nil, Installed = false }
+local ContentFx = { k = 1, alpha = 1, cx = 0, cy = 0, dx = 0, dy = 0, blur = 0, top = 0, h = 1, stagger = 0, reveal = nil, Installed = false }
 local FxBase = getmetatable(Render).__index
 
 function ContentFx.TextOut(font, size, text, pos, col, ...)
@@ -14530,7 +14758,31 @@ end
 
 function ContentFx.P(v)
     local k = ContentFx.k
-    return Vec2(ContentFx.cx + (v.x - ContentFx.cx) * k, ContentFx.cy + (v.y - ContentFx.cy) * k)
+    return Vec2(ContentFx.cx + ContentFx.dx + (v.x - ContentFx.cx) * k, ContentFx.cy + ContentFx.dy + (v.y - ContentFx.cy) * k)
+end
+
+ContentFx.BlurPos = { Text = { 4 }, Image = { 2 }, FilledRect = { 1, 2 }, Rect = { 1, 2 }, FilledCircle = { 1 }, Circle = { 1 }, Line = { 1, 2 } }
+ContentFx.BlurCol = { Text = 5, Image = 4, FilledRect = 3, Rect = 3, FilledCircle = 3, Circle = 3, Line = 3 }
+ContentFx.BlurOff = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } }
+
+function ContentFx.Smear(name, a, base)
+    local b = ContentFx.blur
+    local pos, ci = ContentFx.BlurPos[name], ContentFx.BlurCol[name]
+    if b < 0.6 or not pos or not a[ci] then return 1 end
+    local c = a[ci]
+    local ca = c.a or 255
+    local side = Color(c.r, c.g, c.b, math.floor(ca * 0.26))
+    for _, o in ipairs(ContentFx.BlurOff) do
+        local cp = {}
+        for i = 1, a.n do cp[i] = a[i] end
+        for _, pi in ipairs(pos) do
+            local v = a[pi]
+            if v then cp[pi] = Vec2(v.x + o[1] * b, v.y + o[2] * b) end
+        end
+        cp[ci] = side
+        base(table.unpack(cp, 1, a.n))
+    end
+    return math.max(0.25, 1 - b / 12)
 end
 
 ContentFx.Wrap = {
@@ -14570,6 +14822,12 @@ ContentFx.Wrap = {
         a[1], a[2] = ContentFx.P(a[1]), ContentFx.P(a[2])
     end
 }
+ContentFx.Wrap.Gradient = function(a)
+    local ym = (a[1].y + a[2].y) / 2
+    for i = 3, 6 do a[i] = ContentFx.Alpha(a[i], ym) end
+    a[1], a[2] = ContentFx.P(a[1]), ContentFx.P(a[2])
+    if a.n >= 7 and a[7] then a[7] = a[7] * ContentFx.k end
+end
 ContentFx.Wrap.Rect = ContentFx.Wrap.FilledRect
 ContentFx.Wrap.Circle = ContentFx.Wrap.FilledCircle
 ContentFx.Wrap.Shadow = ContentFx.Wrap.FilledRect
@@ -14578,8 +14836,16 @@ for name, fn in pairs(ContentFx.Wrap) do
     ContentFx.Fns[name] = function(...)
         local a = table.pack(...)
         fn(a)
-        if name == "Text" then return ContentFx.TextOut(table.unpack(a, 1, a.n)) end
-        return FxBase[name](table.unpack(a, 1, a.n))
+        local base = name == "Text" and ContentFx.TextOut or FxBase[name]
+        if ContentFx.blur >= 0.6 then
+            local keep = ContentFx.Smear(name, a, base)
+            local ci = ContentFx.BlurCol[name]
+            if keep < 1 and ci and a[ci] then
+                local c = a[ci]
+                a[ci] = Color(c.r, c.g, c.b, math.floor((c.a or 255) * keep))
+            end
+        end
+        return base(table.unpack(a, 1, a.n))
     end
 end
 
@@ -14592,17 +14858,38 @@ function ContentFx.Begin(layout, alpha, k, reveal, stagger)
     ContentFx.cy = layout.y + layout.h / 2
     ContentFx.top = layout.y
     ContentFx.h = layout.h
+    ContentFx.dx, ContentFx.dy, ContentFx.blur = 0, 0, 0
     if ContentFx.k == 1 and alpha >= 0.999 and (not reveal or reveal >= 1) then
         ContentFx.End()
         return
     end
     if not ContentFx.Installed then
         for name, f in pairs(ContentFx.Fns) do Render[name] = f end
+        Impl.FxOn = true
         ContentFx.Installed = true
     end
 end
 
+function ContentFx.Follow(frame, layout, blur)
+    ContentFx.cy = frame.y
+    ContentFx.dx = (layout.x + layout.w / 2) - (frame.x + frame.w / 2)
+    ContentFx.dy = layout.y - frame.y
+    ContentFx.blur = blur or 0
+    if (math.abs(ContentFx.dx) > 0.5 or math.abs(ContentFx.dy) > 0.5 or ContentFx.blur >= 0.6) and not ContentFx.Installed then
+        for name, f in pairs(ContentFx.Fns) do Render[name] = f end
+        Impl.FxOn = true
+        ContentFx.Installed = true
+    end
+end
+
+function ContentFx.Fit(frame, layout)
+    local k = math.min(layout.w / math.max(1, frame.w), layout.h / math.max(1, frame.h))
+    return math.max(0.3, math.min(1.04, k))
+end
+
 function ContentFx.End()
+    ContentFx.dx, ContentFx.dy, ContentFx.blur = 0, 0, 0
+    Impl.FxOn = false
     if ContentFx.Installed then
         for name in pairs(ContentFx.Fns) do Render[name] = nil end
         if ContentFx.Glass then Render.Text = ContentFx.TextOut end
@@ -14620,49 +14907,60 @@ function Impl.RenderShared(kind, layout, m)
 end
 
 function Impl.RenderContent(layout, dt)
-    local tr = StateMachine.Transition
-    local ghosts = StateMachine.Ghosts
-    for i = #ghosts, 1, -1 do
-        local g = ghosts[i]
-        g.a = g.a - dt / 0.16
-        if g.a <= 0.01 then
-            table.remove(ghosts, i)
-            if g.state == StateMachine.States.NOTIFICATION and not tr.Active and StateMachine.TargetState ~= StateMachine.States.NOTIFICATION then
-                NotificationQueue.LastDismissed = nil
-            end
+    local L = StateMachine.Layers
+    if not L then
+        L = {}
+        StateMachine.Layers = L
+    end
+    StateMachine.Ghosts = {}
+    local S = StateMachine.States
+    local D = Config.Dimensions
+    local target = StateMachine.TargetState
+    local bw, bh = StateMachine.Spring.W.value, StateMachine.Spring.H.value
+    local tl = L[target]
+    if not tl then
+        tl = { a = 0 }
+        L[target] = tl
+    end
+    tl.w, tl.h, tl.r = D.CompactTargetW or D.CompactW, D.CompactTargetH or D.CompactH, D.CompactTargetR or D.CompactRadius
+    local order = {}
+    for st, ly in pairs(L) do
+        local want = 0
+        if st == target then
+            local big = math.max(bw / math.max(1, ly.w), bh / math.max(1, ly.h))
+            local small = math.min(bw / math.max(1, ly.w), bh / math.max(1, ly.h))
+            if big <= 1.25 and small >= 0.6 and not StateMachine.Transition.SqueezeUntil then want = 1 end
+        end
+        if want > ly.a then
+            ly.a = math.min(1, ly.a + dt / 0.14)
+        elseif want < ly.a then
+            ly.a = math.max(0, ly.a - dt / 0.10)
+        end
+        if ly.a <= 0 and st ~= target then
+            L[st] = nil
+            if st == S.NOTIFICATION and target ~= S.NOTIFICATION then NotificationQueue.LastDismissed = nil end
+        elseif ly.a > 0.004 then
+            order[#order + 1] = st
         end
     end
-    for _, g in ipairs(ghosts) do
+    table.sort(order, function(x, y)
+        if x == target then return false end
+        if y == target then return true end
+        return x < y
+    end)
+    for _, st in ipairs(order) do
+        local ly = L[st]
+        local a = ly.a
+        local fr = StateMachine.FrameFor(layout, ly.w, ly.h, ly.r)
+        local grow = st == target
+        local k = ContentFx.Fit(fr, layout) * (grow and (0.96 + 0.04 * a) or (1 - 0.06 * (1 - a)))
         local ok, err = pcall(function()
-            ContentFx.Begin(layout, g.a ^ 1.5, 1 - 0.06 * (1 - g.a))
-            if g.shared then
-                Fuse.Guard("shared", Impl.RenderShared, g.shared, layout, g.m)
-            else
-                RenderStateLayer(g.state, g.w and StateMachine.FrameFor(layout, g.w, g.h, g.r) or layout, 1.0, 0)
-            end
+            ContentFx.Begin(fr, a ^ 1.3, k)
+            ContentFx.Follow(fr, layout, (1 - a) * 3.5 * layout.scale)
+            RenderStateLayer(st, fr, 1.0, 0)
         end)
         ContentFx.End()
         if not ok then error(err, 0) end
-    end
-    if tr.Active and tr.SharedPair then
-        tr.Reveal = 1
-        Fuse.Guard("shared", Impl.RenderShared, tr.SharedPair, layout, StateMachine.SharedM(tr.SharedPair))
-    elseif tr.Active then
-        local r = tr.Shrink and math.min(1, tr.Progress / 0.5) or math.max(0, math.min(1, (tr.Progress - 0.05) / 0.70))
-        r = math.max(r, tr.Reveal or 0)
-        tr.Reveal = r
-        if r > 0.001 then
-            local ok, err = pcall(function()
-                local D = Config.Dimensions
-                local fl = StateMachine.FrameFor(layout, D.CompactTargetW or D.CompactW, D.CompactTargetH or D.CompactH, D.CompactTargetR or D.CompactRadius)
-                ContentFx.Begin(fl, 1, 0.92 + 0.08 * EaseOutCubic(r), r, 0.25)
-                RenderStateLayer(StateMachine.TargetState, fl, 1.0, 0)
-            end)
-            ContentFx.End()
-            if not ok then error(err, 0) end
-        end
-    else
-        RenderStateLayer(StateMachine.Current, layout, 1.0, 0.0)
     end
 end
 
@@ -15879,6 +16177,13 @@ function Swipe.Start(x, y)
         Sdk.PressAt = os.clock()
         return true
     end
+    local main = StateMachine.TargetState == S.COMPACT_MEDIA or StateMachine.TargetState == S.COMPACT_FIGHT or StateMachine.TargetState == S.COURIER_DELIVERY
+        or StateMachine.TargetState == S.GAME_PAUSED or StateMachine.TargetState == S.ACTIVITY or StateMachine.TargetState == S.COMPACT_IDLE
+    if main and inside then
+        Swipe.Target = "island"
+        Swipe.IslandKind = Satellite.Right.kind and "swap" or "main"
+        return true
+    end
     local sb = SatelliteBounds
     local kind = Satellite.Right.kind
     if sb and kind and x >= sb.x1 and x <= sb.x2 and y >= sb.y1 and y <= sb.y2 then
@@ -15913,7 +16218,11 @@ function Swipe.Tick(layout, now, dt)
     if g.active then
         local dx, dy = g.x - g.x0, g.y - g.y0
         if t == "island" then
-            Swipe.IslandX, Swipe.IslandV = dx * 0.85, 0
+            if Swipe.IslandKind == "notif" then
+                Swipe.IslandX, Swipe.IslandV = Gesture.Rubber(dx, 70 * s), 0
+            else
+                Swipe.IslandX, Swipe.IslandV = Gesture.Rubber(dx, 34 * s), 0
+            end
         elseif t == "sat" then
             Swipe.SatX, Swipe.SatV = dx * 0.85, 0
             if not g.moved and not Swipe.SatHeld and now - (Swipe.SatPressAt or now) >= 0.35 * AnimScale() then
@@ -15934,7 +16243,12 @@ function Swipe.Tick(layout, now, dt)
         if t == "island" then
             local far = g.moved and math.abs(dx) > 6 and (math.abs(dx) > 28 * s or math.abs(g.vx) > 600)
             if far then StateMachine.NoExpand = true end
-            if Swipe.IslandKind == "activity" then
+            if Swipe.IslandKind == "swap" or Swipe.IslandKind == "main" then
+                if far and Swipe.IslandKind == "swap" then
+                    Haptic.Trigger(Haptic.Types.TAP_MEDIUM)
+                    Impl.SwapWithBubble()
+                end
+            elseif Swipe.IslandKind == "activity" then
                 if far then
                     Sdk.Dismiss(Sdk.Current())
                 elseif not g.moved and StateMachine.TargetState == StateMachine.States.ACTIVITY_LARGE and not (Sdk.ExpandedAt and Sdk.ExpandedAt >= (Sdk.PressAt or 0)) then
@@ -16119,7 +16433,7 @@ function DynamicIsland.OnFrame()
         C.FillSecondary = hc and D(140, 140, 150, 115, 100, 100, 110, 75) or D(120, 120, 128, 82, 120, 120, 128, 41)
         C.FillTertiary = hc and D(135, 135, 148, 95, 100, 100, 110, 60) or D(118, 118, 128, 61, 118, 118, 128, 31)
         C.FillQuaternary = hc and D(130, 130, 145, 75, 100, 100, 110, 45) or D(118, 118, 128, 46, 116, 116, 128, 20)
-        C.Border = hc and D(255, 255, 255, 90, 0, 0, 0, 110) or D(255, 255, 255, 28, 0, 0, 0, 35)
+        C.Border = hc and D(255, 255, 255, 90, 0, 0, 0, 110) or D(255, 255, 255, 16, 0, 0, 0, 22)
         C.SegThumb = D(99, 99, 102, 255, 255, 255, 255, 255)
         C.ChipActiveBorder = D(255, 255, 255, 255, 0, 0, 0, 255)
         C.Red = hc and D(255, 105, 97, 255, 215, 0, 21, 255) or D(255, 69, 58, 255, 255, 59, 48, 255)
@@ -16142,8 +16456,8 @@ function DynamicIsland.OnFrame()
         C.Placeholder = D(58, 58, 60, 255, 229, 229, 234, 255)
     end
 
-    if inGame and CachedDotaMapHandle == nil and os.clock() - LastMapWarmCheck > 10.0 then
-        LastMapWarmCheck = os.clock()
+    if inGame and Impl.MapH == nil and os.clock() - Impl.MapWarm > 10.0 then
+        Impl.MapWarm = os.clock()
         Impl.GetDotaMapTexture()
     end
 
@@ -16209,6 +16523,11 @@ function DynamicIsland.OnFrame()
         local tW = Config.Dimensions.CompactTargetW or Config.Dimensions.CompactW
         local tH = Config.Dimensions.CompactTargetH or Config.Dimensions.CompactH
         local d = math.abs(StateMachine.Spring.W.value - tW) + math.abs(StateMachine.Spring.H.value - tH)
+        if tr.TW ~= tW or tr.TH ~= tH then
+            tr.TW, tr.TH = tW, tH
+            tr.Dist0 = nil
+            tr.Progress = 0
+        end
         if not tr.Dist0 or d > tr.Dist0 then
             tr.Dist0 = d
             tr.Shrink = tW * tH < StateMachine.Spring.W.value * StateMachine.Spring.H.value
@@ -16228,7 +16547,8 @@ function DynamicIsland.OnFrame()
             local m = StateMachine.SharedM(tr.SharedPair)
             settled = (m <= 0 or m >= 1) or elapsed > 2.5 * AnimScale()
         end
-        if p >= 0.999 and settled then
+        local still = d <= 2 and math.abs(StateMachine.Spring.W.vel or 0) + math.abs(StateMachine.Spring.H.vel or 0) < 12 and not trq.SqueezeUntil
+        if (p >= 0.999 and settled and still) or elapsed > 3.0 then
             tr.Active = false
             tr.SharedPair = nil
             tr.Reveal = 1
@@ -16238,15 +16558,24 @@ function DynamicIsland.OnFrame()
         StateMachine.Current = StateMachine.TargetState
     end
     if not tr.Active and NotificationQueue.LastDismissed and StateMachine.TargetState ~= StateMachine.States.NOTIFICATION then
-        local held = false
-        for _, g in ipairs(StateMachine.Ghosts) do
-            if g.state == StateMachine.States.NOTIFICATION then held = true end
-        end
+        local held = StateMachine.Layers and StateMachine.Layers[StateMachine.States.NOTIFICATION]
         if not held then NotificationQueue.LastDismissed = nil end
     end
 
     if Haptic and Haptic.Update then
         Haptic.Update(dt)
+    end
+
+    do
+        local P = StateMachine.Spring.Press
+        if not P then
+            P = { value = 0, vel = 0 }
+            StateMachine.Spring.Press = P
+        end
+        local L = Swipe.Layout
+        local pin = Pointer.down and L and Pointer.px and Pointer.px >= L.x and Pointer.px <= L.x + L.w and Pointer.py >= L.y and Pointer.py <= L.y + L.h
+            and not DragState.IsDragging and not (Swipe.G and Swipe.G.active and Swipe.G.moved) and not Hello.Blocking()
+        P.value, P.vel = MotionEngine.Step(P.value, P.vel, pin and 1 or 0, dt, pin and "SMOOTH" or "BOUNCY")
     end
 
     local layout = GetIslandLayout()
@@ -16266,7 +16595,7 @@ function DynamicIsland.OnFrame()
     local borderW = (UI and UI.Main and UI.Main.BorderThickness) and UI.Main.BorderThickness:Get() or 1.0
     IslandSurface(p1, p2, layout.r, HUDCustomizer.IsOpen and Config.Colors.PMenuIslandBorder or Config.Colors.Border, HUDCustomizer.IsOpen and math.max(1.2, borderW) or borderW)
 
-    if Haptic and Haptic.State and Haptic.State.GlowAlpha > 1.0 then
+    if Impl.GlowBorder and Haptic and Haptic.State and Haptic.State.GlowAlpha > 1.0 then
         local gAlpha = math.min(255, math.floor(Haptic.State.GlowAlpha))
         local gCol = Haptic.State.GlowColor or Color(255, 255, 255, 255)
         local tactileBorderCol = Color(gCol.r, gCol.g, gCol.b, math.floor(gCol.a * (gAlpha / 255)))
@@ -16384,6 +16713,7 @@ function DynamicIsland.OnUpdateEx()
     MouseInput.LiveAt = os.clock()
     Fuse.Guard("camera", Impl.CameraTick)
     Fuse.Guard("input", Impl.HandleInteractions)
+    Fuse.Guard("chan", Impl.ChanTick)
     Fuse.Guard("media", Impl.PollMediaBridge)
     Fuse.Guard("level", Impl.PollLevel)
     Fuse.Guard("bridge", Impl.PollBridgeStatus)
@@ -16395,6 +16725,9 @@ function DynamicIsland.OnScriptsLoaded()
     Impl.LoadScriptFonts()
     Impl.InitMenu()
     Impl.LoadAllConfig()
+    Reminders.Booting = false
+    UI.Reminders.Index:Set(Reminders.Cur)
+    Reminders.Load()
     UI.Main.Enabled:Set(true)
     Sheet.ConfigLoaded = true
     Sdk.Ready = true
@@ -16436,7 +16769,7 @@ do
         if ok then return ... end
         ContentFx.End()
         Fuse.Unwind(0)
-        Fuse.Fail(name, (...))
+        Fuse.Fail(name, (...), true)
     end
     local function Timed(name, t0, ok, ...)
         Perf.Add(name, Perf.Now() - t0)
@@ -16450,7 +16783,7 @@ do
                     if Dbg.TB then return Timed(name, Perf.Now(), xpcall(fn, Dbg.Trace, ...)) end
                     return Timed(name, Perf.Now(), pcall(fn, ...))
                 end
-                return Finish(name, pcall(fn, ...))
+                return Finish(name, xpcall(fn, Fuse.Trace, ...))
             end
         end
     end

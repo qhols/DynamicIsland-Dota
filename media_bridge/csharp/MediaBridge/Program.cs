@@ -15,7 +15,7 @@ public record PlaylistResponse(string status, string[] items, bool[] selected);
 public record FocusResponse(string status, bool focused);
 public record SoundResponse(string status);
 public record LevelResponse(double[] l, string src, int n, double p);
-public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions, string spotify_debug, string yandex_debug, bool fonts_ok);
+public record StatusResponse(string status, string version, string latest_version, int sounds_loaded, string sound_output, string sound_error, string media_sessions, string spotify_debug, string yandex_debug, bool fonts_ok, string channel);
 
 [JsonSerializable(typeof(MediaInfo))]
 [JsonSerializable(typeof(CommandResponse))]
@@ -128,191 +128,42 @@ internal static class Program
         catch { }
     }
 
+    internal record Reply(int Code, string ContentType, byte[] Body);
+
+    private static Reply Json<T>(T data, JsonTypeInfo<T> typeInfo) => new(200, "application/json; charset=utf-8", JsonSerializer.SerializeToUtf8Bytes(data, typeInfo));
+
+    internal static async Task<string> StatusJsonAsync()
+    {
+        var st = new StatusResponse("ok", UpdateChecker.BridgeVersion, Updater.TestMode ? "v9.9.9" : UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync(), await YandexLike.DebugStateAsync(), FontInstaller.Installed, FileChannel.Dir);
+        return JsonSerializer.Serialize(st, AppJson.Context.StatusResponse);
+    }
+
     private static async Task HandleRequestAsync(HttpListenerContext context)
     {
         var request = context.Request;
         var response = context.Response;
-
         try
         {
             response.KeepAlive = false;
             response.Headers.Add("Access-Control-Allow-Origin", "*");
             response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-
             if (request.HttpMethod == "OPTIONS")
             {
                 response.StatusCode = 200;
                 response.OutputStream.Close();
                 return;
             }
-
             string path = (request.Url?.LocalPath ?? "").ToLowerInvariant();
-
-            if (path == "/media")
+            Reply r = await HandleCore(path, request.QueryString);
+            response.StatusCode = r.Code;
+            if (r.Body.Length > 0)
             {
-                MediaSessionService.SetScriptsDir(request.QueryString["dir"]);
-                FontInstaller.CopyToCheat(MediaSessionService.ScriptsDirectory);
-                SpotifyFlags.SetEnabled(request.QueryString["likes"]);
-                var data = await MediaSessionService.GetMediaInfoAsync() ?? new MediaInfo
-                {
-                    is_playing = false,
-                    volume = -100,
-                    is_liked = MediaSessionService.CurrentIsLiked
-                };
-                await WriteJsonAsync(response, data, AppJson.Context.MediaInfo);
+                response.ContentType = r.ContentType;
+                response.ContentLength64 = r.Body.Length;
+                await response.OutputStream.WriteAsync(r.Body);
             }
-            else if (path == "/media/seek")
-            {
-                bool ok = false;
-                if (double.TryParse(request.QueryString["pos"], NumberStyles.Float, CultureInfo.InvariantCulture, out double pos))
-                {
-                    ok = await MediaSessionService.SeekAsync(pos);
-                }
-                await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
-            }
-            else if (path == "/playlist/open")
-            {
-                var (status, items, selected) = await YandexPlaylist.OpenAsync();
-                await WriteJsonAsync(response, new PlaylistResponse(status, items.Select(Uri.EscapeDataString).ToArray(), selected), AppJson.Context.PlaylistResponse);
-            }
-            else if (path == "/playlist/add")
-            {
-                bool ok = int.TryParse(request.QueryString["index"], out int index) && await YandexPlaylist.AddAsync(index);
-                await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
-            }
-            else if (path == "/playlist/remove")
-            {
-                bool ok = int.TryParse(request.QueryString["index"], out int index) && await YandexPlaylist.RemoveAsync(index);
-                await WriteJsonAsync(response, new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
-            }
-            else if (path is "/media/playpause" or "/media/next" or "/media/prev" or "/media/shuffle"
-                     or "/media/repeat" or "/media/like" or "/media/volup" or "/media/voldown")
-            {
-                string cmd = path[7..];
-                bool bump = request.QueryString["bump"] == "1";
-                bool noSound = request.QueryString["nosound"] == "1";
-
-                if ((cmd == "volup" || cmd == "voldown") && !noSound)
-                {
-                    double notchVol = bump ? 0.65 : 0.45;
-                    if (double.TryParse(request.QueryString["vol"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedNotch))
-                    {
-                        notchVol = Math.Max(0.01, Math.Min(1.0, parsedNotch));
-                    }
-                    SoundEngine.Play(bump ? "wheel_boundary_bump" : "wheel_notch", notchVol);
-                }
-
-                bool yandexMode = (cmd is "shuffle" or "repeat") && YandexLike.IsApp(MediaSessionService.CurrentAppId);
-                bool commandOk = cmd == "like" ? await MediaSessionService.ToggleLikeAsync()
-                    : !yandexMode || await YandexLike.ToggleModeAsync(cmd);
-                float? curVol = cmd == "like" || yandexMode ? null : await MediaSessionService.HandleMediaCommandAsync(cmd);
-                curVol ??= AppAudioControl.GetAppVolume(MediaSessionService.CurrentFamily);
-                int volInt = (int)Math.Round(curVol.Value * 100);
-
-                await WriteJsonAsync(response, new CommandResponse(commandOk ? "ok" : "failed", volInt, MediaSessionService.CurrentIsLiked, AppAudioControl.LastTarget), AppJson.Context.CommandResponse);
-            }
-            else if (path == "/sound")
-            {
-                string? soundName = request.QueryString["name"];
-                double vol = 0.5;
-                if (double.TryParse(request.QueryString["vol"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedVol))
-                {
-                    vol = Math.Max(0.01, Math.Min(1.0, parsedVol));
-                }
-                bool force = request.QueryString["force"] == "1";
-
-                if (double.TryParse(request.QueryString["duck"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedDuck))
-                {
-                    double duckVal = Math.Max(0.0, Math.Min(1.0, parsedDuck));
-                    if (duckVal > 0.01)
-                    {
-                        int dur = soundName != null && SoundEngine.Durations.TryGetValue(soundName, out int d) ? d : 800;
-                        AppAudioControl.DuckAllAudio((float)duckVal, dur);
-                    }
-                }
-
-                if (soundName != null) SoundEngine.Play(soundName, vol, force);
-                await WriteJsonAsync(response, new SoundResponse("ok"), AppJson.Context.SoundResponse);
-            }
-            else if (path == "/update/start")
-            {
-                Updater.Start(request.QueryString["dir"], request.QueryString["path"]);
-                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
-            }
-            else if (path == "/update/test")
-            {
-                Updater.SetTest(request.QueryString["on"] == "1", request.QueryString["fail"] == "1");
-                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
-            }
-            else if (path == "/update/status")
-            {
-                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
-            }
-            else if (path == "/update/restart")
-            {
-                await WriteJsonAsync(response, Updater.Status, AppJson.Context.UpdateStatus);
-                _ = Task.Run(async () => { await Task.Delay(300); Updater.Restart(); });
-            }
-            else if (path == "/fonts")
-            {
-                await WriteJsonAsync(response, FontInstaller.Status, AppJson.Context.FontStatus);
-            }
-            else if (path == "/fonts/install")
-            {
-                FontInstaller.Start();
-                await WriteJsonAsync(response, FontInstaller.Status, AppJson.Context.FontStatus);
-            }
-            else if (path == "/open")
-            {
-                Updater.OpenReleasePage(request.QueryString["url"]);
-                await WriteJsonAsync(response, new SoundResponse("ok"), AppJson.Context.SoundResponse);
-            }
-            else if (path == "/reveal")
-            {
-                await WriteJsonAsync(response, new SoundResponse(LogReveal.Reveal(MediaSessionService.ScriptsDirectory)), AppJson.Context.SoundResponse);
-            }
-            else if (path == "/system")
-            {
-                await WriteJsonAsync(response, SystemWatcher.Current, AppJson.Context.SystemInfo);
-            }
-            else if (path == "/key")
-            {
-                bool ok = int.TryParse(request.QueryString["vk"], out int vk) && KeyPress.Allowed(vk);
-                string how = ok ? KeyPress.Tap(vk, request.QueryString["global"] == "1") : "denied";
-                await WriteJsonAsync(response, new SoundResponse(how), AppJson.Context.SoundResponse);
-            }
-            else if (path == "/level")
-            {
-                await WriteJsonAsync(response, new LevelResponse(LevelMeter.Snapshot(), LevelMeter.Source, LevelMeter.Sessions, Math.Round(LevelMeter.Peak, 3)), AppJson.Context.LevelResponse);
-            }
-            else if (path == "/lyrics")
-            {
-                double.TryParse(request.QueryString["dur"], NumberStyles.Float, CultureInfo.InvariantCulture, out double dur);
-                string text = await Lyrics.GetAsync(request.QueryString["artist"] ?? "", request.QueryString["title"] ?? "", request.QueryString["album"] ?? "", dur);
-                byte[] buffer = Encoding.UTF8.GetBytes(text);
-                response.ContentType = "text/plain; charset=utf-8";
-                response.ContentLength64 = buffer.Length;
-                await response.OutputStream.WriteAsync(buffer);
-                response.OutputStream.Close();
-            }
-            else if (path == "/diag/audio")
-            {
-                await WriteJsonAsync(response, new AudioDiag("ok", MediaSessionService.CurrentAppId, MediaSessionService.CurrentFamily, AppAudioControl.DescribeSessions()), AppJson.Context.AudioDiag);
-            }
-            else if (path == "/focus")
-            {
-                await WriteJsonAsync(response, new FocusResponse("ok", AppAudioControl.IsDotaFocused()), AppJson.Context.FocusResponse);
-            }
-            else if (path == "/status")
-            {
-                await WriteJsonAsync(response, new StatusResponse("ok", UpdateChecker.BridgeVersion, Updater.TestMode ? "v9.9.9" : UpdateChecker.LatestTag, SoundEngine.LoadedCount, SoundEngine.OutputKind, SoundEngine.LastError, MediaSessionService.ManagerState, await SpotifyFlags.DebugStateAsync(), await YandexLike.DebugStateAsync(), FontInstaller.Installed), AppJson.Context.StatusResponse);
-            }
-            else
-            {
-                response.StatusCode = 404;
-                response.OutputStream.Close();
-            }
+            response.OutputStream.Close();
         }
         catch (Exception ex)
         {
@@ -321,12 +172,165 @@ internal static class Program
         }
     }
 
-    private static async Task WriteJsonAsync<T>(HttpListenerResponse response, T data, JsonTypeInfo<T> typeInfo)
+    internal static async Task<Reply> HandleCore(string path, System.Collections.Specialized.NameValueCollection q)
     {
-        byte[] buffer = JsonSerializer.SerializeToUtf8Bytes(data, typeInfo);
-        response.ContentType = "application/json; charset=utf-8";
-        response.ContentLength64 = buffer.Length;
-        await response.OutputStream.WriteAsync(buffer);
-        response.OutputStream.Close();
+        if (path == "/media")
+        {
+            MediaSessionService.SetScriptsDir(q["dir"]);
+            FontInstaller.CopyToCheat(MediaSessionService.ScriptsDirectory);
+            SpotifyFlags.SetEnabled(q["likes"]);
+            var data = await MediaSessionService.GetMediaInfoAsync() ?? new MediaInfo
+            {
+                is_playing = false,
+                volume = -100,
+                is_liked = MediaSessionService.CurrentIsLiked
+            };
+            return Json(data, AppJson.Context.MediaInfo);
+        }
+        if (path == "/media/seek")
+        {
+            bool ok = false;
+            if (double.TryParse(q["pos"], NumberStyles.Float, CultureInfo.InvariantCulture, out double pos))
+            {
+                ok = await MediaSessionService.SeekAsync(pos);
+            }
+            return Json(new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
+        }
+        if (path == "/playlist/open")
+        {
+            var (status, items, selected) = await YandexPlaylist.OpenAsync();
+            return Json(new PlaylistResponse(status, items.Select(Uri.EscapeDataString).ToArray(), selected), AppJson.Context.PlaylistResponse);
+        }
+        if (path == "/playlist/add")
+        {
+            bool ok = int.TryParse(q["index"], out int index) && await YandexPlaylist.AddAsync(index);
+            return Json(new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
+        }
+        if (path == "/playlist/remove")
+        {
+            bool ok = int.TryParse(q["index"], out int index) && await YandexPlaylist.RemoveAsync(index);
+            return Json(new SoundResponse(ok ? "ok" : "failed"), AppJson.Context.SoundResponse);
+        }
+        if (path is "/media/playpause" or "/media/next" or "/media/prev" or "/media/shuffle"
+                 or "/media/repeat" or "/media/like" or "/media/volup" or "/media/voldown")
+        {
+            string cmd = path[7..];
+            bool bump = q["bump"] == "1";
+            bool noSound = q["nosound"] == "1";
+            if ((cmd == "volup" || cmd == "voldown") && !noSound)
+            {
+                double notchVol = bump ? 0.65 : 0.45;
+                if (double.TryParse(q["vol"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedNotch))
+                {
+                    notchVol = Math.Max(0.01, Math.Min(1.0, parsedNotch));
+                }
+                SoundEngine.Play(bump ? "wheel_boundary_bump" : "wheel_notch", notchVol);
+            }
+            bool yandexMode = (cmd is "shuffle" or "repeat") && YandexLike.IsApp(MediaSessionService.CurrentAppId);
+            bool commandOk = cmd == "like" ? await MediaSessionService.ToggleLikeAsync()
+                : !yandexMode || await YandexLike.ToggleModeAsync(cmd);
+            float? curVol = cmd == "like" || yandexMode ? null : await MediaSessionService.HandleMediaCommandAsync(cmd);
+            curVol ??= AppAudioControl.GetAppVolume(MediaSessionService.CurrentFamily);
+            int volInt = (int)Math.Round(curVol.Value * 100);
+            return Json(new CommandResponse(commandOk ? "ok" : "failed", volInt, MediaSessionService.CurrentIsLiked, AppAudioControl.LastTarget), AppJson.Context.CommandResponse);
+        }
+        if (path == "/sound")
+        {
+            string? soundName = q["name"];
+            double vol = 0.5;
+            if (double.TryParse(q["vol"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedVol))
+            {
+                vol = Math.Max(0.01, Math.Min(1.0, parsedVol));
+            }
+            bool force = q["force"] == "1";
+            if (double.TryParse(q["duck"], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedDuck))
+            {
+                double duckVal = Math.Max(0.0, Math.Min(1.0, parsedDuck));
+                if (duckVal > 0.01)
+                {
+                    int dur = soundName != null && SoundEngine.Durations.TryGetValue(soundName, out int d) ? d : 800;
+                    AppAudioControl.DuckAllAudio((float)duckVal, dur);
+                }
+            }
+            if (soundName != null) SoundEngine.Play(soundName, vol, force);
+            return Json(new SoundResponse("ok"), AppJson.Context.SoundResponse);
+        }
+        if (path == "/update/start")
+        {
+            Updater.Start(q["dir"], q["path"]);
+            return Json(Updater.Status, AppJson.Context.UpdateStatus);
+        }
+        if (path == "/update/test")
+        {
+            Updater.SetTest(q["on"] == "1", q["fail"] == "1");
+            return Json(Updater.Status, AppJson.Context.UpdateStatus);
+        }
+        if (path == "/update/status")
+        {
+            return Json(Updater.Status, AppJson.Context.UpdateStatus);
+        }
+        if (path == "/update/restart")
+        {
+            _ = Task.Run(async () => { await Task.Delay(300); Updater.Restart(); });
+            return Json(Updater.Status, AppJson.Context.UpdateStatus);
+        }
+        if (path == "/fonts")
+        {
+            return Json(FontInstaller.Status, AppJson.Context.FontStatus);
+        }
+        if (path == "/fonts/install")
+        {
+            FontInstaller.Start();
+            return Json(FontInstaller.Status, AppJson.Context.FontStatus);
+        }
+        if (path == "/open")
+        {
+            Updater.OpenReleasePage(q["url"]);
+            return Json(new SoundResponse("ok"), AppJson.Context.SoundResponse);
+        }
+        if (path == "/reveal")
+        {
+            return Json(new SoundResponse(LogReveal.Reveal(MediaSessionService.ScriptsDirectory)), AppJson.Context.SoundResponse);
+        }
+        if (path == "/system")
+        {
+            return Json(SystemWatcher.Current, AppJson.Context.SystemInfo);
+        }
+        if (path == "/key")
+        {
+            bool ok = int.TryParse(q["vk"], out int vk) && KeyPress.Allowed(vk);
+            string how = ok ? KeyPress.Tap(vk, q["global"] == "1") : "denied";
+            return Json(new SoundResponse(how), AppJson.Context.SoundResponse);
+        }
+        if (path == "/level")
+        {
+            return Json(new LevelResponse(LevelMeter.Snapshot(), LevelMeter.Source, LevelMeter.Sessions, Math.Round(LevelMeter.Peak, 3)), AppJson.Context.LevelResponse);
+        }
+        if (path == "/lyrics")
+        {
+            double.TryParse(q["dur"], NumberStyles.Float, CultureInfo.InvariantCulture, out double dur);
+            string text = await Lyrics.GetAsync(q["artist"] ?? "", q["title"] ?? "", q["album"] ?? "", dur);
+            return new Reply(200, "text/plain; charset=utf-8", Encoding.UTF8.GetBytes(text));
+        }
+        if (path == "/diag/audio")
+        {
+            return Json(new AudioDiag("ok", MediaSessionService.CurrentAppId, MediaSessionService.CurrentFamily, AppAudioControl.DescribeSessions()), AppJson.Context.AudioDiag);
+        }
+        if (path == "/focus")
+        {
+            return Json(new FocusResponse("ok", AppAudioControl.IsDotaFocused()), AppJson.Context.FocusResponse);
+        }
+        if (path == "/status")
+        {
+            if (!string.IsNullOrWhiteSpace(q["dir"]))
+            {
+                MediaSessionService.SetScriptsDir(q["dir"]);
+                FontInstaller.CopyToCheat(MediaSessionService.ScriptsDirectory);
+                FileChannel.Start(MediaSessionService.ScriptsDirectory, Log);
+            }
+            if (q["likes"] != null) SpotifyFlags.SetEnabled(q["likes"]);
+            return new Reply(200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(await StatusJsonAsync()));
+        }
+        return new Reply(404, "text/plain", Array.Empty<byte>());
     }
 }
